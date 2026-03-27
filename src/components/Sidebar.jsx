@@ -18,7 +18,7 @@ const Sidebar = ({ currentStep, setStep }) => {
 
   const gameTheorySteps = [
     "1. Datos",
-
+    "2. Análisis"
   ];
 
   const toggleMenu = (menu) => {

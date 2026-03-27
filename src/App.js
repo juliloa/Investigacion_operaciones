@@ -16,10 +16,12 @@ import Step10 from "./steps/Step10";
 
 // 🎮 Teoría del Juego
 import GameTheoryScreen from "./views/gameTheory/GameTheoryScreen";
+import GameAnalysis from "./views/gameTheory/GameAnalysis";
 
 function App() {
   const [step, setStep] = useState(0);
   const [data, setData] = useState(defaultData);
+  const [gameMatrix, setGameMatrix] = useState(null);
 
   const next = () => setStep(step + 1);
   const prev = () => setStep(step - 1);
@@ -41,9 +43,8 @@ function App() {
       case 9: return <Step10 {...props} />;
 
       // 🎮 TEORÍA DEL JUEGO (100 - 199)
-      case 100: return <GameTheoryScreen />;
-      case 101: return <GameTheoryScreen />;
-      case 102: return <GameTheoryScreen />;
+      case 100: return <GameTheoryScreen setStep={setStep} setGameMatrix={setGameMatrix} />;
+      case 101: return <GameAnalysis matrix={gameMatrix} onBack={() => setStep(100)} />;
 
       default: return <Step1 {...props} />;
     }

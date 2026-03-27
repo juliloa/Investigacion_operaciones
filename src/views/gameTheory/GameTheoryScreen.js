@@ -180,7 +180,7 @@ const GameTheoryScreen = ({ setStep, setGameMatrix }) => {
               style={styles.analysisBtn}
               onClick={() => {
                 setGameMatrix(matrix);
-                setStep(11);
+                setStep(101);
               }}
             >
               🔍 Minimizar
