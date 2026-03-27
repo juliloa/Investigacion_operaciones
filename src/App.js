@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 
+import { defaultData } from "./data/defaultData";
 import Sidebar from "./components/Sidebar";
 
 import Step1 from "./steps/Step1";
@@ -16,16 +17,7 @@ import Step10 from "./steps/Step10";
 function App() {
   const [step, setStep] = useState(0);
 
-  const [data, setData] = useState({
-    alternatives: ["A", "B", "C"],
-    states: ["Alta", "Baja"],
-    probabilities: [0.7, 0.3],
-    payoff: [
-      [30, -8],
-      [20, 7],
-      [5, 15]
-    ]
-  });
+  const [data, setData] = useState(defaultData);
 
   const next = () => setStep(step + 1);
   const prev = () => setStep(step - 1);
