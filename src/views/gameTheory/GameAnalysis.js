@@ -481,12 +481,24 @@ const GameAnalysis = ({ matrix, onBack, onOpenAlgebraic }) => {
 
       <div style={panel}>
         <h3 style={panelTitle}>Desarrollo paso a paso</h3>
+
         {eliminationSteps.length === 0 ? (
           <p style={muted}>No hubo eliminaciones ni cierres de proceso.</p>
         ) : (
-          eliminationSteps.map((step, index) => (
-            <StepCard key={index} step={step} index={index} />
-          ))
+          <>
+            {eliminationSteps
+              .filter((step) => step.action !== "no-more-eliminations")
+              .map((step, index) => (
+                <StepCard key={index} step={step} index={index} />
+              ))}
+
+            {eliminationSteps.some((step) => step.action === "no-more-eliminations") && (
+              <p style={muted}>
+                Se llegó a la matriz final y ya no se pueden hacer más iteraciones de reducción.
+                Por eso el proceso se detiene aquí (p.ej., 2x2). Esta observación se informa una sola vez.
+              </p>
+            )}
+          </>
         )}
       </div>
 
