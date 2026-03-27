@@ -1,51 +1,88 @@
 import React, { useState } from "react";
 
-const GameTheoryScreen = ({ setStep, setGameMatrix }) => {
+const GameTheoryScreen = ({ setStep, gameData, setGameData }) => {
 
   const createMatrix = (r, c) =>
     Array(r).fill().map(() => Array(c).fill(""));
 
-  const [matrix, setMatrix] = useState(createMatrix(2, 2));
+  const [matrix, setMatrix] = useState(
+    gameData?.matrix || createMatrix(2, 2)
+  );
 
-  const [rowGroup, setRowGroup] = useState("Estrategias");
-  const [colGroup, setColGroup] = useState("Estrategias");
+  const [rowGroup, setRowGroup] = useState(gameData?.rowGroup || "Estrategias");
+  const [colGroup, setColGroup] = useState(gameData?.colGroup || "Estrategias");
 
-  const [rowNames, setRowNames] = useState(["Estrategia 1", "Estrategia 2"]);
-  const [colNames, setColNames] = useState(["Estrategia 1", "Estrategia 2"]);
+  const [rowNames, setRowNames] = useState(
+    gameData?.rowNames || ["Estrategia 1", "Estrategia 2"]
+  );
+  const [colNames, setColNames] = useState(
+    gameData?.colNames || ["Estrategia 1", "Estrategia 2"]
+  );
 
-  // ➕ FILA
+  const persistGameData = ({
+    nextMatrix = matrix,
+    nextRowNames = rowNames,
+    nextColNames = colNames,
+    nextRowGroup = rowGroup,
+    nextColGroup = colGroup
+  } = {}) => {
+    setGameData({
+      matrix: nextMatrix.map((row) => [...row]),
+      rowNames: [...nextRowNames],
+      colNames: [...nextColNames],
+      rowGroup: nextRowGroup,
+      colGroup: nextColGroup
+    });
+  };
+
+  //  FILA
   const addRow = () => {
-    setMatrix([...matrix, Array(colNames.length).fill("")]);
-    setRowNames([...rowNames, `Estrategia ${rowNames.length + 1}`]);
+    const nextMatrix = [...matrix, Array(colNames.length).fill("")];
+    const nextRowNames = [...rowNames, `Estrategia ${rowNames.length + 1}`];
+
+    setMatrix(nextMatrix);
+    setRowNames(nextRowNames);
+    persistGameData({ nextMatrix, nextRowNames });
   };
 
   const removeRow = () => {
     if (matrix.length <= 1) return;
-    setMatrix(matrix.slice(0, -1));
-    setRowNames(rowNames.slice(0, -1));
+    const nextMatrix = matrix.slice(0, -1);
+    const nextRowNames = rowNames.slice(0, -1);
+
+    setMatrix(nextMatrix);
+    setRowNames(nextRowNames);
+    persistGameData({ nextMatrix, nextRowNames });
   };
 
-  // ➕ COLUMNA
+  //  COLUMNA
   const addColumn = () => {
-    const newMatrix = matrix.map(row => [...row, ""]);
-    setMatrix(newMatrix);
-    setColNames([...colNames, `Estrategia ${colNames.length + 1}`]);
+    const nextMatrix = matrix.map(row => [...row, ""]);
+    const nextColNames = [...colNames, `Estrategia ${colNames.length + 1}`];
+
+    setMatrix(nextMatrix);
+    setColNames(nextColNames);
+    persistGameData({ nextMatrix, nextColNames });
   };
 
   const removeColumn = () => {
     if (colNames.length <= 1) return;
-    const newMatrix = matrix.map(row => row.slice(0, -1));
-    setMatrix(newMatrix);
-    setColNames(colNames.slice(0, -1));
+    const nextMatrix = matrix.map(row => row.slice(0, -1));
+    const nextColNames = colNames.slice(0, -1);
+
+    setMatrix(nextMatrix);
+    setColNames(nextColNames);
+    persistGameData({ nextMatrix, nextColNames });
   };
 
   const handleChange = (i, j, value) => {
-    const newMatrix = [...matrix];
-    newMatrix[i][j] = value;
-    setMatrix(newMatrix);
+    const nextMatrix = [...matrix];
+    nextMatrix[i][j] = value;
+    setMatrix(nextMatrix);
+    persistGameData({ nextMatrix });
   };
 
-  // 🧠 CÁLCULOS
+  //  CÁLCULOS
   const rowMin = matrix.map(row =>
     Math.min(...row.map(v => parseFloat(v) || 0))
   );
@@ -62,14 +99,14 @@ const GameTheoryScreen = ({ setStep, setGameMatrix }) => {
 
   return (
     <div style={styles.container}>
-      <h2 style={styles.title}>🎮 Teoría de Juegos</h2>
+      <h2 style={styles.title}>Teoría de Juegos</h2>
 
       {/* CONTROLES */}
       <div style={styles.controls}>
-        <button style={styles.btn} onClick={addRow}>➕ Fila</button>
-        <button style={styles.btn} onClick={removeRow}>➖ Fila</button>
-        <button style={styles.btn} onClick={addColumn}>➕ Columna</button>
-        <button style={styles.btn} onClick={removeColumn}>➖ Columna</button>
+        <button style={styles.btn} onClick={addRow}>Agregar fila</button>
+        <button style={styles.btn} onClick={removeRow}>Eliminar fila</button>
+        <button style={styles.btn} onClick={addColumn}>Agregar columna</button>
+        <button style={styles.btn} onClick={removeColumn}>Eliminar columna</button>
       </div>
 
       {/* TABLA */}
@@ -82,7 +119,11 @@ const GameTheoryScreen = ({ setStep, setGameMatrix }) => {
               <th colSpan={colNames.length} style={styles.groupHeader}>
                 <input
                   value={colGroup}
-                  onChange={(e) => setColGroup(e.target.value)}
+                  onChange={(e) => {
+                    const nextColGroup = e.target.value;
+                    setColGroup(nextColGroup);
+                    persistGameData({ nextColGroup });
+                  }}
                   style={styles.groupInput}
                 />
               </th>
@@ -94,7 +135,11 @@ const GameTheoryScreen = ({ setStep, setGameMatrix }) => {
               <th style={styles.groupSide}>
                 <input
                   value={rowGroup}
-                  onChange={(e) => setRowGroup(e.target.value)}
+                  onChange={(e) => {
+                    const nextRowGroup = e.target.value;
+                    setRowGroup(nextRowGroup);
+                    persistGameData({ nextRowGroup });
+                  }}
                   style={styles.groupInputSide}
                 />
               </th>
@@ -104,9 +149,10 @@ const GameTheoryScreen = ({ setStep, setGameMatrix }) => {
                   <input
                     value={col}
                     onChange={(e) => {
-                      const newCols = [...colNames];
-                      newCols[j] = e.target.value;
-                      setColNames(newCols);
+                      const nextColNames = [...colNames];
+                      nextColNames[j] = e.target.value;
+                      setColNames(nextColNames);
+                      persistGameData({ nextColNames });
                     }}
                     style={styles.headerInput}
                   />
@@ -124,9 +170,10 @@ const GameTheoryScreen = ({ setStep, setGameMatrix }) => {
                   <input
                     value={rowNames[i]}
                     onChange={(e) => {
-                      const newRows = [...rowNames];
-                      newRows[i] = e.target.value;
-                      setRowNames(newRows);
+                      const nextRowNames = [...rowNames];
+                      nextRowNames[i] = e.target.value;
+                      setRowNames(nextRowNames);
+                      persistGameData({ nextRowNames });
                     }}
                     style={styles.headerInput}
                   />
@@ -171,22 +218,20 @@ const GameTheoryScreen = ({ setStep, setGameMatrix }) => {
         <p><b>Minimax:</b> {minimax}</p>
 
         {hasSaddlePoint ? (
-          <p style={styles.success}>✅ Punto silla encontrado</p>
+          <p style={styles.success}>Punto silla encontrado</p>
         ) : (
-          <>
-            <p style={styles.error}>❌ No hay punto silla</p>
-
-            <button
-              style={styles.analysisBtn}
-              onClick={() => {
-                setGameMatrix(matrix);
-                setStep(101);
-              }}
-            >
-              🔍 Minimizar
-            </button>
-          </>
+          <p style={styles.error}>No hay punto silla</p>
         )}
+
+        <button
+          style={styles.analysisBtn}
+          onClick={() => {
+            persistGameData();
+            setStep(101);
+          }}
+        >
+          Ver analisis completo
+        </button>
       </div>
     </div>
   );
@@ -195,7 +240,7 @@ const GameTheoryScreen = ({ setStep, setGameMatrix }) => {
 export default GameTheoryScreen;
 
 //////////////////////////////////////////////////
-// 🎨 ESTILOS
+//  ESTILOS
 
 const styles = {
   container: {

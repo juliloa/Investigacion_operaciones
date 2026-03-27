@@ -3,7 +3,7 @@ import React from "react";
 const Step1 = ({ data, setData, next }) => {
   const { alternatives, states, probabilities, payoff } = data;
 
-  // 🟢 ACTUALIZAR NOMBRES
+  //  ACTUALIZAR NOMBRES
   const updateAlternative = (i, value) => {
     const newAlt = [...alternatives];
     newAlt[i] = value;
@@ -16,21 +16,21 @@ const Step1 = ({ data, setData, next }) => {
     setData({ ...data, states: newStates });
   };
 
-  // 🎲 PROBABILIDADES
+  //  PROBABILIDADES
   const updateProbability = (i, value) => {
     const newProb = [...probabilities];
     newProb[i] = Number(value);
     setData({ ...data, probabilities: newProb });
   };
 
-  // 💰 PAYOFF
+  //  PAYOFF
   const updatePayoff = (i, j, value) => {
     const newPayoff = [...payoff];
     newPayoff[i][j] = Number(value);
     setData({ ...data, payoff: newPayoff });
   };
 
-  // ➕ AGREGAR ALTERNATIVA
+  //  AGREGAR ALTERNATIVA
   const addAlternative = () => {
     setData({
       ...data,
@@ -39,7 +39,7 @@ const Step1 = ({ data, setData, next }) => {
     });
   };
 
-  // ❌ ELIMINAR ALTERNATIVA
+  //  ELIMINAR ALTERNATIVA
   const removeAlternative = (i) => {
     setData({
       ...data,
@@ -48,7 +48,7 @@ const Step1 = ({ data, setData, next }) => {
     });
   };
 
-  // ➕ AGREGAR ESTADO
+  //  AGREGAR ESTADO
   const addState = () => {
     setData({
       ...data,
@@ -58,7 +58,7 @@ const Step1 = ({ data, setData, next }) => {
     });
   };
 
-  // ❌ ELIMINAR ESTADO
+  //  ELIMINAR ESTADO
   const removeState = (i) => {
     setData({
       ...data,
@@ -183,7 +183,7 @@ export default Step1;
 
 //////////////////////////////////////////////////
 
-// 🎨 ESTILO ELEGANTE Y COMPACTO
+//  ESTILO ELEGANTE Y COMPACTO
 
 const container = {
   display: "flex",

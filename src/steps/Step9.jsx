@@ -14,7 +14,7 @@ const Step9 = ({ data, next, prev }) => {
   const P_fav_alta = studyConfig.favorableDetectionRate ?? 0.9;
   const P_fav_baja = studyConfig.unfavorableFalsePositiveRate ?? 0.25;
 
-  // 🧠 SIN ESTUDIO
+  //  SIN ESTUDIO
   const VE_no_estudio = alternatives.map((alt, i) => {
     return payoff[i][0] * P_alta + payoff[i][1] * P_baja;
   });
@@ -23,7 +23,7 @@ const Step9 = ({ data, next, prev }) => {
   const bestAltNoStudy =
     alternatives[VE_no_estudio.indexOf(bestNoStudy)];
 
-  // 🧠 CON ESTUDIO
+  //  CON ESTUDIO
 
   // Probabilidades
   const P_fav = P_alta * P_fav_alta + P_baja * P_fav_baja;
@@ -84,17 +84,17 @@ const Step9 = ({ data, next, prev }) => {
         </strong>
       </div>
 
-      {/* 🧠 COMPARACIÓN */}
+      {/*  COMPARACIÓN */}
       <div style={card}>
         <h2>Conclusión</h2>
 
         {VE_con_estudio > bestNoStudy ? (
           <p style={{ color: "green" }}>
-            ✔ Conviene realizar el estudio de mercado, ya que mejora el valor esperado.
+             Conviene realizar el estudio de mercado, ya que mejora el valor esperado.
           </p>
         ) : (
           <p style={{ color: "red" }}>
-            ✖ No conviene realizar el estudio de mercado, no aporta mejora.
+             No conviene realizar el estudio de mercado, no aporta mejora.
           </p>
         )}
       </div>

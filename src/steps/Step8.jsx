@@ -170,7 +170,7 @@ const Step8 = ({ data, next, prev }) => {
                         dominantBaseline="central"
                         fill={isBest ? "#e1f5ee" : "#444"}
                         fontSize="11" fontWeight={isBest ? "700" : "500"}>
-                    EV={ds.evs[ai].toFixed(2)}  {isBest ? "★" : ""}
+                    EV={ds.evs[ai].toFixed(2)}  {isBest ? "" : ""}
                   </text>
 
                   {/* Flecha hacia caja EV */}
@@ -234,7 +234,7 @@ const Step8 = ({ data, next, prev }) => {
             <h3 style={{ margin: "0 0 8px", color: "#3b6d11" }}>3. EV Favorable</h3>
             {alternatives.map((alt, i) => (
               <p key={i} style={{ ...formula, fontWeight: i === bestFavIdx ? "700" : "400" }}>
-                {alt}: {EV_fav[i].toFixed(2)} {i === bestFavIdx ? "★" : ""}
+                {alt}: {EV_fav[i].toFixed(2)} {i === bestFavIdx ? "" : ""}
               </p>
             ))}
           </div>
@@ -243,7 +243,7 @@ const Step8 = ({ data, next, prev }) => {
             <h3 style={{ margin: "0 0 8px", color: "#993c1d" }}>4. EV Desfavorable</h3>
             {alternatives.map((alt, i) => (
               <p key={i} style={{ ...formula, fontWeight: i === bestDesfIdx ? "700" : "400" }}>
-                {alt}: {EV_desf[i].toFixed(2)} {i === bestDesfIdx ? "★" : ""}
+                {alt}: {EV_desf[i].toFixed(2)} {i === bestDesfIdx ? "" : ""}
               </p>
             ))}
           </div>
@@ -252,7 +252,7 @@ const Step8 = ({ data, next, prev }) => {
             <h3 style={{ margin: "0 0 8px", color: "#854f0b" }}>5. EV Sin estudio</h3>
             {alternatives.map((alt, i) => (
               <p key={i} style={{ ...formula, fontWeight: i === bestNoIdx ? "700" : "400" }}>
-                {alt}: {EV_no[i].toFixed(2)} {i === bestNoIdx ? "★" : ""}
+                {alt}: {EV_no[i].toFixed(2)} {i === bestNoIdx ? "" : ""}
               </p>
             ))}
           </div>

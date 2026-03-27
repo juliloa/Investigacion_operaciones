@@ -147,7 +147,7 @@ export default Step2;
 
 //////////////////////////////////////////////////
 
-// 🎨 ESTILOS
+//  ESTILOS
 
 const container = {
   display: "flex",

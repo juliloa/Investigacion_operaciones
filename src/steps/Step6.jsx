@@ -16,7 +16,7 @@ const Step6 = ({ data, next, prev }) => {
 
   const colors = ["#007BFF", "#28a745", "#dc3545", "#ffc107"];
 
-  // 🧠 Generar funciones lineales: VE = intercept + slope*p
+  //  Generar funciones lineales: VE = intercept + slope*p
   const linearFunctions = alternatives.map((alternative, i) => {
     const payoffFavorableState = payoff[i][0];
     const payoffUnfavorableState = payoff[i][1];
@@ -28,13 +28,13 @@ const Step6 = ({ data, next, prev }) => {
     };
   });
 
-  // 📊 Eje X (probabilidad del estado favorable)
+  //  Eje X (probabilidad del estado favorable)
   const probabilityLabels = [];
   for (let p = 0; p <= 1; p += 0.02) {
     probabilityLabels.push(parseFloat(p.toFixed(2)));
   }
 
-  // 📈 Datasets (LÍNEAS de valor esperado)
+  //  Datasets (LÍNEAS de valor esperado)
   const datasets = linearFunctions.map((f, i) => ({
     label: f.name,
     data: probabilityLabels.map(p => ({
@@ -47,7 +47,7 @@ const Step6 = ({ data, next, prev }) => {
     tension: 0.2
   }));
 
-  // 🧠 Calcular intersecciones
+  //  Calcular intersecciones
   const intersectionPoints = [];
 
   for (let i = 0; i < linearFunctions.length; i++) {
@@ -68,7 +68,7 @@ const Step6 = ({ data, next, prev }) => {
     }
   }
 
-  // 🔵 Dataset de puntos de corte
+  //  Dataset de puntos de corte
   const cutPointsDataset = {
     label: "Puntos de corte",
     data: intersectionPoints,
@@ -79,7 +79,7 @@ const Step6 = ({ data, next, prev }) => {
     type: "scatter"
   };
 
-  // ⚙️ Opciones del gráfico
+  // Opciones del gráfico
   const chartOptions = {
     responsive: true,
     plugins: {
@@ -120,24 +120,7 @@ const Step6 = ({ data, next, prev }) => {
 
   return (
     <div style={container}>
-      <h1>📊 Gráfica de Valor Esperado</h1>
-
-      <div style={card}>
-        <p style={{ color: "#666", marginBottom: "20px" }}>
-          Each line represents the expected value of an alternative as a function of p (probability of favorable state).
-          The intersection points show where alternatives are equally attractive.
-        </p>
-
-        <svg viewBox="0 0 900 400" style={{ width: "100%", height: "auto" }}>
-          {/* Grid/Background */}
-          <defs>
-            <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
-              <path d="M 30 0 L 0 0 0 30" fill="none" stroke="#f0f0f0" strokeWidth="0.5"/>
-            </pattern>
-          </defs>
-          <rect width="900" height="400" fill="url(#grid)" />
-        </svg>
-      </div>
+      <h1>Gráfica de Valor Esperado</h1>
 
       {/* Gráfico interactivo con Chart.js */}
       <div style={card}>
@@ -145,9 +128,9 @@ const Step6 = ({ data, next, prev }) => {
         <Line data={{ datasets: [...datasets, cutPointsDataset] }} options={chartOptions} />
       </div>
 
-      {/* 📈 Interpretación */}
+      {/*  Interpretación */}
       <div style={card}>
-        <h2>🧠 Interpretación de la Gráfica</h2>
+        <h2>Interpretación de la Gráfica</h2>
 
         <div style={interpretationBox}>
           <h3>Líneas Lineales</h3>
@@ -181,7 +164,7 @@ const Step6 = ({ data, next, prev }) => {
             borderRadius: "8px"
           }}
         >
-          <h3>💡 Consejo de Decisión</h3>
+          <h3>Consejo de Decisión</h3>
           <p>
             Si tienes confianza en tu estimación de <strong>p</strong>, elige la alternativa
             cuya línea esté más arriba en ese valor de p.
@@ -202,7 +185,7 @@ export default Step6;
 
 //////////////////////////////////////////////////
 
-// 🎨 ESTILOS
+//  ESTILOS
 
 const container = {
   display: "flex",
