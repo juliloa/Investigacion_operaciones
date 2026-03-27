@@ -2,12 +2,17 @@ import React from "react";
 
 const Step9 = ({ data, next, prev }) => {
   const { alternatives, payoff, probabilities } = data;
+  const safeDiv = (a, b) => (b === 0 ? 0 : a / b);
 
   const P_alta = probabilities[0];
   const P_baja = probabilities[1];
 
-  const P_fav_alta = 0.9;
-  const P_fav_baja = 0.25;
+  const studyConfig = data.studyConfig || {
+    favorableDetectionRate: 0.9,
+    unfavorableFalsePositiveRate: 0.25
+  };
+  const P_fav_alta = studyConfig.favorableDetectionRate ?? 0.9;
+  const P_fav_baja = studyConfig.unfavorableFalsePositiveRate ?? 0.25;
 
   // 🧠 SIN ESTUDIO
   const VE_no_estudio = alternatives.map((alt, i) => {
@@ -25,13 +30,11 @@ const Step9 = ({ data, next, prev }) => {
   const P_desf = 1 - P_fav;
 
   // Bayes
-  const P_alta_fav = (P_alta * P_fav_alta) / P_fav;
-  const P_baja_fav = (P_baja * P_fav_baja) / P_fav;
+  const P_alta_fav = safeDiv(P_alta * P_fav_alta, P_fav);
+  const P_baja_fav = safeDiv(P_baja * P_fav_baja, P_fav);
 
-  const P_alta_desf =
-    (P_alta * (1 - P_fav_alta)) / P_desf;
-  const P_baja_desf =
-    (P_baja * (1 - P_fav_baja)) / P_desf;
+  const P_alta_desf = safeDiv(P_alta * (1 - P_fav_alta), P_desf);
+  const P_baja_desf = safeDiv(P_baja * (1 - P_fav_baja), P_desf);
 
   // VE por escenario
   const VE_fav = alternatives.map((alt, i) => {

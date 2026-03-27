@@ -16,62 +16,62 @@ const Step6 = ({ data, next, prev }) => {
 
   const colors = ["#007BFF", "#28a745", "#dc3545", "#ffc107"];
 
-  // 🧠 funciones lineales
-  const functions = alternatives.map((alt, i) => {
-    const a = payoff[i][0];
-    const b = payoff[i][1];
+  // 🧠 Generar funciones lineales: VE = intercept + slope*p
+  const linearFunctions = alternatives.map((alternative, i) => {
+    const payoffFavorableState = payoff[i][0];
+    const payoffUnfavorableState = payoff[i][1];
 
     return {
-      name: alt,
-      m: a - b,
-      b
+      name: alternative,
+      slope: payoffFavorableState - payoffUnfavorableState,
+      intercept: payoffUnfavorableState
     };
   });
 
-  // 📊 eje X (probabilidad)
-  const labels = [];
+  // 📊 Eje X (probabilidad del estado favorable)
+  const probabilityLabels = [];
   for (let p = 0; p <= 1; p += 0.02) {
-    labels.push(parseFloat(p.toFixed(2)));
+    probabilityLabels.push(parseFloat(p.toFixed(2)));
   }
 
-  // 📈 datasets (LÍNEAS)
-  const datasets = functions.map((f, i) => ({
+  // 📈 Datasets (LÍNEAS de valor esperado)
+  const datasets = linearFunctions.map((f, i) => ({
     label: f.name,
-    data: labels.map(p => ({
+    data: probabilityLabels.map(p => ({
       x: p,
-      y: f.b + f.m * p
+      y: f.intercept + f.slope * p
     })),
     borderColor: colors[i],
     borderWidth: 2,
-    pointRadius: 0, // 👈 ocultamos puntos de línea
+    pointRadius: 0,
     tension: 0.2
   }));
 
-  // 🧠 INTERSECCIONES
-  const intersections = [];
+  // 🧠 Calcular intersecciones
+  const intersectionPoints = [];
 
-  for (let i = 0; i < functions.length; i++) {
-    for (let j = i + 1; j < functions.length; j++) {
-      const f1 = functions[i];
-      const f2 = functions[j];
+  for (let i = 0; i < linearFunctions.length; i++) {
+    for (let j = i + 1; j < linearFunctions.length; j++) {
+      const f1 = linearFunctions[i];
+      const f2 = linearFunctions[j];
 
-      const p = (f2.b - f1.b) / (f1.m - f2.m);
+      const intersectionProbability = (f2.intercept - f1.intercept) / (f1.slope - f2.slope);
 
-      if (p >= 0 && p <= 1) {
-        const y = f1.b + f1.m * p;
+      if (intersectionProbability >= 0 && intersectionProbability <= 1) {
+        const intersectionValue = f1.intercept + f1.slope * intersectionProbability;
 
-        intersections.push({
-          x: parseFloat(p.toFixed(3)),
-          y: parseFloat(y.toFixed(2))
+        intersectionPoints.push({
+          x: parseFloat(intersectionProbability.toFixed(3)),
+          y: parseFloat(intersectionValue.toFixed(2))
         });
       }
     }
   }
 
-  // 🔵 PUNTOS DE CORTE
-  const pointsDataset = {
+  // 🔵 Dataset de puntos de corte
+  const cutPointsDataset = {
     label: "Puntos de corte",
-    data: intersections,
+    data: intersectionPoints,
     backgroundColor: "#000",
     borderColor: "#000",
     pointRadius: 6,
@@ -79,8 +79,8 @@ const Step6 = ({ data, next, prev }) => {
     type: "scatter"
   };
 
-  // ⚙️ OPCIONES
-  const options = {
+  // ⚙️ Opciones del gráfico
+  const chartOptions = {
     responsive: true,
     plugins: {
       tooltip: {
@@ -89,13 +89,13 @@ const Step6 = ({ data, next, prev }) => {
             return `VE: ${context.parsed.y.toFixed(2)}`;
           },
           afterBody: function(context) {
-            const p = context[0].parsed.x;
+            const probabilityValue = context[0].parsed.x;
 
-            const values = functions.map(f => f.b + f.m * p);
-            const max = Math.max(...values);
-            const bestIndex = values.indexOf(max);
+            const veValues = linearFunctions.map(f => f.intercept + f.slope * probabilityValue);
+            const maxVE = Math.max(...veValues);
+            const bestAlternativeIndex = veValues.indexOf(maxVE);
 
-            return `Mejor: ${functions[bestIndex].name}`;
+            return `Mejor: ${linearFunctions[bestAlternativeIndex].name}`;
           }
         }
       }
@@ -103,17 +103,16 @@ const Step6 = ({ data, next, prev }) => {
     scales: {
       x: {
         type: "linear",
-        min: 0,
-        max: 1,
+        position: "bottom",
         title: {
           display: true,
-          text: "Probabilidad (p)"
+          text: "p (Probabilidad del Estado Favorable)"
         }
       },
       y: {
         title: {
           display: true,
-          text: "Valor Esperado"
+          text: "Valor Esperado (VE)"
         }
       }
     }
@@ -121,47 +120,73 @@ const Step6 = ({ data, next, prev }) => {
 
   return (
     <div style={container}>
-      <h1>Gráfica de Sensibilidad (Pro)</h1>
+      <h1>📊 Gráfica de Valor Esperado</h1>
 
       <div style={card}>
-        <Line
-          data={{
-            datasets: [...datasets, pointsDataset]
+        <p style={{ color: "#666", marginBottom: "20px" }}>
+          Each line represents the expected value of an alternative as a function of p (probability of favorable state).
+          The intersection points show where alternatives are equally attractive.
+        </p>
+
+        <svg viewBox="0 0 900 400" style={{ width: "100%", height: "auto" }}>
+          {/* Grid/Background */}
+          <defs>
+            <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
+              <path d="M 30 0 L 0 0 0 30" fill="none" stroke="#f0f0f0" strokeWidth="0.5"/>
+            </pattern>
+          </defs>
+          <rect width="900" height="400" fill="url(#grid)" />
+        </svg>
+      </div>
+
+      {/* Gráfico interactivo con Chart.js */}
+      <div style={card}>
+        <h2>Gráfico Interactivo</h2>
+        <Line data={{ datasets: [...datasets, cutPointsDataset] }} options={chartOptions} />
+      </div>
+
+      {/* 📈 Interpretación */}
+      <div style={card}>
+        <h2>🧠 Interpretación de la Gráfica</h2>
+
+        <div style={interpretationBox}>
+          <h3>Líneas Lineales</h3>
+          <p>
+            Cada línea representa el valor esperado de una alternativa como función de <strong>p</strong>.
+            La pendiente positiva significa que la alternativa mejora con mayor probabilidad del estado favorable.
+          </p>
+        </div>
+
+        <div style={interpretationBox}>
+          <h3>Puntos de Corte (Intersecciones)</h3>
+          <p>
+            Los puntos negros indican dónde dos alternativas tienen el mismo valor esperado.
+            Esto marca los "umbrales de decisión" donde cambia cuál es la mejor alternativa.
+          </p>
+        </div>
+
+        <div style={interpretationBox}>
+          <h3>Región Óptima</h3>
+          <p>
+            Para cada valor de p, la alternativa óptima es la que tiene la línea más alta.
+            Hover sobre el gráfico para ver cuál es la mejor alternativa en cada punto.
+          </p>
+        </div>
+
+        <div
+          style={{
+            ...interpretationBox,
+            background: "#f0f7ff",
+            padding: "15px",
+            borderRadius: "8px"
           }}
-          options={options}
-        />
-      </div>
-
-      {/* 📍 PUNTOS DE CORTE */}
-      <div style={card}>
-        <h2>Puntos de corte</h2>
-
-        {intersections.length > 0 ? (
-          intersections.map((pt, i) => (
-            <p key={i}>
-              p = <strong>{pt.x}</strong> → VE = <strong>{pt.y}</strong>
-            </p>
-          ))
-        ) : (
-          <p>No hay intersecciones en el rango.</p>
-        )}
-      </div>
-
-      {/* 🧠 EXPLICACIÓN */}
-      <div style={card}>
-        <h2>Interpretación</h2>
-
-        <p>
-          Cada línea representa una alternativa con su valor esperado.
-        </p>
-
-        <p>
-          Los puntos de corte indican dónde una alternativa deja de ser mejor y otra la supera.
-        </p>
-
-        <p>
-          La alternativa óptima es la que tiene el mayor valor en cada región del eje.
-        </p>
+        >
+          <h3>💡 Consejo de Decisión</h3>
+          <p>
+            Si tienes confianza en tu estimación de <strong>p</strong>, elige la alternativa
+            cuya línea esté más arriba en ese valor de p.
+          </p>
+        </div>
       </div>
 
       {/* BOTONES */}
@@ -192,9 +217,16 @@ const card = {
   boxShadow: "0 4px 10px rgba(0,0,0,0.1)"
 };
 
+const interpretationBox = {
+  marginBottom: "15px",
+  paddingBottom: "15px",
+  borderBottom: "1px solid #eee"
+};
+
 const buttons = {
   display: "flex",
-  justifyContent: "space-between"
+  justifyContent: "space-between",
+  gap: "10px"
 };
 
 const btnPrimary = {
@@ -202,12 +234,16 @@ const btnPrimary = {
   background: "#007BFF",
   color: "#fff",
   border: "none",
-  borderRadius: "6px"
+  borderRadius: "6px",  cursor: "pointer",
+  fontSize: "14px",
+  fontWeight: "600"
 };
 
 const btnSecondary = {
   padding: "10px 20px",
   background: "#ccc",
   border: "none",
-  borderRadius: "6px"
+  borderRadius: "6px",
+  cursor: "pointer",
+  fontSize: "14px"
 };

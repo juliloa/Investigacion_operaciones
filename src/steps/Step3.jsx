@@ -3,78 +3,125 @@ import React from "react";
 const Step3 = ({ data, next, prev }) => {
   const { alternatives, payoff } = data;
 
-  // 🧠 Generar funciones
-  const functions = alternatives.map((alt, i) => {
-    const a = payoff[i][0]; // estado 1
-    const b = payoff[i][1]; // estado 2
+  // 🧠 Generar funciones de valor esperado
+  const sensitivityAnalysis = alternatives.map((alternative, i) => {
+    const payoffFavorableState = payoff[i][0]; // estado favorable
+    const payoffUnfavorableState = payoff[i][1]; // estado desfavorable
 
-    // Forma expandida
-    const expanded = `${a}p + ${b}(1 - p)`;
+    // Forma expandida: VE = a*p + b*(1 - p)
+    const expandedForm = `${payoffFavorableState}p + ${payoffUnfavorableState}(1 - p)`;
 
-    // Forma simplificada: b + (a - b)p
-    const simplifiedA = a - b;
-    const simplified = `${b} + ${simplifiedA}p`;
+    // Forma simplificada: VE = b + (a - b)p
+    const slope = payoffFavorableState - payoffUnfavorableState;
+    const simplifiedForm = `${payoffUnfavorableState} + ${slope}p`;
 
     return {
-      name: alt,
-      expanded,
-      simplified,
-      slope: simplifiedA
+      name: alternative,
+      expandedForm,
+      simplifiedForm,
+      slope
     };
   });
 
-  // 🧠 Encontrar mejor pendiente
-  const bestSlope = Math.max(...functions.map(f => f.slope));
+  // 🧠 Encontrar la alternativa con mayor pendiente
+  const bestSlope = Math.max(...sensitivityAnalysis.map(f => f.slope));
 
   return (
     <div style={container}>
-      <h1>Análisis de Sensibilidad</h1>
+      <h1>📈 Análisis de Sensibilidad</h1>
 
       <div style={card}>
-        <p>
+        <p style={{ color: "#666", fontSize: "15px", marginBottom: "20px" }}>
           Sea <strong>p</strong> la probabilidad del estado favorable.
-          Entonces (1 - p) es el estado desfavorable.
+          Entonces <strong>(1 - p)</strong> es la probabilidad del estado desfavorable.
         </p>
 
-        {functions.map((f, i) => (
+        <p style={{ background: "#f5f5f5", padding: "12px", borderRadius: "6px", fontFamily: "monospace", fontSize: "14px" }}>
+          Valor Esperado: VE(p) = b + (m)p, donde m es la pendiente
+        </p>
+      </div>
+
+      {/* ANÁLISIS POR ALTERNATIVA */}
+      <div style={card}>
+        <h2>📊 Análisis por Alternativa</h2>
+
+        {sensitivityAnalysis.map((analysis, i) => (
           <div key={i} style={block}>
             
-            <h3>{f.name}</h3>
+            <h3 style={{ color: "#185fa5" }}>{analysis.name}</h3>
 
-            <p>
-              <strong>Función:</strong> VE = {f.expanded}
-            </p>
+            <div style={functionBox}>
+              <p style={functionLabel}>
+                <strong>Función expandida:</strong>
+              </p>
+              <p style={functionFormula}>
+                VE = {analysis.expandedForm}
+              </p>
+            </div>
 
-            <p>
-              <strong>Simplificación:</strong> VE = {f.simplified}
-            </p>
+            <div style={functionBox}>
+              <p style={functionLabel}>
+                <strong>Forma simplificada:</strong>
+              </p>
+              <p style={functionFormula}>
+                VE = {analysis.simplifiedForm}
+              </p>
+            </div>
 
-            <p>
-              <strong>Pendiente:</strong> {f.slope}
-            </p>
+            <div style={functionBox}>
+              <p style={functionLabel}>
+                <strong>Pendiente (m):</strong> {analysis.slope}
+              </p>
+              <p style={{ fontSize: "12px", color: "#666", marginTop: "8px" }}>
+                Indica el cambio en VE por cada aumento unitario en p
+              </p>
+            </div>
 
-            <p style={{ color: f.slope === bestSlope ? "green" : "black" }}>
-              {f.slope === bestSlope
-                ? "Esta alternativa crece más rápido → mejor en escenarios favorables."
-                : "Menor crecimiento frente al aumento de p."}
-            </p>
+            {analysis.slope === bestSlope && (
+              <p style={{ background: "#d4edda", color: "#155724", padding: "10px", borderRadius: "6px", marginTop: "10px", fontWeight: "600" }}>
+                ⭐ <strong>Mejor pendiente:</strong> Esta alternativa crece más rápido → mejor en escenarios más favorables
+              </p>
+            )}
+
+            {analysis.slope !== bestSlope && (
+              <p style={{ background: "#fff3cd", color: "#856404", padding: "10px", borderRadius: "6px", marginTop: "10px" }}>
+                Menor crecimiento frente al aumento de p
+              </p>
+            )}
 
           </div>
         ))}
       </div>
 
-      {/* 🧠 ANÁLISIS GENERAL */}
+      {/* 🧠 INTERPRETACIÓN */}
       <div style={card}>
-        <h2>Interpretación</h2>
+        <h2>🧠 Interpretación del Análisis</h2>
 
-        <p>
-          La pendiente indica qué tan sensible es cada alternativa frente al cambio
-          en la probabilidad del estado favorable.
-        </p>
+        <div style={interpretationBlock}>
+          <h3>Sensibilidad a la Probabilidad</h3>
+          <p>
+            La pendiente indica qué tan sensible es cada alternativa frente al cambio
+            en la probabilidad del estado favorable.
+          </p>
+        </div>
 
-        <p>
-          A mayor pendiente, mayor beneficio cuando el escenario favorable es más probable.
-        </p>
+        <div style={interpretationBlock}>
+          <h3>Estrategia según Confianza</h3>
+          <p>
+            <strong>Pendiente positiva alta:</strong> Buena alternativa cuando crees que el estado favorable es probable.
+          </p>
+          <p>
+            <strong>Pendiente baja o negativa:</strong> Buena alternativa cuando crees que el estado desfavorable es probable.
+          </p>
+        </div>
+
+        <div style={interpretationBlock}>
+          <h3>Punto de Indiferencia</h3>
+          <p>
+            En Análisis Gráfico (siguiente paso), veremos dónde se intersectan estas líneas,
+            es decir, en qué valores de p cada alternativa es óptima.
+          </p>
+        </div>
       </div>
 
       {/* BOTONES */}
@@ -107,13 +154,43 @@ const card = {
 
 const block = {
   borderBottom: "1px solid #eee",
-  paddingBottom: "10px",
-  marginBottom: "10px"
+  paddingBottom: "15px",
+  marginBottom: "15px"
+};
+
+const functionBox = {
+  background: "#f9f9f9",
+  padding: "12px",
+  borderRadius: "6px",
+  marginBottom: "10px",
+  borderLeft: "3px solid #185fa5"
+};
+
+const functionLabel = {
+  fontSize: "13px",
+  color: "#666",
+  margin: "0 0 6px 0"
+};
+
+const functionFormula = {
+  fontSize: "14px",
+  fontFamily: "monospace",
+  background: "#fff",
+  padding: "8px",
+  borderRadius: "4px",
+  margin: "0"
+};
+
+const interpretationBlock = {
+  marginBottom: "15px",
+  paddingBottom: "15px",
+  borderBottom: "1px solid #eee"
 };
 
 const buttons = {
   display: "flex",
-  justifyContent: "space-between"
+  justifyContent: "space-between",
+  gap: "10px"
 };
 
 const btnPrimary = {
@@ -121,12 +198,17 @@ const btnPrimary = {
   background: "#007BFF",
   color: "#fff",
   border: "none",
-  borderRadius: "6px"
+  borderRadius: "6px",
+  cursor: "pointer",
+  fontSize: "14px",
+  fontWeight: "600"
 };
 
 const btnSecondary = {
   padding: "10px 20px",
   background: "#ccc",
   border: "none",
-  borderRadius: "6px"
+  borderRadius: "6px",
+  cursor: "pointer",
+  fontSize: "14px"
 };
