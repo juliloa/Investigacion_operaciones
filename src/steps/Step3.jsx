@@ -1,214 +1,273 @@
 import React from "react";
 
+const style = `
+:root {
+  --accent: #4f7fe8;
+  --accent-light: #eef3fd;
+  --accent-mid: #c5d8f9;
+  --text-primary: #1c2333;
+  --text-secondary: #5a6478;
+  --bg: #f5f8ff;
+  --surface: #ffffff;
+  --border: #dde4f4;
+  --success: #d4edda;
+  --warning: #fff3cd;
+}
+
+.step3-container {
+  font-family: 'Outfit', sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 10px rgba(79,127,232,0.05);
+}
+
+.card-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+}
+
+.text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.formula {
+  font-family: monospace;
+  background: var(--accent-light);
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  border: 1px solid var(--border);
+}
+
+.block {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+}
+
+.function-box {
+  background: var(--accent-light);
+  padding: 10px;
+  border-radius: 8px;
+  margin-top: 8px;
+  border-left: 3px solid var(--accent);
+}
+
+.function-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 5px;
+}
+
+.function-value {
+  font-family: monospace;
+  background: var(--surface);
+  padding: 6px;
+  border-radius: 6px;
+  font-size: 13px;
+  border: 1px solid var(--border);
+}
+
+.badge-success {
+  background: var(--success);
+  color: #155724;
+  padding: 10px;
+  border-radius: 8px;
+  margin-top: 10px;
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.badge-warning {
+  background: var(--warning);
+  color: #856404;
+  padding: 10px;
+  border-radius: 8px;
+  margin-top: 10px;
+  font-size: 13px;
+}
+
+.interpretation {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+}
+
+.interpretation h3 {
+  font-size: 13.5px;
+  margin-bottom: 6px;
+  color: var(--text-primary);
+}
+
+.buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.btn {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 13px;
+  transition: 0.2s;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn-secondary {
+  background: #e4e7ee;
+  color: var(--text-primary);
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+`;
+
 const Step3 = ({ data, next, prev }) => {
   const { alternatives, payoff } = data;
 
-  //  Generar funciones de valor esperado
   const sensitivityAnalysis = alternatives.map((alternative, i) => {
-    const payoffFavorableState = payoff[i][0]; // estado favorable
-    const payoffUnfavorableState = payoff[i][1]; // estado desfavorable
+    const a = payoff[i][0];
+    const b = payoff[i][1];
 
-    // Forma expandida: VE = a*p + b*(1 - p)
-    const expandedForm = `${payoffFavorableState}p + ${payoffUnfavorableState}(1 - p)`;
+    const expandedForm = `${a}p + ${b}(1 - p)`;
+    const slope = a - b;
+    const simplifiedForm = `${b} + ${slope}p`;
 
-    // Forma simplificada: VE = b + (a - b)p
-    const slope = payoffFavorableState - payoffUnfavorableState;
-    const simplifiedForm = `${payoffUnfavorableState} + ${slope}p`;
-
-    return {
-      name: alternative,
-      expandedForm,
-      simplifiedForm,
-      slope
-    };
+    return { name: alternative, expandedForm, simplifiedForm, slope };
   });
 
-  //  Encontrar la alternativa con mayor pendiente
   const bestSlope = Math.max(...sensitivityAnalysis.map(f => f.slope));
 
   return (
-    <div style={container}>
-      <h1> Análisis de Sensibilidad</h1>
+    <>
+      <style>{style}</style>
 
-      <div style={card}>
-        <p style={{ color: "#666", fontSize: "15px", marginBottom: "20px" }}>
-          Sea <strong>p</strong> la probabilidad del estado favorable.
-          Entonces <strong>(1 - p)</strong> es la probabilidad del estado desfavorable.
-        </p>
+      <div className="step3-container">
 
-        <p style={{ background: "#f5f5f5", padding: "12px", borderRadius: "6px", fontFamily: "monospace", fontSize: "14px" }}>
-          Valor Esperado: VE(p) = b + (m)p, donde m es la pendiente
-        </p>
-      </div>
+        <div className="card">
+          <div className="card-title">Análisis de Sensibilidad</div>
 
-      {/* ANÁLISIS POR ALTERNATIVA */}
-      <div style={card}>
-        <h2> Análisis por Alternativa</h2>
+          <p className="text">
+            Sea <strong>p</strong> la probabilidad del estado favorable.
+            Entonces <strong>(1 - p)</strong> representa el estado desfavorable.
+          </p>
 
-        {sensitivityAnalysis.map((analysis, i) => (
-          <div key={i} style={block}>
-            
-            <h3 style={{ color: "#185fa5" }}>{analysis.name}</h3>
-
-            <div style={functionBox}>
-              <p style={functionLabel}>
-                <strong>Función expandida:</strong>
-              </p>
-              <p style={functionFormula}>
-                VE = {analysis.expandedForm}
-              </p>
-            </div>
-
-            <div style={functionBox}>
-              <p style={functionLabel}>
-                <strong>Forma simplificada:</strong>
-              </p>
-              <p style={functionFormula}>
-                VE = {analysis.simplifiedForm}
-              </p>
-            </div>
-
-            <div style={functionBox}>
-              <p style={functionLabel}>
-                <strong>Pendiente (m):</strong> {analysis.slope}
-              </p>
-              <p style={{ fontSize: "12px", color: "#666", marginTop: "8px" }}>
-                Indica el cambio en VE por cada aumento unitario en p
-              </p>
-            </div>
-
-            {analysis.slope === bestSlope && (
-              <p style={{ background: "#d4edda", color: "#155724", padding: "10px", borderRadius: "6px", marginTop: "10px", fontWeight: "600" }}>
-                 <strong>Mejor pendiente:</strong> Esta alternativa crece más rápido → mejor en escenarios más favorables
-              </p>
-            )}
-
-            {analysis.slope !== bestSlope && (
-              <p style={{ background: "#fff3cd", color: "#856404", padding: "10px", borderRadius: "6px", marginTop: "10px" }}>
-                Menor crecimiento frente al aumento de p
-              </p>
-            )}
-
+          <div className="formula">
+            Valor Esperado: VE(p) = b + (m)p
           </div>
-        ))}
-      </div>
-
-      {/*  INTERPRETACIÓN */}
-      <div style={card}>
-        <h2> Interpretación del Análisis</h2>
-
-        <div style={interpretationBlock}>
-          <h3>Sensibilidad a la Probabilidad</h3>
-          <p>
-            La pendiente indica qué tan sensible es cada alternativa frente al cambio
-            en la probabilidad del estado favorable.
-          </p>
         </div>
 
-        <div style={interpretationBlock}>
-          <h3>Estrategia según Confianza</h3>
-          <p>
-            <strong>Pendiente positiva alta:</strong> Buena alternativa cuando crees que el estado favorable es probable.
-          </p>
-          <p>
-            <strong>Pendiente baja o negativa:</strong> Buena alternativa cuando crees que el estado desfavorable es probable.
-          </p>
+        {/* ANÁLISIS */}
+        <div className="card">
+          <div className="card-title">Por alternativa</div>
+
+          {sensitivityAnalysis.map((analysis, i) => (
+            <div key={i} className="block">
+
+              <h3 className="text" style={{ color: "var(--accent)", fontWeight: 500 }}>
+                {analysis.name}
+              </h3>
+
+              <div className="function-box">
+                <div className="function-label">Forma expandida</div>
+                <div className="function-value">
+                  VE = {analysis.expandedForm}
+                </div>
+              </div>
+
+              <div className="function-box">
+                <div className="function-label">Forma simplificada</div>
+                <div className="function-value">
+                  VE = {analysis.simplifiedForm}
+                </div>
+              </div>
+
+              <div className="function-box">
+                <div className="function-label">
+                  Pendiente (m): {analysis.slope}
+                </div>
+                <div className="text" style={{ fontSize: "12px" }}>
+                  Indica cuánto cambia el valor esperado cuando cambia p
+                </div>
+              </div>
+
+              {analysis.slope === bestSlope ? (
+                <div className="badge-success">
+                  ✔ Mejor pendiente: crece más rápido → mejor si p aumenta
+                </div>
+              ) : (
+                <div className="badge-warning">
+                  Menor crecimiento frente al aumento de p
+                </div>
+              )}
+
+            </div>
+          ))}
         </div>
 
-        <div style={interpretationBlock}>
-          <h3>Punto de Indiferencia</h3>
-          <p>
-            En Análisis Gráfico (siguiente paso), veremos dónde se intersectan estas líneas,
-            es decir, en qué valores de p cada alternativa es óptima.
-          </p>
-        </div>
-      </div>
+        {/* INTERPRETACIÓN */}
+        <div className="card">
+          <div className="card-title">Interpretación</div>
 
-      {/* BOTONES */}
-      <div style={buttons}>
-        <button onClick={prev} style={btnSecondary}>← Volver</button>
-        <button onClick={next} style={btnPrimary}>Continuar →</button>
+          <div className="interpretation">
+            <h3>Sensibilidad</h3>
+            <p className="text">
+              La pendiente muestra qué tan sensible es una alternativa al cambio en p.
+            </p>
+          </div>
+
+          <div className="interpretation">
+            <h3>Estrategia</h3>
+            <p className="text">
+              <strong>Pendiente alta:</strong> mejor si el estado favorable es probable.
+            </p>
+            <p className="text">
+              <strong>Pendiente baja:</strong> mejor si el estado desfavorable es probable.
+            </p>
+          </div>
+
+          <div className="interpretation">
+            <h3>Punto de corte</h3>
+            <p className="text">
+              En el siguiente paso se verán las intersecciones entre alternativas.
+            </p>
+          </div>
+        </div>
+
+        {/* BOTONES */}
+        <div className="buttons">
+          <button className="btn btn-secondary" onClick={prev}>
+            ← Volver
+          </button>
+
+          <button className="btn btn-primary" onClick={next}>
+            Continuar →
+          </button>
+        </div>
+
       </div>
-    </div>
+    </>
   );
 };
 
 export default Step3;
-
-//////////////////////////////////////////////////
-
-//  ESTILOS
-
-const container = {
-  display: "flex",
-  flexDirection: "column",
-  gap: "20px"
-};
-
-const card = {
-  background: "#fff",
-  padding: "25px",
-  borderRadius: "12px",
-  boxShadow: "0 4px 10px rgba(0,0,0,0.1)"
-};
-
-const block = {
-  borderBottom: "1px solid #eee",
-  paddingBottom: "15px",
-  marginBottom: "15px"
-};
-
-const functionBox = {
-  background: "#f9f9f9",
-  padding: "12px",
-  borderRadius: "6px",
-  marginBottom: "10px",
-  borderLeft: "3px solid #185fa5"
-};
-
-const functionLabel = {
-  fontSize: "13px",
-  color: "#666",
-  margin: "0 0 6px 0"
-};
-
-const functionFormula = {
-  fontSize: "14px",
-  fontFamily: "monospace",
-  background: "#fff",
-  padding: "8px",
-  borderRadius: "4px",
-  margin: "0"
-};
-
-const interpretationBlock = {
-  marginBottom: "15px",
-  paddingBottom: "15px",
-  borderBottom: "1px solid #eee"
-};
-
-const buttons = {
-  display: "flex",
-  justifyContent: "space-between",
-  gap: "10px"
-};
-
-const btnPrimary = {
-  padding: "10px 20px",
-  background: "#007BFF",
-  color: "#fff",
-  border: "none",
-  borderRadius: "6px",
-  cursor: "pointer",
-  fontSize: "14px",
-  fontWeight: "600"
-};
-
-const btnSecondary = {
-  padding: "10px 20px",
-  background: "#ccc",
-  border: "none",
-  borderRadius: "6px",
-  cursor: "pointer",
-  fontSize: "14px"
-};

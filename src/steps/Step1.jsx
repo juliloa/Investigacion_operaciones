@@ -1,9 +1,150 @@
 import React from "react";
 
+const style = `
+:root {
+  --accent: #4f7fe8;
+  --accent-light: #eef3fd;
+  --accent-mid: #c5d8f9;
+  --text-primary: #1c2333;
+  --text-secondary: #5a6478;
+  --bg: #f5f8ff;
+  --surface: #ffffff;
+  --border: #dde4f4;
+}
+
+.step1-container {
+  font-family: 'Outfit', sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 10px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 10px rgba(79,127,232,0.05);
+}
+
+.card-header {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+}
+
+.guide {
+  background: var(--accent-light);
+  border: 1px solid var(--accent-mid);
+}
+
+.guide p {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  margin: 5px 0;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  align-items: center;
+}
+
+.input {
+  flex: 1;
+  padding: 7px 9px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-light);
+}
+
+.small-input {
+  width: 70px;
+  text-align: center;
+}
+
+.btn {
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 13px;
+}
+
+.btn:hover {
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+
+.btn-danger {
+  background: #fff;
+  border: 1px solid #f2dede;
+}
+
+.btn-danger:hover {
+  background: #ffecec;
+  border-color: #ffbcbc;
+}
+
+.btn-primary {
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  font-weight: 500;
+  transition: 0.2s;
+}
+
+.btn-primary:disabled {
+  background: #9aa3b5;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-top: 10px;
+}
+
+.table th {
+  background: var(--accent-light);
+  border: 1px solid var(--border);
+  padding: 6px;
+  font-weight: 500;
+}
+
+.table td {
+  border: 1px solid var(--border);
+  padding: 5px;
+  text-align: center;
+}
+
+.matrix-input {
+  width: 55px;
+  padding: 4px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  text-align: center;
+}
+`;
+
 const Step1 = ({ data, setData, next }) => {
   const { alternatives, states, probabilities, payoff } = data;
 
-  //  ACTUALIZAR NOMBRES
   const updateAlternative = (i, value) => {
     const newAlt = [...alternatives];
     newAlt[i] = value;
@@ -16,21 +157,18 @@ const Step1 = ({ data, setData, next }) => {
     setData({ ...data, states: newStates });
   };
 
-  //  PROBABILIDADES
   const updateProbability = (i, value) => {
     const newProb = [...probabilities];
     newProb[i] = Number(value);
     setData({ ...data, probabilities: newProb });
   };
 
-  //  PAYOFF
   const updatePayoff = (i, j, value) => {
     const newPayoff = [...payoff];
     newPayoff[i][j] = Number(value);
     setData({ ...data, payoff: newPayoff });
   };
 
-  //  AGREGAR ALTERNATIVA
   const addAlternative = () => {
     setData({
       ...data,
@@ -39,7 +177,6 @@ const Step1 = ({ data, setData, next }) => {
     });
   };
 
-  //  ELIMINAR ALTERNATIVA
   const removeAlternative = (i) => {
     setData({
       ...data,
@@ -48,7 +185,6 @@ const Step1 = ({ data, setData, next }) => {
     });
   };
 
-  //  AGREGAR ESTADO
   const addState = () => {
     setData({
       ...data,
@@ -58,7 +194,6 @@ const Step1 = ({ data, setData, next }) => {
     });
   };
 
-  //  ELIMINAR ESTADO
   const removeState = (i) => {
     setData({
       ...data,
@@ -72,250 +207,120 @@ const Step1 = ({ data, setData, next }) => {
   const isValid = totalProb === 1;
 
   return (
-    <div style={container}>
-      <h1 style={title}>Configuración del Problema</h1>
+    <>
+      <style>{style}</style>
 
-      <div style={guideCard}>
-        <h2 style={sectionTitle}>Guia de uso - Modulo Decision</h2>
-        <p style={guideText}>
-          Este modulo resuelve decisiones bajo incertidumbre. Trabaja en orden del paso 1 al 10.
-          Si cambias datos base, revisa nuevamente los pasos posteriores para mantener coherencia.
-        </p>
-        <p style={guideText}><strong>Paso 1:</strong> Define alternativas, estados, probabilidades y matriz de pagos.</p>
-        <p style={guideText}><strong>Paso 2:</strong> Revisa el arbol base de decisiones.</p>
-        <p style={guideText}><strong>Paso 3:</strong> Analiza sensibilidad para ver como cambia el resultado con p.</p>
-        <p style={guideText}><strong>Paso 4:</strong> Valida el calculo de valor esperado sobre el arbol.</p>
-        <p style={guideText}><strong>Paso 5 y 6:</strong> Interpreta puntos de corte y grafica de valor esperado.</p>
-        <p style={guideText}><strong>Paso 7 y 8:</strong> Configura estudio de mercado e integra su efecto al arbol.</p>
-        <p style={guideText}><strong>Paso 9:</strong> Compara formalmente con estudio vs sin estudio.</p>
-        <p style={guideText}><strong>Paso 10:</strong> Consolida conclusiones y exporta reporte PDF.</p>
-      </div>
+      <div className="step1-container">
 
-      {/* ALTERNATIVAS */}
-      <div style={card}>
-        <h2 style={sectionTitle}>Alternativas</h2>
+        {/* GUÍA */}
+        <div className="card guide">
+          <div className="card-header">Guía del módulo</div>
+          <p>Define alternativas, estados, probabilidades y matriz de pagos.</p>
+          <p>Trabaja en orden desde el paso 1 hasta el 10.</p>
+          <p>Si cambias datos, revisa los pasos posteriores.</p>
+        </div>
 
-        {alternatives.map((alt, i) => (
-          <div key={i} style={row}>
-            <input
-              value={alt}
-              onChange={(e) => updateAlternative(i, e.target.value)}
-              style={input}
-            />
-            <button style={deleteBtn} onClick={() => removeAlternative(i)}>✕</button>
-          </div>
-        ))}
+        {/* ALTERNATIVAS */}
+        <div className="card">
+          <div className="card-header">Alternativas</div>
 
-        <button style={addBtn} onClick={addAlternative}>
-          Añadir alternativa
-        </button>
-      </div>
+          {alternatives.map((alt, i) => (
+            <div key={i} className="row">
+              <input
+                className="input"
+                value={alt}
+                onChange={(e) => updateAlternative(i, e.target.value)}
+              />
+              <button className="btn btn-danger" onClick={() => removeAlternative(i)}>✕</button>
+            </div>
+          ))}
 
-      {/* ESTADOS */}
-      <div style={card}>
-        <h2 style={sectionTitle}>Estados de Naturaleza</h2>
+          <button className="btn" onClick={addAlternative}>
+            + Añadir alternativa
+          </button>
+        </div>
 
-        {states.map((s, i) => (
-          <div key={i} style={row}>
-            <input
-              value={s}
-              onChange={(e) => updateState(i, e.target.value)}
-              style={input}
-            />
+        {/* ESTADOS */}
+        <div className="card">
+          <div className="card-header">Estados</div>
 
-            <input
-              type="number"
-              value={probabilities[i]}
-              onChange={(e) => updateProbability(i, e.target.value)}
-              style={probInput}
-            />
+          {states.map((s, i) => (
+            <div key={i} className="row">
+              <input
+                className="input"
+                value={s}
+                onChange={(e) => updateState(i, e.target.value)}
+              />
 
-            <button style={deleteBtn} onClick={() => removeState(i)}>✕</button>
-          </div>
-        ))}
+              <input
+                type="number"
+                className="input small-input"
+                value={probabilities[i]}
+                onChange={(e) => updateProbability(i, e.target.value)}
+              />
 
-        <button style={addBtn} onClick={addState}>
-          Añadir estado
-        </button>
+              <button className="btn btn-danger" onClick={() => removeState(i)}>✕</button>
+            </div>
+          ))}
 
-        <p style={{ color: isValid ? "#2e7d32" : "#c62828", fontSize: "14px" }}>
-          Suma probabilidades: {totalProb}
-        </p>
-      </div>
+          <button className="btn" onClick={addState}>
+            + Añadir estado
+          </button>
 
-      {/* MATRIZ */}
-      <div style={card}>
-        <h2 style={sectionTitle}>Matriz de Pagos</h2>
+          <p style={{ color: isValid ? "green" : "red", fontSize: "13px" }}>
+            Probabilidad total: {totalProb}
+          </p>
+        </div>
 
-        <table style={table}>
-          <thead>
-            <tr>
-              <th style={th}></th>
-              {states.map((s, i) => (
-                <th key={i} style={th}>{s}</th>
-              ))}
-            </tr>
-          </thead>
+        {/* MATRIZ */}
+        <div className="card">
+          <div className="card-header">Matriz de pagos</div>
 
-          <tbody>
-            {alternatives.map((alt, i) => (
-              <tr key={i}>
-                <td style={td}>{alt}</td>
-
-                {states.map((_, j) => (
-                  <td key={j} style={td}>
-                    <input
-                      type="number"
-                      value={payoff[i][j]}
-                      onChange={(e) =>
-                        updatePayoff(i, j, e.target.value)
-                      }
-                      style={matrixInput}
-                    />
-                  </td>
+          <table className="table">
+            <thead>
+              <tr>
+                <th></th>
+                {states.map((s, i) => (
+                  <th key={i}>{s}</th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
 
-      {/* BOTÓN */}
-      <button
-        onClick={next}
-        disabled={!isValid}
-        style={{
-          ...btnPrimary,
-          background: isValid ? "#111" : "#999"
-        }}
-      >
-        Continuar
-      </button>
-    </div>
+            <tbody>
+              {alternatives.map((alt, i) => (
+                <tr key={i}>
+                  <td>{alt}</td>
+
+                  {states.map((_, j) => (
+                    <td key={j}>
+                      <input
+                        className="matrix-input"
+                        type="number"
+                        value={payoff[i][j]}
+                        onChange={(e) =>
+                          updatePayoff(i, j, e.target.value)
+                        }
+                      />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* BOTÓN */}
+        <button
+          className="btn-primary"
+          onClick={next}
+          disabled={!isValid}
+        >
+          Continuar
+        </button>
+
+      </div>
+    </>
   );
 };
 
 export default Step1;
-
-//////////////////////////////////////////////////
-
-//  ESTILO ELEGANTE Y COMPACTO
-
-const container = {
-  display: "flex",
-  flexDirection: "column",
-  gap: "20px",
-  fontFamily: "Inter, Arial, sans-serif"
-};
-
-const title = {
-  fontSize: "22px",
-  fontWeight: "600"
-};
-
-const sectionTitle = {
-  fontSize: "16px",
-  fontWeight: "500",
-  marginBottom: "10px"
-};
-
-const card = {
-  background: "#fff",
-  padding: "18px",
-  borderRadius: "10px",
-  border: "1px solid #e5e5e5",
-  boxShadow: "0 2px 6px rgba(0,0,0,0.04)"
-};
-
-const guideCard = {
-  ...card,
-  border: "1px solid #cfe1f2",
-  background: "#f7fbff"
-};
-
-const guideText = {
-  margin: "6px 0",
-  color: "#24445d",
-  lineHeight: "1.45",
-  fontSize: "13px"
-};
-
-const row = {
-  display: "flex",
-  gap: "8px",
-  marginBottom: "8px",
-  alignItems: "center"
-};
-
-const input = {
-  padding: "6px 8px",
-  borderRadius: "6px",
-  border: "1px solid #ddd",
-  flex: 1,
-  fontSize: "13px"
-};
-
-const probInput = {
-  width: "65px",
-  padding: "6px",
-  borderRadius: "6px",
-  border: "1px solid #ddd",
-  fontSize: "13px",
-  textAlign: "center"
-};
-
-const addBtn = {
-  padding: "8px 12px",
-  fontSize: "13px",
-  borderRadius: "6px",
-  border: "1px solid #ccc",
-  background: "#fafafa",
-  cursor: "pointer"
-};
-
-const deleteBtn = {
-  padding: "6px 8px",
-  borderRadius: "6px",
-  border: "none",
-  background: "#f5f5f5",
-  cursor: "pointer"
-};
-
-const btnPrimary = {
-  padding: "12px",
-  border: "none",
-  color: "#fff",
-  borderRadius: "8px",
-  cursor: "pointer",
-  fontWeight: "500"
-};
-
-// TABLA MÁS COMPACTA
-
-const table = {
-  width: "100%",
-  borderCollapse: "collapse",
-  fontSize: "13px"
-};
-
-const th = {
-  border: "1px solid #e0e0e0",
-  padding: "6px",
-  background: "#fafafa",
-  fontWeight: "500"
-};
-
-const td = {
-  border: "1px solid #eaeaea",
-  padding: "5px",
-  textAlign: "center"
-};
-
-const matrixInput = {
-  width: "50px",
-  padding: "4px",
-  borderRadius: "4px",
-  border: "1px solid #ddd",
-  textAlign: "center",
-  fontSize: "12px"
-};
