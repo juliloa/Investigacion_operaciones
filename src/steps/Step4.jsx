@@ -3,7 +3,7 @@ import React from "react";
 const Step4 = ({ data, next, prev }) => {
   const { alternatives, states, probabilities, payoff } = data;
 
-  // 🧠 Calcular valores esperados
+  //  Calcular valores esperados
   const results = alternatives.map((alt, i) => {
     const calc = states.map((_, j) => payoff[i][j] * probabilities[j]);
     const total = calc.reduce((a, b) => a + b, 0);
@@ -11,7 +11,7 @@ const Step4 = ({ data, next, prev }) => {
     return { name: alt, calc, total };
   });
 
-  // 🏆 Mejor alternativa
+  //  Mejor alternativa
   const best = Math.max(...results.map(r => r.total));
 
   return (
@@ -100,7 +100,7 @@ const Step4 = ({ data, next, prev }) => {
                     VE = {results[i].total.toFixed(2)}
                   </text>
 
-                  {/* ⭐ Mejor (separado) */}
+                  {/*  Mejor (separado) */}
                   {results[i].total === best && (
                     <text
                       x="740"
@@ -110,7 +110,7 @@ const Step4 = ({ data, next, prev }) => {
                       fill="#fff"
                       fontWeight="600"
                     >
-                      ⭐ Mejor
+                       Mejor
                     </text>
                   )}
                 </g>
@@ -136,9 +136,9 @@ const Step4 = ({ data, next, prev }) => {
         </svg>
       </div>
 
-      {/* 🧠 PASO A PASO COMPLETO */}
+      {/*  PASO A PASO COMPLETO */}
       <div style={card}>
-        <h2>🔢 Paso a paso del cálculo</h2>
+        <h2> Paso a paso del cálculo</h2>
 
         {alternatives.map((alt, i) => (
           <div key={i} style={{ marginBottom: "20px" }}>
@@ -161,9 +161,9 @@ const Step4 = ({ data, next, prev }) => {
         ))}
       </div>
 
-      {/* 🧠 RESULTADO FINAL */}
+      {/*  RESULTADO FINAL */}
       <div style={card}>
-        <h2>📊 Resultados finales</h2>
+        <h2> Resultados finales</h2>
 
         {results.map((r, i) => (
           <p key={i}>
@@ -172,13 +172,13 @@ const Step4 = ({ data, next, prev }) => {
         ))}
 
         <h3>
-          🏆 Mejor alternativa:{" "}
+           Mejor alternativa:{" "}
           {results.find(r => r.total === best)?.name} (
           {best.toFixed(2)})
         </h3>
       </div>
 
-      {/* 🧠 INTERPRETACIÓN */}
+      {/*  INTERPRETACIÓN */}
       <div style={card}>
         <h2>Interpretación</h2>
 
@@ -208,7 +208,7 @@ export default Step4;
 
 //////////////////////////////////////////////////
 
-// 🎨 ESTILOS
+//  ESTILOS
 
 const container = {
   display: "flex",

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import { defaultData } from "./data/defaultData";
 import Sidebar from "./components/Sidebar";
@@ -14,14 +14,50 @@ import Step8 from "./steps/Step8";
 import Step9 from "./steps/Step9";
 import Step10 from "./steps/Step10";
 
-// 🎮 Teoría del Juego
+//  Teoría del Juego
 import GameTheoryScreen from "./views/gameTheory/GameTheoryScreen";
 import GameAnalysis from "./views/gameTheory/GameAnalysis";
+import AlgebraicMethod from "./views/gameTheory/AlgebraicMethod";
 
 function App() {
-  const [step, setStep] = useState(0);
-  const [data, setData] = useState(defaultData);
-  const [gameMatrix, setGameMatrix] = useState(null);
+  const [step, setStep] = useState(() => {
+    try {
+      const saved = localStorage.getItem("io_step");
+      return saved ? parseInt(saved, 10) : 0;
+    } catch {
+      return 0;
+    }
+  });
+
+  const [data, setData] = useState(() => {
+    try {
+      const saved = localStorage.getItem("io_data");
+      return saved ? JSON.parse(saved) : defaultData;
+    } catch {
+      return defaultData;
+    }
+  });
+
+  const [gameMatrix, setGameMatrix] = useState(() => {
+    try {
+      const saved = localStorage.getItem("io_game_data");
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem("io_step", String(step));
+  }, [step]);
+
+  useEffect(() => {
+    localStorage.setItem("io_data", JSON.stringify(data));
+  }, [data]);
+
+  useEffect(() => {
+    localStorage.setItem("io_game_data", JSON.stringify(gameMatrix));
+  }, [gameMatrix]);
 
   const next = () => setStep(step + 1);
   const prev = () => setStep(step - 1);
@@ -29,7 +65,7 @@ function App() {
   const renderStep = () => {
     const props = { data, setData, next, prev };
 
-    // 🧠 DECISIÓN (0 - 9)
+    //  DECISIÓN (0 - 9)
     switch (step) {
       case 0: return <Step1 {...props} />;
       case 1: return <Step2 {...props} />;
@@ -42,9 +78,31 @@ function App() {
       case 8: return <Step9 {...props} />;
       case 9: return <Step10 {...props} />;
 
-      // 🎮 TEORÍA DEL JUEGO (100 - 199)
-      case 100: return <GameTheoryScreen setStep={setStep} setGameMatrix={setGameMatrix} />;
-      case 101: return <GameAnalysis matrix={gameMatrix} onBack={() => setStep(100)} />;
+      //  TEORÍA DEL JUEGO (100 - 199)
+      case 100:
+        return (
+          <GameTheoryScreen
+            setStep={setStep}
+            gameData={gameMatrix}
+            setGameData={setGameMatrix}
+          />
+        );
+      case 101:
+        return (
+          <GameAnalysis
+            matrix={gameMatrix}
+            onBack={() => setStep(100)}
+            onOpenAlgebraic={() => setStep(102)}
+          />
+        );
+      case 102:
+        return (
+          <AlgebraicMethod
+            gameData={gameMatrix}
+            onBack={() => setStep(101)}
+            onGoData={() => setStep(100)}
+          />
+        );
 
       default: return <Step1 {...props} />;
     }
@@ -65,7 +123,7 @@ function App() {
 
 export default App;
 
-// 🎨 estilos
+//  estilos
 
 const content = {
   marginLeft: "260px",

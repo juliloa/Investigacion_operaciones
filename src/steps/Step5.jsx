@@ -3,7 +3,7 @@ import React from "react";
 const Step5 = ({ data, next, prev }) => {
   const { alternatives, payoff } = data;
 
-  // 🧠 Generar funciones lineales de Valor Esperado: VE = intercept + slope*p
+  //  Generar funciones lineales de Valor Esperado: VE = intercept + slope*p
   const linearFunctions = alternatives.map((alternative, i) => {
     const payoffFavorableState = payoff[i][0];
     const payoffUnfavorableState = payoff[i][1];
@@ -16,7 +16,7 @@ const Step5 = ({ data, next, prev }) => {
     };
   });
 
-  // 🧠 Calcular puntos de corte (intersecciones)
+  //  Calcular puntos de corte (intersecciones)
   const intersectionPoints = [];
 
   for (let i = 0; i < linearFunctions.length; i++) {
@@ -37,9 +37,9 @@ const Step5 = ({ data, next, prev }) => {
 
   return (
     <div style={container}>
-      <h1>📐 Análisis Gráfico - Puntos de Corte</h1>
+      <h1> Análisis Gráfico - Puntos de Corte</h1>
 
-      {/* 🧠 ECUACIONES */}
+      {/*  ECUACIONES */}
       <div style={card}>
         <h2>Funciones Lineales de Valor Esperado</h2>
 
@@ -56,7 +56,7 @@ const Step5 = ({ data, next, prev }) => {
         ))}
       </div>
 
-      {/* 📐 PUNTOS DE CORTE */}
+      {/*  PUNTOS DE CORTE */}
       <div style={card}>
         <h2>Puntos de Corte (Intersecciones)</h2>
 
@@ -89,9 +89,9 @@ const Step5 = ({ data, next, prev }) => {
         )}
       </div>
 
-      {/* 🧠 INTERPRETACIÓN */}
+      {/*  INTERPRETACIÓN */}
       <div style={card}>
-        <h2>🧠 Interpretación</h2>
+        <h2> Interpretación</h2>
 
         <div style={interpretationBox}>
           <h3>¿Qué son los Puntos de Corte?</h3>
@@ -110,7 +110,7 @@ const Step5 = ({ data, next, prev }) => {
         </div>
 
         <div style={interpretationBox}>
-          <h3>📌 Próximo Paso</h3>
+          <h3> Próximo Paso</h3>
           <p>
             En el siguiente paso, visualizaremos gráficamente estas funciones lineales
             para identificar visualmente cuál es la mejor alternativa para cada nivel de confianza en el estado favorable.
@@ -131,7 +131,7 @@ export default Step5;
 
 //////////////////////////////////////////////////
 
-// 🎨 ESTILOS
+//  ESTILOS
 
 const container = {
   display: "flex",

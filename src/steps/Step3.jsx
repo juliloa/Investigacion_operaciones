@@ -3,7 +3,7 @@ import React from "react";
 const Step3 = ({ data, next, prev }) => {
   const { alternatives, payoff } = data;
 
-  // 🧠 Generar funciones de valor esperado
+  //  Generar funciones de valor esperado
   const sensitivityAnalysis = alternatives.map((alternative, i) => {
     const payoffFavorableState = payoff[i][0]; // estado favorable
     const payoffUnfavorableState = payoff[i][1]; // estado desfavorable
@@ -23,12 +23,12 @@ const Step3 = ({ data, next, prev }) => {
     };
   });
 
-  // 🧠 Encontrar la alternativa con mayor pendiente
+  //  Encontrar la alternativa con mayor pendiente
   const bestSlope = Math.max(...sensitivityAnalysis.map(f => f.slope));
 
   return (
     <div style={container}>
-      <h1>📈 Análisis de Sensibilidad</h1>
+      <h1> Análisis de Sensibilidad</h1>
 
       <div style={card}>
         <p style={{ color: "#666", fontSize: "15px", marginBottom: "20px" }}>
@@ -43,7 +43,7 @@ const Step3 = ({ data, next, prev }) => {
 
       {/* ANÁLISIS POR ALTERNATIVA */}
       <div style={card}>
-        <h2>📊 Análisis por Alternativa</h2>
+        <h2> Análisis por Alternativa</h2>
 
         {sensitivityAnalysis.map((analysis, i) => (
           <div key={i} style={block}>
@@ -79,7 +79,7 @@ const Step3 = ({ data, next, prev }) => {
 
             {analysis.slope === bestSlope && (
               <p style={{ background: "#d4edda", color: "#155724", padding: "10px", borderRadius: "6px", marginTop: "10px", fontWeight: "600" }}>
-                ⭐ <strong>Mejor pendiente:</strong> Esta alternativa crece más rápido → mejor en escenarios más favorables
+                 <strong>Mejor pendiente:</strong> Esta alternativa crece más rápido → mejor en escenarios más favorables
               </p>
             )}
 
@@ -93,9 +93,9 @@ const Step3 = ({ data, next, prev }) => {
         ))}
       </div>
 
-      {/* 🧠 INTERPRETACIÓN */}
+      {/*  INTERPRETACIÓN */}
       <div style={card}>
-        <h2>🧠 Interpretación del Análisis</h2>
+        <h2> Interpretación del Análisis</h2>
 
         <div style={interpretationBlock}>
           <h3>Sensibilidad a la Probabilidad</h3>
@@ -137,7 +137,7 @@ export default Step3;
 
 //////////////////////////////////////////////////
 
-// 🎨 ESTILOS
+//  ESTILOS
 
 const container = {
   display: "flex",

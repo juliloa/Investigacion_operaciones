@@ -18,7 +18,8 @@ const Sidebar = ({ currentStep, setStep }) => {
 
   const gameTheorySteps = [
     "1. Datos",
-    "2. Análisis"
+    "2. Analisis",
+    "3. Metodo algebraico"
   ];
 
   const toggleMenu = (menu) => {
@@ -28,6 +29,7 @@ const Sidebar = ({ currentStep, setStep }) => {
   const renderSteps = (steps, baseIndex) => {
     return steps.map((step, index) => {
       const stepIndex = baseIndex + index;
+
       return (
         <div
           key={stepIndex}
@@ -50,7 +52,7 @@ const Sidebar = ({ currentStep, setStep }) => {
       <div style={menuContainer}>
         {/* MENÚ DECISIÓN */}
         <div style={menuHeader} onClick={() => toggleMenu("decision")}>
-          🧠 Decisión
+           Decisión
         </div>
 
         {openMenu === "decision" && (
@@ -61,7 +63,7 @@ const Sidebar = ({ currentStep, setStep }) => {
 
         {/* MENÚ TEORÍA DEL JUEGO */}
         <div style={menuHeader} onClick={() => toggleMenu("game")}>
-          🎮 Teoría del Juego
+           Teoría del Juego
         </div>
 
         {openMenu === "game" && (
@@ -78,7 +80,7 @@ export default Sidebar;
 
 //////////////////////////////////////////////////
 
-// 🎨 ESTILOS
+//  ESTILOS
 
 const sidebar = {
   width: "230px",
