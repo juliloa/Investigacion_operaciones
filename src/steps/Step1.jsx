@@ -75,6 +75,22 @@ const Step1 = ({ data, setData, next }) => {
     <div style={container}>
       <h1 style={title}>Configuración del Problema</h1>
 
+      <div style={guideCard}>
+        <h2 style={sectionTitle}>Guia de uso - Modulo Decision</h2>
+        <p style={guideText}>
+          Este modulo resuelve decisiones bajo incertidumbre. Trabaja en orden del paso 1 al 10.
+          Si cambias datos base, revisa nuevamente los pasos posteriores para mantener coherencia.
+        </p>
+        <p style={guideText}><strong>Paso 1:</strong> Define alternativas, estados, probabilidades y matriz de pagos.</p>
+        <p style={guideText}><strong>Paso 2:</strong> Revisa el arbol base de decisiones.</p>
+        <p style={guideText}><strong>Paso 3:</strong> Analiza sensibilidad para ver como cambia el resultado con p.</p>
+        <p style={guideText}><strong>Paso 4:</strong> Valida el calculo de valor esperado sobre el arbol.</p>
+        <p style={guideText}><strong>Paso 5 y 6:</strong> Interpreta puntos de corte y grafica de valor esperado.</p>
+        <p style={guideText}><strong>Paso 7 y 8:</strong> Configura estudio de mercado e integra su efecto al arbol.</p>
+        <p style={guideText}><strong>Paso 9:</strong> Compara formalmente con estudio vs sin estudio.</p>
+        <p style={guideText}><strong>Paso 10:</strong> Consolida conclusiones y exporta reporte PDF.</p>
+      </div>
+
       {/* ALTERNATIVAS */}
       <div style={card}>
         <h2 style={sectionTitle}>Alternativas</h2>
@@ -209,6 +225,19 @@ const card = {
   borderRadius: "10px",
   border: "1px solid #e5e5e5",
   boxShadow: "0 2px 6px rgba(0,0,0,0.04)"
+};
+
+const guideCard = {
+  ...card,
+  border: "1px solid #cfe1f2",
+  background: "#f7fbff"
+};
+
+const guideText = {
+  margin: "6px 0",
+  color: "#24445d",
+  lineHeight: "1.45",
+  fontSize: "13px"
 };
 
 const row = {

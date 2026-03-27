@@ -47,48 +47,50 @@ const evaluateCriteria = (matrix) => {
   };
 };
 
-const pickRowToRemove = (criteria) => {
-  const candidates = criteria.rowMin
-    .map((value, index) => ({ index, value }))
-    .filter((item) => item.value < criteria.maximin);
+const rowDominates = (matrix, dominatorIndex, dominatedIndex) => {
+  const dominator = matrix[dominatorIndex];
+  const dominated = matrix[dominatedIndex];
 
-  if (!candidates.length) return null;
+  const allGreaterOrEqual = dominator.every((value, i) => value >= dominated[i]);
+  const atLeastOneGreater = dominator.some((value, i) => value > dominated[i]);
 
-  candidates.sort((a, b) => a.value - b.value || a.index - b.index);
-  return candidates[0].index;
+  return allGreaterOrEqual && atLeastOneGreater;
 };
 
-const pickColToRemove = (criteria) => {
-  const candidates = criteria.colMax
-    .map((value, index) => ({ index, value }))
-    .filter((item) => item.value > criteria.minimax);
+const colDominates = (matrix, dominatorIndex, dominatedIndex) => {
+  const allLowerOrEqual = matrix.every(
+    (row) => row[dominatorIndex] <= row[dominatedIndex]
+  );
+  const atLeastOneLower = matrix.some(
+    (row) => row[dominatorIndex] < row[dominatedIndex]
+  );
 
-  if (!candidates.length) return null;
-
-  candidates.sort((a, b) => b.value - a.value || a.index - b.index);
-  return candidates[0].index;
+  return allLowerOrEqual && atLeastOneLower;
 };
 
-const pickReferenceRow = (criteria, removedIndex) => {
-  const bestRows = criteria.rowMin
-    .map((value, index) => ({ value, index }))
-    .filter((item) => item.value === criteria.maximin)
-    .sort((a, b) => a.index - b.index);
-
-  if (!bestRows.length) return null;
-  if (bestRows[0].index !== removedIndex) return bestRows[0].index;
-  return bestRows[1]?.index ?? null;
+const findDominatedRowPair = (matrix) => {
+  for (let dominated = 0; dominated < matrix.length; dominated += 1) {
+    for (let dominator = 0; dominator < matrix.length; dominator += 1) {
+      if (dominator === dominated) continue;
+      if (rowDominates(matrix, dominator, dominated)) {
+        return { dominatedIndex: dominated, dominatorIndex: dominator };
+      }
+    }
+  }
+  return null;
 };
 
-const pickReferenceCol = (criteria, removedIndex) => {
-  const bestCols = criteria.colMax
-    .map((value, index) => ({ value, index }))
-    .filter((item) => item.value === criteria.minimax)
-    .sort((a, b) => a.index - b.index);
-
-  if (!bestCols.length) return null;
-  if (bestCols[0].index !== removedIndex) return bestCols[0].index;
-  return bestCols[1]?.index ?? null;
+const findDominatedColPair = (matrix) => {
+  const colCount = matrix[0]?.length || 0;
+  for (let dominated = 0; dominated < colCount; dominated += 1) {
+    for (let dominator = 0; dominator < colCount; dominator += 1) {
+      if (dominator === dominated) continue;
+      if (colDominates(matrix, dominator, dominated)) {
+        return { dominatedIndex: dominated, dominatorIndex: dominator };
+      }
+    }
+  }
+  return null;
 };
 
 const removeSingleRow = (matrix, rowNames, indexToRemove) => {
@@ -135,8 +137,8 @@ const removeSingleCol = (matrix, colNames, indexToRemove) => {
 
 const attemptElimination = (axis, matrix, rowNames, colNames, criteriaBefore) => {
   if (axis === "row") {
-    const rowIndex = pickRowToRemove(criteriaBefore);
-    if (rowIndex === null) {
+    const pair = findDominatedRowPair(matrix);
+    if (!pair) {
       return {
         canEliminate: false,
         action: "rows-maximin",
@@ -146,10 +148,8 @@ const attemptElimination = (axis, matrix, rowNames, colNames, criteriaBefore) =>
       };
     }
 
-      const referenceIndex = pickReferenceRow(criteriaBefore, rowIndex);
-      const removedValue = criteriaBefore.rowMin[rowIndex];
-      const comparedValue =
-        referenceIndex !== null ? criteriaBefore.rowMin[referenceIndex] : criteriaBefore.maximin;
+    const rowIndex = pair.dominatedIndex;
+    const referenceIndex = pair.dominatorIndex;
 
     const { removedName, remainingMatrix, remainingRowNames } = removeSingleRow(
       matrix,
@@ -165,19 +165,18 @@ const attemptElimination = (axis, matrix, rowNames, colNames, criteriaBefore) =>
       rowNamesAfter: remainingRowNames,
       colNamesAfter: [...colNames],
       reason:
-        "Se elimina una fila por maximin: se retira la fila con minimo estrictamente menor al maximin actual.",
+        "Se elimina una fila por dominancia estricta: la fila que queda es mayor o igual en todos los elementos y estrictamente mayor en al menos uno.",
       comparedWith: referenceIndex !== null ? rowNames[referenceIndex] : null,
       comparison: {
         axis: "row",
-        removedMetric: removedValue,
-        comparedMetric: comparedValue,
-        criteriaMetric: criteriaBefore.maximin
+        removedVector: [...matrix[rowIndex]],
+        comparedVector: [...matrix[referenceIndex]]
       }
     };
   }
 
-  const colIndex = pickColToRemove(criteriaBefore);
-  if (colIndex === null) {
+  const pair = findDominatedColPair(matrix);
+  if (!pair) {
     return {
       canEliminate: false,
       action: "cols-minimax",
@@ -187,10 +186,8 @@ const attemptElimination = (axis, matrix, rowNames, colNames, criteriaBefore) =>
     };
   }
 
-  const referenceIndex = pickReferenceCol(criteriaBefore, colIndex);
-  const removedValue = criteriaBefore.colMax[colIndex];
-  const comparedValue =
-    referenceIndex !== null ? criteriaBefore.colMax[referenceIndex] : criteriaBefore.minimax;
+  const colIndex = pair.dominatedIndex;
+  const referenceIndex = pair.dominatorIndex;
 
   const { removedName, remainingMatrix, remainingColNames } = removeSingleCol(
     matrix,
@@ -206,13 +203,12 @@ const attemptElimination = (axis, matrix, rowNames, colNames, criteriaBefore) =>
     rowNamesAfter: [...rowNames],
     colNamesAfter: remainingColNames,
     reason:
-      "Se elimina una columna por minimax: se retira la columna con maximo estrictamente mayor al minimax actual.",
+      "Se elimina una columna por dominancia estricta: la columna que queda es menor o igual en todos los elementos y estrictamente menor en al menos uno.",
     comparedWith: referenceIndex !== null ? colNames[referenceIndex] : null,
     comparison: {
       axis: "col",
-      removedMetric: removedValue,
-      comparedMetric: comparedValue,
-      criteriaMetric: criteriaBefore.minimax
+      removedVector: matrix.map((row) => row[colIndex]),
+      comparedVector: matrix.map((row) => row[referenceIndex])
     }
   };
 };
@@ -276,7 +272,7 @@ const reduceBySuccessiveCriteria = (matrix, rowNames, colNames) => {
       eliminationSteps.push({
         action: "no-more-eliminations",
         reason:
-          "No hay mas eliminaciones posibles ni por filas (maximin) ni por columnas (minimax).",
+          "No hay mas eliminaciones posibles por dominancia estricta ni en filas ni en columnas.",
         matrixBefore: cloneMatrix(currentMatrix),
         matrixAfter: cloneMatrix(currentMatrix),
         rowNamesBefore: [...currentRowNames],

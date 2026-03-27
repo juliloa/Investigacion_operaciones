@@ -245,8 +245,8 @@ const StepCard = ({ step, index }) => {
       <div style={stepHeader}>
         <span style={stepTag}>Paso {index + 1}</span>
         <strong style={stepTitle}>
-          {isRows && "Eliminacion por maximin (filas)"}
-          {isCols && "Eliminacion por minimax (columnas)"}
+          {isRows && "Eliminacion por dominancia (filas)"}
+          {isCols && "Eliminacion por dominancia (columnas)"}
           {isTerminal && "Cierre del proceso"}
         </strong>
       </div>
@@ -262,10 +262,14 @@ const StepCard = ({ step, index }) => {
 
       {(isRows || isCols) && step.comparedWith && step.comparison && (
         <p style={stepText}>
-          Comparacion: <strong>{step.removed[0]}</strong> (valor {formatNumber(step.comparison.removedMetric)}) frente a
-          <strong> {step.comparedWith}</strong> (valor {formatNumber(step.comparison.comparedMetric)}), con
-          {step.comparison.axis === "row" ? " maximin " : " minimax "}
-          objetivo = <strong>{formatNumber(step.comparison.criteriaMetric)}</strong>.
+          Comparacion elemento a elemento: <strong>{step.removed[0]}</strong>
+          {` [${step.comparison.removedVector.map((value) => formatNumber(value)).join(", ")}] `}
+          frente a <strong>{step.comparedWith}</strong>
+          {` [${step.comparison.comparedVector.map((value) => formatNumber(value)).join(", ")}] `}
+          .
+          {step.comparison.axis === "row"
+            ? " Se elimina la primera porque la segunda es mayor o igual en todas las posiciones y estrictamente mayor en al menos una."
+            : " Se elimina la primera porque la segunda es menor o igual en todas las posiciones y estrictamente menor en al menos una."}
         </p>
       )}
 
@@ -442,10 +446,10 @@ const GameAnalysis = ({ matrix, onBack, onOpenAlgebraic }) => {
 
       <div style={infoBox}>
         <p style={infoText}>
-          Si no hay punto silla, se aplica el criterio pedido: eliminar filas fuera del maximin y columnas fuera del minimax.
+          Si no hay punto silla, se elimina solo por dominancia estricta elemento a elemento.
         </p>
         <p style={infoText}>
-          En cada paso se muestran calculos, matriz derivada y estrategias que permanecen activas.
+          En cada iteracion se intenta alternar fila/columna y, si no se puede por una, se prueba por la otra.
         </p>
       </div>
 
