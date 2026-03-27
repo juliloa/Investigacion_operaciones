@@ -6,6 +6,26 @@ const COLORS = ["#1d4ed8", "#dc2626", "#059669", "#7c3aed", "#ea580c", "#0891b2"
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const format = (value) => Number(value).toFixed(2);
 
+const projectMatrixToColumns = (matrix, sourceColNames, targetColNames) => {
+  if (!Array.isArray(matrix) || !matrix.length || !Array.isArray(sourceColNames)) {
+    return { ok: false, reason: "No hay matriz base para proyectar columnas." };
+  }
+
+  const indexes = targetColNames.map((targetName) =>
+    sourceColNames.findIndex((name) => name === targetName)
+  );
+
+  if (indexes.some((idx) => idx < 0)) {
+    return {
+      ok: false,
+      reason: "No fue posible mapear todas las columnas finales dentro de la matriz original."
+    };
+  }
+
+  const projected = matrix.map((row) => indexes.map((idx) => Number(row[idx])));
+  return { ok: true, matrix: projected };
+};
+
 const buildAlgebraicData = (matrix, rowNames) => {
   if (!matrix.length || matrix[0]?.length !== 2) {
     return {
@@ -196,6 +216,24 @@ const AlgebraicChart = ({ lines, intersections, yMin, yMax }) => {
   );
 };
 
+const StrategyLegend = ({ lines, title }) => {
+  if (!lines?.length) return null;
+
+  return (
+    <div style={legendWrap}>
+      <p style={legendTitle}>{title}</p>
+      <div style={legendItems}>
+        {lines.map((line) => (
+          <div key={line.name} style={legendItem}>
+            <span style={{ ...legendDot, background: line.color }} />
+            <span style={legendLabel}>{line.name}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const SingleCellChart = ({ value, rowName, colName }) => (
   <svg viewBox="0 0 720 220" style={svgStyle} role="img" aria-label="Resultado puntual 1x1">
     <rect x="0" y="0" width="720" height="220" fill="#ffffff" />
@@ -231,7 +269,21 @@ const AlgebraicMethod = ({ gameData, onBack, onGoData }) => {
   }
 
   const analysis = analyzeGame(gameData);
-  const algebraic = buildAlgebraicData(analysis.reducedMatrix, analysis.reducedRowNames);
+  const algebraicFinal = buildAlgebraicData(analysis.reducedMatrix, analysis.reducedRowNames);
+
+  const fullProjection = projectMatrixToColumns(
+    analysis.originalMatrix,
+    analysis.colNames,
+    analysis.reducedColNames
+  );
+
+  const algebraicComplete = fullProjection.ok
+    ? buildAlgebraicData(fullProjection.matrix, analysis.rowNames)
+    : {
+        isApplicable: false,
+        reason: fullProjection.reason
+      };
+
   const isSingleCell =
     analysis.reducedMatrix.length === 1 && analysis.reducedMatrix[0]?.length === 1;
   const singleValue = isSingleCell ? Number(analysis.reducedMatrix[0][0]) : 0;
@@ -295,10 +347,10 @@ const AlgebraicMethod = ({ gameData, onBack, onGoData }) => {
         </>
       )}
 
-      {!isSingleCell && !algebraic.isApplicable && (
+      {!isSingleCell && !algebraicFinal.isApplicable && (
         <div style={panel}>
           <h3 style={panelTitle}>Ecuaciones y grafica</h3>
-          <p style={muted}>{algebraic.reason}</p>
+          <p style={muted}>{algebraicFinal.reason}</p>
           <p style={muted}>
             Para esta formulacion lineal, si: deben quedar exactamente 2 columnas para usar y = a*p + b*(1-p).
             Con 3 o mas columnas se requiere un metodo grafico/general distinto (programacion lineal o envolvente por pares).
@@ -306,11 +358,11 @@ const AlgebraicMethod = ({ gameData, onBack, onGoData }) => {
         </div>
       )}
 
-      {!isSingleCell && algebraic.isApplicable && (
+      {!isSingleCell && algebraicFinal.isApplicable && (
         <>
           <div style={panel}>
             <h3 style={panelTitle}>Ecuaciones del metodo algebraico</h3>
-            {algebraic.lines.map((line, index) => (
+            {algebraicFinal.lines.map((line, index) => (
               <p key={index} style={equation}>
                 <span style={{ ...dot, background: line.color }} />
                 {line.name}: y = {format(line.a)}p + {format(line.b)}(1-p) = {format(line.m)}p + {format(line.c)}
@@ -319,21 +371,50 @@ const AlgebraicMethod = ({ gameData, onBack, onGoData }) => {
           </div>
 
           <div style={panel}>
-            <h3 style={panelTitle}>Grafica de estrategias y puntos criticos</h3>
+            <h3 style={panelTitle}>Grafica completa (todas las estrategias)</h3>
+
+            {algebraicComplete.isApplicable ? (
+              <>
+                <p style={text}>
+                  Esta grafica incluye todas las estrategias de fila proyectadas sobre las dos columnas finales
+                  [{analysis.reducedColNames.join(", ")}].
+                </p>
+                <AlgebraicChart
+                  lines={algebraicComplete.lines}
+                  intersections={algebraicComplete.intersections}
+                  yMin={algebraicComplete.yMin}
+                  yMax={algebraicComplete.yMax}
+                />
+                <StrategyLegend
+                  lines={algebraicComplete.lines}
+                  title="Leyenda de colores (grafica completa)"
+                />
+              </>
+            ) : (
+              <p style={muted}>{algebraicComplete.reason}</p>
+            )}
+          </div>
+
+          <div style={panel}>
+            <h3 style={panelTitle}>Grafica de la matriz final reducida</h3>
             <AlgebraicChart
-              lines={algebraic.lines}
-              intersections={algebraic.intersections}
-              yMin={algebraic.yMin}
-              yMax={algebraic.yMax}
+              lines={algebraicFinal.lines}
+              intersections={algebraicFinal.intersections}
+              yMin={algebraicFinal.yMin}
+              yMax={algebraicFinal.yMax}
+            />
+            <StrategyLegend
+              lines={algebraicFinal.lines}
+              title="Leyenda de colores (matriz final reducida)"
             />
 
-            {algebraic.intersections.length === 0 && (
+            {algebraicFinal.intersections.length === 0 && (
               <p style={muted}>No hay intersecciones internas en [0, 1]. Una estrategia domina en todo el rango.</p>
             )}
 
-            {algebraic.intersections.length > 0 && (
+            {algebraicFinal.intersections.length > 0 && (
               <div style={listBlock}>
-                {algebraic.intersections.map((point, index) => (
+                {algebraicFinal.intersections.map((point, index) => (
                   <p key={index} style={text}>
                     Cruce {index + 1}: {point.pair[0]} con {point.pair[1]} en p = {point.x.toFixed(3)} y valor {point.y.toFixed(3)}.
                   </p>
@@ -344,12 +425,12 @@ const AlgebraicMethod = ({ gameData, onBack, onGoData }) => {
 
           <div style={panel}>
             <h3 style={panelTitle}>Conclusiones</h3>
-            {algebraic.strategyIntervals.length === 0 && (
+            {algebraicFinal.strategyIntervals.length === 0 && (
               <p style={text}>
                 No hay intervalos internos para comparar estrategias (solo extremos p = 0 o p = 1).
               </p>
             )}
-            {algebraic.strategyIntervals.map((interval, index) => (
+            {algebraicFinal.strategyIntervals.map((interval, index) => (
               <p key={index} style={text}>
                 Para p en [{interval.left.toFixed(3)}, {interval.right.toFixed(3)}], la mejor estrategia de filas es
                 {` ${interval.winners.join(" y ")}`} con valor aproximado {interval.value.toFixed(3)}.
@@ -484,6 +565,46 @@ const pointLabel = {
 
 const listBlock = {
   marginTop: "10px"
+};
+
+const legendWrap = {
+  marginTop: "10px",
+  background: "#f8fbff",
+  border: "1px dashed #bfd8ee",
+  borderRadius: "8px",
+  padding: "10px"
+};
+
+const legendTitle = {
+  margin: "0 0 8px 0",
+  color: "#12324a",
+  fontWeight: 700
+};
+
+const legendItems = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: "8px 14px"
+};
+
+const legendItem = {
+  display: "flex",
+  alignItems: "center",
+  gap: "6px"
+};
+
+const legendDot = {
+  width: "12px",
+  height: "12px",
+  borderRadius: "50%",
+  border: "1px solid #1f2937",
+  display: "inline-block"
+};
+
+const legendLabel = {
+  color: "#1f415d",
+  fontSize: "13px",
+  fontWeight: 600
 };
 
 const actions = {

@@ -101,6 +101,18 @@ const GameTheoryScreen = ({ setStep, gameData, setGameData }) => {
     <div style={styles.container}>
       <h2 style={styles.title}>Teoría de Juegos</h2>
 
+      <div style={styles.guideCard}>
+        <h3 style={styles.guideTitle}>Guia de uso - Modulo Teoria del Juego</h3>
+        <p style={styles.guideText}>
+          Este modulo analiza juegos de suma cero con estrategias puras y apoyo grafico algebraico.
+        </p>
+        <p style={styles.guideText}><strong>Datos:</strong> Define nombres de estrategias y completa la matriz de pagos.</p>
+        <p style={styles.guideText}><strong>Analisis:</strong> Primero verifica punto silla; si no existe, aplica eliminacion sucesiva por dominancia estricta.</p>
+        <p style={styles.guideText}><strong>Regla de eliminacion:</strong> solo se elimina una estrategia cuando domina elemento a elemento (todas las posiciones cumplen).</p>
+        <p style={styles.guideText}><strong>Metodo algebraico:</strong> compara grafica completa y grafica de matriz final reducida para identificar cruces e intervalos optimos.</p>
+        <p style={styles.guideText}><strong>Persistencia:</strong> los datos se guardan automaticamente al editar, cambiar vista o recargar.</p>
+      </div>
+
       {/* CONTROLES */}
       <div style={styles.controls}>
         <button style={styles.btn} onClick={addRow}>Agregar fila</button>
@@ -253,6 +265,27 @@ const styles = {
     fontSize: "24px",
     fontWeight: "800",
     marginBottom: "20px"
+  },
+
+  guideCard: {
+    background: "#f7fbff",
+    border: "1px solid #cfe1f2",
+    borderRadius: "12px",
+    padding: "14px",
+    marginBottom: "16px"
+  },
+
+  guideTitle: {
+    margin: "0 0 8px 0",
+    color: "#133a5a",
+    fontSize: "18px"
+  },
+
+  guideText: {
+    margin: "5px 0",
+    color: "#24445d",
+    lineHeight: "1.45",
+    fontSize: "13px"
   },
 
   controls: {
