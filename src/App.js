@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 
 import { defaultData } from "./data/defaultData";
 import Sidebar from "./components/Sidebar";
@@ -14,35 +14,12 @@ import Step8 from "./steps/Step8";
 import Step9 from "./steps/Step9";
 import Step10 from "./steps/Step10";
 
+// 🎮 Teoría del Juego
+import GameTheoryScreen from "./views/gameTheory/GameTheoryScreen";
+
 function App() {
-  // 💾 Cargar datos del localStorage o usar valores por defecto
-  const [data, setData] = useState(() => {
-    try {
-      const saved = localStorage.getItem("operationsData");
-      return saved ? JSON.parse(saved) : defaultData;
-    } catch {
-      return defaultData;
-    }
-  });
-
-  const [step, setStep] = useState(() => {
-    try {
-      const saved = localStorage.getItem("operationsStep");
-      return saved ? parseInt(saved, 10) : 0;
-    } catch {
-      return 0;
-    }
-  });
-
-  // 💾 Guardar datos cada vez que cambien
-  useEffect(() => {
-    localStorage.setItem("operationsData", JSON.stringify(data));
-  }, [data]);
-
-  // 💾 Guardar paso cada vez que cambie
-  useEffect(() => {
-    localStorage.setItem("operationsStep", String(step));
-  }, [step]);
+  const [step, setStep] = useState(0);
+  const [data, setData] = useState(defaultData);
 
   const next = () => setStep(step + 1);
   const prev = () => setStep(step - 1);
@@ -50,6 +27,7 @@ function App() {
   const renderStep = () => {
     const props = { data, setData, next, prev };
 
+    // 🧠 DECISIÓN (0 - 9)
     switch (step) {
       case 0: return <Step1 {...props} />;
       case 1: return <Step2 {...props} />;
@@ -61,6 +39,12 @@ function App() {
       case 7: return <Step8 {...props} />;
       case 8: return <Step9 {...props} />;
       case 9: return <Step10 {...props} />;
+
+      // 🎮 TEORÍA DEL JUEGO (100 - 199)
+      case 100: return <GameTheoryScreen />;
+      case 101: return <GameTheoryScreen />;
+      case 102: return <GameTheoryScreen />;
+
       default: return <Step1 {...props} />;
     }
   };
