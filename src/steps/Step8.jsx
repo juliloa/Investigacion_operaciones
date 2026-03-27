@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React from "react";
 
 const Step8 = ({ data, next, prev }) => {
   const { alternatives, payoff, probabilities } = data || {};
@@ -17,8 +17,13 @@ const Step8 = ({ data, next, prev }) => {
   const P_alta = probabilities[0] ?? 0;
   const P_baja = probabilities[1] ?? 0;
 
-  const P_fav_alta = 0.9;
-  const P_fav_baja = 0.25;
+  const studyConfig = data.studyConfig || {
+    favorableDetectionRate: 0.9,
+    unfavorableFalsePositiveRate: 0.25
+  };
+
+  const P_fav_alta = studyConfig.favorableDetectionRate ?? 0.9;
+  const P_fav_baja = studyConfig.unfavorableFalsePositiveRate ?? 0.25;
 
   const P_fav  = P_alta * P_fav_alta + P_baja * P_fav_baja;
   const P_desf = 1 - P_fav;
@@ -68,7 +73,6 @@ const Step8 = ({ data, next, prev }) => {
   ];
 
   const bestIdxs = [bestFavIdx, bestDesfIdx, bestNoIdx];
-  const branchColors = ["#0f6e56", "#993c1d", "#5f5e5a"];
 
   return (
     <div style={container}>
@@ -117,7 +121,6 @@ const Step8 = ({ data, next, prev }) => {
           {/* ── Ramas de segundo nivel: alternativas ── */}
           {datasets.map((ds, di) => {
             const c1y = CHANCE1[di].cy;
-            const bColor = branchColors[di];
             return alternatives.map((alt, ai) => {
               const altY = c1y + altOffsets[ai];
               // Payoffs
