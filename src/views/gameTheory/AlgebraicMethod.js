@@ -193,15 +193,38 @@ const AlgebraicChart = ({ lines, intersections, yMin, yMax }) => {
 
       {intersections.map((point, index) => (
         <g key={`in-${index}`}>
+          {/* Línea punteada desde p hacia la intersección */}
+          <line
+            x1={toX(point.x)}
+            y1={height - margin.bottom}
+            x2={toX(point.x)}
+            y2={toY(point.y)}
+            stroke="#6b7280"
+            strokeWidth="1.2"
+            strokeDasharray="4,4"
+          />
+          {/* Línea punteada desde (1-p) hacia la intersección */}
+          <line
+            x1={toX(1 - point.x)}
+            y1={height - margin.bottom}
+            x2={toX(point.x)}
+            y2={toY(point.y)}
+            stroke="#6b7280"
+            strokeWidth="1.2"
+            strokeDasharray="4,4"
+          />
           <circle cx={toX(point.x)} cy={toY(point.y)} r="5" fill="#111827" />
           <text x={toX(point.x) + 8} y={toY(point.y) - 8} style={pointLabel}>
-            ({point.x.toFixed(2)}, {point.y.toFixed(2)})
+            p={point.x.toFixed(2)}, 1-p={format(1 - point.x)}
+          </text>
+          <text x={toX(point.x) + 8} y={toY(point.y) + 14} style={pointLabel}>
+            Valor={point.y.toFixed(2)}
           </text>
         </g>
       ))}
 
       <text x={width / 2} y={height - 12} textAnchor="middle" style={axisTitle}>
-        p (probabilidad de la primera columna)
+        p (probabilidad de la primera columna) | (1-p) para la segunda columna
       </text>
       <text
         x="18"
@@ -338,11 +361,18 @@ const AlgebraicMethod = ({ gameData, onBack, onGoData }) => {
           </div>
 
           <div style={panel}>
-            <h3 style={panelTitle}>Conclusiones</h3>
+            <h3 style={panelTitle}>Conclusiones y Analisis</h3>
             <p style={text}>
-              Resultado deterministico: estrategia de fila {analysis.reducedRowNames[0]} contra estrategia de columna {analysis.reducedColNames[0]}.
+              <strong>Resultado deterministico:</strong> estrategia de fila {analysis.reducedRowNames[0]} contra estrategia de columna {analysis.reducedColNames[0]}.
             </p>
-            <p style={text}>Valor del juego = {format(singleValue)}.</p>
+            <p style={text}>
+              <strong>Valor del juego:</strong> {format(singleValue)}.
+            </p>
+            <p style={text}>
+              <strong>Analisis:</strong> Como existe un punto silla en la matriz reducida (1x1), 
+              el equilibrio se alcanza con estrategias puras. No hay necesidad de estrategias mixtas 
+              porque ambos jugadores tienen una unica opcion optima.
+            </p>
           </div>
         </>
       )}
@@ -370,14 +400,93 @@ const AlgebraicMethod = ({ gameData, onBack, onGoData }) => {
             ))}
           </div>
 
+          {/* Comparación de matrices */}
           <div style={panel}>
-            <h3 style={panelTitle}>Grafica completa (todas las estrategias)</h3>
+            <h3 style={panelTitle}>Comparacion: Matriz Original vs Matriz Reducida</h3>
+            
+            <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
+              {/* Matriz original */}
+              <div style={{ flex: 1, minWidth: "300px" }}>
+                <h4 style={{ ...subTitle, color: "#dc2626" }}>Matriz Original (todas las estrategias)</h4>
+                <div style={matrixWrap}>
+                  <table style={table}>
+                    <thead>
+                      <tr>
+                        <th style={th}></th>
+                        {analysis.colNames.map((colName, index) => (
+                          <th key={index} style={{...th, background: "#fef2f2"}}>{colName}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {analysis.originalMatrix.map((row, rowIndex) => (
+                        <tr key={rowIndex}>
+                          <th style={{...rowHeader, background: "#fef2f2"}}>{analysis.rowNames[rowIndex]}</th>
+                          {row.map((value, colIndex) => (
+                            <td key={colIndex} style={{...td, background: rowIndex >= analysis.reducedMatrix.length ? "#fef2f2" : "#ffffff"}}>
+                              {format(value)}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p style={{...text, fontSize: "12px", color: "#dc2626"}}>
+                  * Las estrategias en rojo fueron eliminadas por dominancia
+                </p>
+              </div>
+
+              {/* Matriz reducida */}
+              <div style={{ flex: 1, minWidth: "300px" }}>
+                <h4 style={{ ...subTitle, color: "#059669" }}>Matriz Reducida (estrategias sobrevivientes)</h4>
+                <div style={matrixWrap}>
+                  <table style={table}>
+                    <thead>
+                      <tr>
+                        <th style={th}></th>
+                        {analysis.reducedColNames.map((colName, index) => (
+                          <th key={index} style={{...th, background: "#ecfdf5"}}>{colName}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {analysis.reducedMatrix.map((row, rowIndex) => (
+                        <tr key={rowIndex}>
+                          <th style={{...rowHeader, background: "#ecfdf5"}}>{analysis.reducedRowNames[rowIndex]}</th>
+                          {row.map((value, colIndex) => (
+                            <td key={colIndex} style={{...td, background: "#ecfdf5"}}>
+                              {format(value)}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p style={{...text, fontSize: "12px", color: "#059669"}}>
+                  * Estas estrategias sobrevivieron a la eliminacion por dominancia
+                </p>
+              </div>
+            </div>
+
+            <p style={text}>
+              <strong>Diferencia clave:</strong> La matriz original tiene {analysis.originalMatrix.length} filas y {analysis.colNames.length} columnas.
+              La matriz reducida tiene {analysis.reducedMatrix.length} filas y {analysis.reducedColNames.length} columnas.
+              Las estrategias eliminadas ({analysis.rowNames.length - analysis.reducedMatrix.length} filas) no afectan el resultado del juego.
+            </p>
+          </div>
+
+          <div style={panel}>
+            <h3 style={panelTitle}>Grafica completa (todas las estrategias de la matriz original)</h3>
 
             {algebraicComplete.isApplicable ? (
               <>
                 <p style={text}>
-                  Esta grafica incluye todas las estrategias de fila proyectadas sobre las dos columnas finales
-                  [{analysis.reducedColNames.join(", ")}].
+                  Esta grafica incluye <strong>TODAS</strong> las estrategias de fila de la matriz original 
+                  proyectadas sobre las dos columnas finales [{analysis.reducedColNames.join(", ")}].
+                  Las estrategias eliminadas se muestran en <span style={{color: "#dc2626"}}>rojo</span> en la tabla de arriba.
+                  Muestra el comportamiento de cada estrategia a lo largo de todo el rango de probabilidades.
                 </p>
                 <AlgebraicChart
                   lines={algebraicComplete.lines}
@@ -385,9 +494,29 @@ const AlgebraicMethod = ({ gameData, onBack, onGoData }) => {
                   yMin={algebraicComplete.yMin}
                   yMax={algebraicComplete.yMax}
                 />
+                
+                {/* Análisis de la gráfica completa */}
+                {algebraicComplete.strategyIntervals.length > 0 && (
+                  <div style={listBlock}>
+                    <p style={text}><strong>Analisis de la grafica completa (todas las estrategias):</strong></p>
+                    <p style={text}>
+                      La linea superior (envolvente) representa la mejor estrategia de filas para cada valor de p.
+                      Los puntos donde las lineas se cruzan son los puntos de equilibrio en estrategias mixtas.
+                    </p>
+                    {algebraicComplete.strategyIntervals.map((interval, index) => (
+                      <p key={index} style={text}>
+                        - En p ∈ [{format(interval.left)}, {format(interval.right)}] 
+                        (primera columna: {format(interval.left*100)}%-{format(interval.right*100)}%, 
+                        segunda columna: {format((1-interval.right)*100)}%-{format((1-interval.left)*100)}%):
+                        estrategia optima = <strong>{interval.winners.join(" o ")}</strong>, valor = {format(interval.value)}
+                      </p>
+                    ))}
+                  </div>
+                )}
+                
                 <StrategyLegend
                   lines={algebraicComplete.lines}
-                  title="Leyenda de colores (grafica completa)"
+                  title="Leyenda de colores (grafica completa - todas las estrategias)"
                 />
               </>
             ) : (
@@ -396,7 +525,11 @@ const AlgebraicMethod = ({ gameData, onBack, onGoData }) => {
           </div>
 
           <div style={panel}>
-            <h3 style={panelTitle}>Grafica de la matriz final reducida</h3>
+            <h3 style={panelTitle}>Grafica de la matriz final reducida (solo estrategias sobrevivientes)</h3>
+            <p style={text}>
+              Esta grafica muestra <strong>SOLO las estrategias que sobrevivieron</strong> a la eliminacion por dominancia:
+              [{analysis.reducedRowNames.join(", ")}] vs [{analysis.reducedColNames.join(", ")}].
+            </p>
             <AlgebraicChart
               lines={algebraicFinal.lines}
               intersections={algebraicFinal.intersections}
@@ -414,31 +547,133 @@ const AlgebraicMethod = ({ gameData, onBack, onGoData }) => {
 
             {algebraicFinal.intersections.length > 0 && (
               <div style={listBlock}>
+                <p style={text}><strong>Puntos de corte en matriz reducida:</strong></p>
                 {algebraicFinal.intersections.map((point, index) => (
                   <p key={index} style={text}>
-                    Cruce {index + 1}: {point.pair[0]} con {point.pair[1]} en p = {point.x.toFixed(3)} y valor {point.y.toFixed(3)}.
+                    - Cruce {index + 1}: {point.pair[0]} con {point.pair[1]} en p = {point.x.toFixed(3)} ({format(point.x*100)}%) 
+                    y 1-p = {format(1-point.x)} ({format((1-point.x)*100)}%), valor = {point.y.toFixed(3)}.
                   </p>
                 ))}
               </div>
             )}
           </div>
 
+          {/* Análisis comparativo */}
           <div style={panel}>
-            <h3 style={panelTitle}>Conclusiones</h3>
+            <h3 style={panelTitle}>Analisis Comparativo: Grafica Completa vs Grafica Reducida</h3>
+            
+            <div style={{ display: "flex", gap: "20px", marginBottom: "15px" }}>
+              <div style={{ flex: 1, padding: "12px", background: "#fef2f2", borderRadius: "8px", border: "1px solid #fecaca" }}>
+                <h4 style={{ margin: "0 0 8px 0", color: "#dc2626" }}>Grafica Completa</h4>
+                <ul style={{ margin: 0, paddingLeft: "18px", color: "#24445d" }}>
+                  <li>Incluye TODAS las {analysis.originalMatrix.length} estrategias de fila</li>
+                  <li>Muestra estrategias eliminadas (no afectan el resultado)</li>
+                  <li>Mas lineas = mas informacion visual</li>
+                  <li>Intersections: {algebraicComplete.intersections.length}</li>
+                </ul>
+              </div>
+              
+              <div style={{ flex: 1, padding: "12px", background: "#ecfdf5", borderRadius: "8px", border: "1px solid #a7f3d0" }}>
+                <h4 style={{ margin: "0 0 8px 0", color: "#059669" }}>Grafica Reducida</h4>
+                <ul style={{ margin: 0, paddingLeft: "18px", color: "#24445d" }}>
+                  <li>Solo {analysis.reducedMatrix.length} estrategias sobrevivientes</li>
+                  <li>Mas facil de interpretar</li>
+                  <li>Focus en las estrategias relevantes</li>
+                  <li>Intersections: {algebraicFinal.intersections.length}</li>
+                </ul>
+              </div>
+            </div>
+
+            <p style={text}>
+              <strong>Conclusion:</strong> Ambas graficas llegan al mismo resultado de equilibrio. 
+              La grafica completa muestra todas las estrategias (incluyendo las eliminadas), 
+              mientras que la grafica reducida se enfoca solo en las que importan para el analisis final.
+              Los puntos de equilibrio son identicos en ambas.
+            </p>
+          </div>
+
+          <div style={panel}>
+            <h3 style={panelTitle}>Conclusiones y Analisis del Equilibrio</h3>
+            
             {algebraicFinal.strategyIntervals.length === 0 && (
               <p style={text}>
                 No hay intervalos internos para comparar estrategias (solo extremos p = 0 o p = 1).
+                Una estrategia domina en todo el rango de probabilidad.
               </p>
             )}
-            {algebraicFinal.strategyIntervals.map((interval, index) => (
-              <p key={index} style={text}>
-                Para p en [{interval.left.toFixed(3)}, {interval.right.toFixed(3)}], la mejor estrategia de filas es
-                {` ${interval.winners.join(" y ")}`} con valor aproximado {interval.value.toFixed(3)}.
-              </p>
-            ))}
+
+            {/* Análisis de intervalos y equilibrio */}
+            {algebraicFinal.strategyIntervals.length > 0 && (
+              <>
+                <p style={text}>
+                  <strong>Analisis de intervalos de equilibrio:</strong>
+                </p>
+                {algebraicFinal.strategyIntervals.map((interval, index) => (
+                  <p key={index} style={text}>
+                    - Para p en [{interval.left.toFixed(3)}, {interval.right.toFixed(3)}] 
+                    (es decir, probabilidad de la primera columna entre {format(interval.left*100)}% y {format(interval.right*100)}%),
+                    la mejor estrategia de filas es <strong>{interval.winners.join(" o ")}</strong> 
+                    con valor esperado aproximado de {interval.value.toFixed(3)}.
+                  </p>
+                ))}
+              </>
+            )}
+
+            {/* Análisis de los puntos de corte */}
+            {algebraicFinal.intersections.length > 0 && (
+              <div style={listBlock}>
+                <p style={text}><strong>Puntos de corte (donde cambia la estrategia optima):</strong></p>
+                {algebraicFinal.intersections.map((point, index) => (
+                  <p key={index} style={text}>
+                    - Cruce {index + 1} entre {point.pair[0]} y {point.pair[1]}:<br/>
+                    &nbsp;&nbsp;p = {point.x.toFixed(3)} ({format(point.x*100)}% para primera columna)<br/>
+                    &nbsp;&nbsp;1-p = {format(1 - point.x)} ({format((1-point.x)*100)}% para segunda columna)<br/>
+                    &nbsp;&nbsp;Valor del juego en este punto: {point.y.toFixed(3)}
+                  </p>
+                ))}
+              </div>
+            )}
+
+            {/* Recomendación de equilibrio */}
             <p style={text}>
-              La decision final se apoya en la envolvente superior de rectas: en cada rango de p se elige la estrategia que maximiza el pago esperado.
+              <strong>Recomendacion de equilibrio:</strong> La estrategia optima depende del valor de p (probabilidad de usar la primera columna).
+              Si el jugador de columnas elige p = 0.7 (70% probabilidad primera columna), entonces 1-p = 0.3 (30% probabilidad segunda columna).
+              El jugador de filas debe elegir la estrategia que maximice su pago esperado segun el intervalo donde caiga p.
             </p>
+
+            <p style={text}>
+              <strong>Resumen del equilibrio:</strong> La decision final se apoya en la envolvente superior de rectas: 
+              en cada rango de p se elige la estrategia que maximiza el pago esperado. 
+              El equilibrio de Nash en estrategias mixtas se encuentra en los puntos donde las rectas se cruzan.
+              Si p = {algebraicFinal.intersections[0]?.x.toFixed(2) || "N/A"}, entonces el valor del juego es {algebraicFinal.intersections[0]?.y.toFixed(2) || "N/A"}.
+            </p>
+
+            {/* Tabla resumen de equilibrio */}
+            <div style={listBlock}>
+              <p style={text}><strong>Tabla resumen del equilibrio:</strong></p>
+              <table style={{...table, width: "100%", marginTop: "10px"}}>
+                <thead>
+                  <tr>
+                    <th style={{...th, textAlign: "left"}}>Intervalo de p</th>
+                    <th style={{...th, textAlign: "left"}}>Prob. 1ra columna</th>
+                    <th style={{...th, textAlign: "left"}}>Prob. 2da columna</th>
+                    <th style={{...th, textAlign: "left"}}>Estrategia optima (filas)</th>
+                    <th style={{...th, textAlign: "left"}}>Valor esperado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {algebraicFinal.strategyIntervals.map((interval, index) => (
+                    <tr key={index}>
+                      <td style={td}>[{format(interval.left)}, {format(interval.right)}]</td>
+                      <td style={td}>{format(interval.left*100)}% - {format(interval.right*100)}%</td>
+                      <td style={td}>{format((1-interval.right)*100)}% - {format((1-interval.left)*100)}%</td>
+                      <td style={td}><strong>{interval.winners.join(", ")}</strong></td>
+                      <td style={td}>{format(interval.value)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </>
       )}
@@ -478,6 +713,12 @@ const panel = {
 const panelTitle = {
   marginTop: 0,
   color: "#12324a"
+};
+
+const subTitle = {
+  margin: "10px 0 8px 0",
+  fontSize: "16px",
+  fontWeight: 600
 };
 
 const matrixWrap = {
