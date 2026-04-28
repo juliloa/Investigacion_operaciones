@@ -210,6 +210,13 @@ const style = `
     border-top: 1px solid var(--border-light);
     display: flex; align-items: center; justify-content: space-between;
   }
+
+  .sb-divider { 
+    height: 1px;
+    background: var(--border-light);
+    margin: 4px 0;
+  }
+
   .sb-footer-text {
     font-size: 10px; letter-spacing: 0.1em;
     text-transform: uppercase; color: var(--text-muted);
@@ -235,6 +242,21 @@ const gameTheoryCoreSteps = [
   { number: "01", label: "Datos", step: 100 },
   { number: "02", label: "Análisis", step: 101 },
   { number: "03", label: "Método algebraico", step: 102 },
+];
+
+const poissonSteps = [
+  { number: "01", label: "Datos", step: 200 },
+  { number: "02", label: "Análisis", step: 201 },
+];
+
+const mm1Steps = [
+  { number: "01", label: "Datos", step: 202 },
+  { number: "02", label: "Análisis", step: 203 },
+];
+
+const mmkSteps = [
+  { number: "01", label: "Datos", step: 204 },
+  { number: "02", label: "Análisis", step: 205 },
 ];
 
 const nashSteps = [
@@ -295,6 +317,45 @@ const NashSubGroup = ({ currentStep, setStep }) => {
   );
 };
 
+const QueueSubGroup = ({ label, steps, currentStep, setStep }) => {
+  const isAnyActive = steps.some(s => s.step === currentStep);
+  const [open, setOpen] = useState(isAnyActive);
+
+  return (
+    <div className="sb-subgroup">
+      <button
+        className={`sb-subgroup-btn${open ? " open" : ""}`}
+        onClick={() => setOpen(v => !v)}
+      >
+        <div className="sb-subgroup-line" />
+        <span className="sb-subgroup-label">{label}</span>
+        <ChevronSm />
+      </button>
+
+      <div style={{
+        maxHeight: open ? `${steps.length * 36}px` : "0px",
+        opacity: open ? 1 : 0,
+        overflow: "hidden",
+        transition: "all 0.28s ease",
+      }}>
+        <div className="sb-substeps-inner">
+          {steps.map(({ number, label: lbl, step }) => (
+            <div
+              key={step}
+              className={`sb-step${currentStep === step ? " active" : ""}`}
+              onClick={() => setStep(step)}
+            >
+              <div className="sb-step-dot" />
+              <span className="sb-step-num">{number}</span>
+              <span className="sb-step-label">{lbl}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ── NAV GROUP GENÉRICO ───────────────────────────────────────────
 const NavGroup = ({ label, steps, baseIndex, currentStep, setStep, badgeCount, children }) => {
   const isAnyActive = steps
@@ -321,14 +382,13 @@ const NavGroup = ({ label, steps, baseIndex, currentStep, setStep, badgeCount, c
       <div
         className="sb-steps"
         style={{
-          maxHeight: open
-            ? `${(steps ? steps.length : 0) * 38 + (children ? 120 : 0)}px`
-            : "0px",
+          maxHeight: open ? "600px" : "0px",
           opacity: open ? 1 : 0,
           overflow: "hidden",
-          transition: "all 0.3s ease",
+          transition: "max-height 0.4s ease, opacity 0.3s ease",
         }}
       >
+
         <div className="sb-steps-inner">
           {steps && steps.map(({ number, label: lbl, step }, i) => {
             const idx = step !== undefined ? step : baseIndex + i;
@@ -379,6 +439,8 @@ const Sidebar = ({ currentStep, setStep }) => {
 
             <div className="sb-divider" />
 
+            <div className="sb-divider" />
+
             {/* TEORÍA DEL JUEGO */}
             <NavGroup
               label="Teoría del Juego"
@@ -389,6 +451,35 @@ const Sidebar = ({ currentStep, setStep }) => {
               badgeCount="5"
             >
               <NashSubGroup currentStep={currentStep} setStep={setStep} />
+            </NavGroup>
+
+            {/* TEORÍA DE COLAS */}
+            <NavGroup
+              label="Teoría de Colas"
+              steps={[]}
+              baseIndex={200}
+              currentStep={currentStep}
+              setStep={setStep}
+              badgeCount="6"
+            >
+              <QueueSubGroup
+                label="Poisson"
+                steps={poissonSteps}
+                currentStep={currentStep}
+                setStep={setStep}
+              />
+              <QueueSubGroup
+                label="Líneas de espera M/M/1"
+                steps={mm1Steps}
+                currentStep={currentStep}
+                setStep={setStep}
+              />
+              <QueueSubGroup
+                label="Canales múltiples M/M/k"
+                steps={mmkSteps}
+                currentStep={currentStep}
+                setStep={setStep}
+              />
             </NavGroup>
 
           </nav>

@@ -27,99 +27,146 @@ const isNashCell = (matrix, r, c, n) => {
 // ── CÁLCULO ENEM ─────────────────────────────────────────────────────────────
 // Para matriz NxM: resuelve sistema lineal igualando utilidades
 // Retorna { steps, probabilities } para cada jugador
-const calcMixedStrategy = (matrix, playerIdx, numRows, numCols) => {
-  // playerIdx=0 → encontrar q (prob J2 sobre columnas) igualando utilidades de J1 por filas
-  // playerIdx=1 → encontrar p (prob J1 sobre filas) igualando utilidades de J2 por columnas
+const calcMixedStrategy = (matrix, playerIdx, rowNames, colNames) => {
+  const numRows = matrix.length;
+  const numCols = colNames.length;
 
   if (playerIdx === 0) {
-    // Caso 2x2: igualar fila 0 vs fila 1
+    // Encontrar q — igualar utilidades de J1 entre filas
+    // Para cada fila: expresión algebraica en función de q (2 columnas) o q1..qn
     if (numCols === 2) {
-      const a = getVal(matrix[0][0], 0); // J1, fila0, col0
-      const b = getVal(matrix[0][1], 0); // J1, fila0, col1
-      const c = getVal(matrix[1][0], 0); // J1, fila1, col0
-      const d = getVal(matrix[1][1], 0); // J1, fila1, col1
-      // aq + b(1-q) = cq + d(1-q)
-      // (a-b)q + b = (c-d)q + d
-      // q(a-b-c+d) = d-b
+      const a = getVal(matrix[0][0], 0);
+      const b = getVal(matrix[0][1], 0);
+      const c = getVal(matrix[1][0], 0);
+      const d = getVal(matrix[1][1], 0);
+
+      // Expresiones algebraicas por fila
+      const exprRow0 = `${a}q + ${b}(1-q)`;
+      const exprRow1 = `${c}q + ${d}(1-q)`;
+
+      // Simplificado: (a-b)q + b  vs  (c-d)q + d
+      const coef0 = a - b;
+      const coef1 = c - d;
+      const simplRow0 = `${coef0 >= 0 ? "" : ""}${coef0}q + ${b}`;
+      const simplRow1 = `${coef1 >= 0 ? "" : ""}${coef1}q + ${d}`;
+
       const denom = a - b - c + d;
       if (denom === 0) return null;
       const q = (d - b) / denom;
+
       return {
         varName: "q",
-        equation: `${a}q + ${b}(1-q) = ${c}q + ${d}(1-q)`,
-        simplified: `${a - b}q + ${b} = ${c - d}q + ${d}`,
-        steps: [
-          `Igualar utilidad de J1 en fila 1 vs fila 2:`,
-          `${a}q + ${b}(1-q) = ${c}q + ${d}(1-q)`,
-          `${a}q + ${b} - ${b}q = ${c}q + ${d} - ${d}q`,
-          `${a - b}q + ${b} = ${c - d}q + ${d}`,
-          `${a - b - (c - d)}q = ${d - b}`,
-          `q = ${d - b} / ${denom} = ${q.toFixed(4)}`
-        ],
+        rows: rowNames.slice(0, 2).map((name, i) => ({
+          name,
+          expr: i === 0 ? exprRow0 : exprRow1,
+          simplified: i === 0 ? simplRow0 : simplRow1,
+          vals: i === 0 ? [a, b] : [c, d]
+        })),
+        equalStep: `${exprRow0} = ${exprRow1}`,
+        simplStep: `${simplRow0} = ${simplRow1}`,
+        solveStep: `${coef0 - coef1}q = ${d - b}`,
         prob: q,
         complement: 1 - q,
         valid: q >= 0 && q <= 1
       };
     }
 
-    // Caso NxM general: para cada par de filas consecutivas
+    // NxM general
     const results = [];
     for (let r = 0; r < numRows - 1; r++) {
-      const rowSteps = [];
-      const coeffs = Array(numCols).fill(0);
-      for (let j = 0; j < numCols; j++) {
-        coeffs[j] = getVal(matrix[r][j], 0) - getVal(matrix[r + 1][j], 0);
-      }
-      rowSteps.push(`Igualar fila ${r + 1} con fila ${r + 2}: ` +
-        coeffs.map((c, j) => `${c >= 0 ? "+" : ""}${c}·q${j + 1}`).join(" ") + " = 0"
-      );
-      results.push({ pair: [r, r + 1], coeffs, steps: rowSteps });
+      const terms = colNames.map((col, j) => {
+        const v0 = getVal(matrix[r][j], 0);
+        const v1 = getVal(matrix[r + 1][j], 0);
+        return { col, v0, v1, diff: v0 - v1 };
+      });
+      results.push({
+        pair: [rowNames[r], rowNames[r + 1]],
+        expr0: terms.map((t, j) => `${t.v0}·q${j + 1}`).join(" + "),
+        expr1: terms.map((t, j) => `${t.v1}·q${j + 1}`).join(" + "),
+        diffExpr: terms.map((t, j) => `${t.diff >= 0 ? "+" : ""}${t.diff}·q${j + 1}`).join(" ") + " = 0"
+      });
     }
     return { general: true, results, varName: "q" };
   }
 
   if (playerIdx === 1) {
+    // Encontrar p — igualar utilidades de J2 entre columnas
     if (numRows === 2) {
       const a = getVal(matrix[0][0], 1);
       const b = getVal(matrix[1][0], 1);
       const c = getVal(matrix[0][1], 1);
       const d = getVal(matrix[1][1], 1);
-      // ap + b(1-p) = cp + d(1-p)
+
+      const exprCol0 = `${a}p + ${b}(1-p)`;
+      const exprCol1 = `${c}p + ${d}(1-p)`;
+
+      const coef0 = a - b;
+      const coef1 = c - d;
+      const simplCol0 = `${coef0}p + ${b}`;
+      const simplCol1 = `${coef1}p + ${d}`;
+
       const denom = a - b - c + d;
       if (denom === 0) return null;
       const p = (d - b) / denom;
+
       return {
         varName: "p",
-        equation: `${a}p + ${b}(1-p) = ${c}p + ${d}(1-p)`,
-        steps: [
-          `Igualar utilidad de J2 en columna 1 vs columna 2:`,
-          `${a}p + ${b}(1-p) = ${c}p + ${d}(1-p)`,
-          `${a}p + ${b} - ${b}p = ${c}p + ${d} - ${d}p`,
-          `${a - b}p + ${b} = ${c - d}p + ${d}`,
-          `${a - b - (c - d)}p = ${d - b}`,
-          `p = ${d - b} / ${denom} = ${p.toFixed(4)}`
-        ],
+        cols: colNames.slice(0, 2).map((name, j) => ({
+          name,
+          expr: j === 0 ? exprCol0 : exprCol1,
+          simplified: j === 0 ? simplCol0 : simplCol1,
+          vals: j === 0 ? [a, b] : [c, d]
+        })),
+        equalStep: `${exprCol0} = ${exprCol1}`,
+        simplStep: `${simplCol0} = ${simplCol1}`,
+        solveStep: `${coef0 - coef1}p = ${d - b}`,
         prob: p,
         complement: 1 - p,
         valid: p >= 0 && p <= 1
       };
     }
 
+    // NxM general
     const results = [];
     for (let j = 0; j < numCols - 1; j++) {
-      const coeffs = Array(numRows).fill(0);
-      for (let r = 0; r < numRows; r++) {
-        coeffs[r] = getVal(matrix[r][j], 1) - getVal(matrix[r][j + 1], 1);
-      }
+      const terms = rowNames.map((row, i) => {
+        const v0 = getVal(matrix[i][j], 1);
+        const v1 = getVal(matrix[i][j + 1], 1);
+        return { row, v0, v1, diff: v0 - v1 };
+      });
       results.push({
-        pair: [j, j + 1],
-        coeffs,
-        steps: [`Igualar col ${j + 1} con col ${j + 2}: ` +
-          coeffs.map((c, r) => `${c >= 0 ? "+" : ""}${c}·p${r + 1}`).join(" ") + " = 0"
-        ]
+        pair: [colNames[j], colNames[j + 1]],
+        expr0: terms.map((t, i) => `${t.v0}·p${i + 1}`).join(" + "),
+        expr1: terms.map((t, i) => `${t.v1}·p${i + 1}`).join(" + "),
+        diffExpr: terms.map((t, i) => `${t.diff >= 0 ? "+" : ""}${t.diff}·p${i + 1}`).join(" ") + " = 0"
       });
     }
     return { general: true, results, varName: "p" };
+  }
+  return null;
+};
+
+// Cálculo de utilidad esperada para cada jugador dado p y q (solo para 2 jugadores)
+const calcExpectedUtility = (matrix, playerIdx, p, q, numRows, numCols) => {
+  // Utilidad esperada de J1 con probabilidades q de J2
+  if (playerIdx === 0 && q !== null) {
+    return matrix.map((row, i) => {
+      const eu = row.reduce((sum, cell, j) => {
+        const prob = j === 0 ? q : (1 - q); // solo 2 columnas por ahora
+        return sum + getVal(cell, 0) * prob;
+      }, 0);
+      return { label: `Fila ${i + 1}`, eu: eu.toFixed(4) };
+    });
+  }
+  // Utilidad esperada de J2 con probabilidades p de J1
+  if (playerIdx === 1 && p !== null) {
+    return colNames => colNames.map((_, j) => {
+      const eu = matrix.reduce((sum, row, i) => {
+        const prob = i === 0 ? p : (1 - p);
+        return sum + getVal(row[j], 1) * prob;
+      }, 0);
+      return { label: `Col ${j + 1}`, eu: eu.toFixed(4) };
+    });
   }
   return null;
 };
@@ -164,8 +211,8 @@ const NashAnalysis = ({ nashData, onBack }) => {
   const isRowMax = (i, j, k) => getVal(matrix[i][j], k) === rowMax(k)[i];
 
   // ── ENEM cálculo ──────────────────────────────────────────────
-  const mixedJ2 = !hasENEP ? calcMixedStrategy(matrix, 0, numRows, numCols) : null;
-  const mixedJ1 = !hasENEP ? calcMixedStrategy(matrix, 1, numRows, numCols) : null;
+const mixedJ2 = !hasENEP ? calcMixedStrategy(matrix, 0, rowNames, colNames) : null;
+const mixedJ1 = !hasENEP ? calcMixedStrategy(matrix, 1, rowNames, colNames) : null;
 
   // ── Render tabs ───────────────────────────────────────────────
   const renderTab = () => {
@@ -361,129 +408,165 @@ const NashAnalysis = ({ nashData, onBack }) => {
   );
 
   // ENEM: cálculo de estrategias mixtas
-  const AnalysisENEM = () => (
+  const AnalysisENEM = () => {
+  const renderMixed = (mixed, playerColor, playerBgColor, jugador, controla) => {
+    if (!mixed) return (
+      <div style={s.card}>
+        <p style={{ fontSize: 13, color: "#dc2626" }}>No se pudo calcular — denominador cero.</p>
+      </div>
+    );
+
+    if (mixed.general) return (
+      <div style={s.card}>
+        <div style={{ ...s.playerTag, background: playerBgColor, color: playerColor, border: `1px solid ${playerColor}33`, marginBottom: 12 }}>
+          Encontrar {mixed.varName} — {jugador}
+        </div>
+        <p style={s.stepText}>Matriz {numRows}×{numCols} — sistema de ecuaciones ({controla}):</p>
+        {mixed.results.map((r, i) => (
+          <div key={i} style={{ marginBottom: 10 }}>
+            <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 4 }}>
+              Igualar {r.pair[0]} con {r.pair[1]}:
+            </p>
+            <div style={stepBox}>{r.expr0} = {r.expr1}</div>
+            <div style={stepBox}>{r.diffExpr}</div>
+          </div>
+        ))}
+        <p style={{ fontSize: 12, color: "#6b7280", marginTop: 8 }}>
+          Resolver con la restricción {mixed.varName}1 + {mixed.varName}2 + ... = 1
+        </p>
+      </div>
+    );
+
+    // Caso 2x2 — paso a paso algebraico
+    const items = mixed.rows || mixed.cols;
+    return (
+      <div style={s.card}>
+        <div style={{ ...s.playerTag, background: playerBgColor, color: playerColor, border: `1px solid ${playerColor}33`, marginBottom: 12 }}>
+          Encontrar {mixed.varName} — utilidad de {jugador} ({controla})
+        </div>
+
+        {/* Paso 1: Expresiones por estrategia */}
+        <p style={stepLabel}>Paso 1 — Expresar utilidad esperada por estrategia</p>
+        {items.map((item, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
+            <span style={{ fontSize: 12, color: "#6b7280", minWidth: 80 }}>{item.name}:</span>
+            <code style={codeStyle}>{item.expr}</code>
+            <span style={{ fontSize: 12, color: "#9ca3af" }}>→</span>
+            <code style={codeStyle}>{item.simplified}</code>
+          </div>
+        ))}
+
+        {/* Paso 2: Igualar */}
+        <p style={{ ...stepLabel, marginTop: 14 }}>Paso 2 — Igualar utilidades</p>
+        <div style={stepBox}>{mixed.equalStep}</div>
+
+        {/* Paso 3: Simplificar */}
+        <p style={{ ...stepLabel, marginTop: 10 }}>Paso 3 — Simplificar</p>
+        <div style={stepBox}>{mixed.simplStep}</div>
+
+        {/* Paso 4: Despejar */}
+        <p style={{ ...stepLabel, marginTop: 10 }}>Paso 4 — Despejar {mixed.varName}</p>
+        <div style={stepBox}>{mixed.solveStep}</div>
+
+        {/* Resultado */}
+        <div style={{
+          ...s.verifyBox,
+          marginTop: 12,
+          background: mixed.valid ? playerBgColor : "#fef2f2",
+          borderColor: mixed.valid ? playerColor + "66" : "#dc2626",
+          color: mixed.valid ? playerColor : "#dc2626",
+          fontSize: 15,
+          fontWeight: 700,
+          fontFamily: "monospace"
+        }}>
+          {mixed.valid
+            ? `${mixed.varName} = ${mixed.prob.toFixed(4)}     1-${mixed.varName} = ${mixed.complement.toFixed(4)}`
+            : `${mixed.varName} fuera de rango [0,1] — revisar matriz`
+          }
+        </div>
+      </div>
+    );
+  };
+
+  return (
     <div>
       <p style={s.sectionLabel}>Cálculo de estrategias mixtas</p>
       <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 16 }}>
         No existe equilibrio en estrategias puras. Se calculan las probabilidades con las que
-        cada jugador hace indiferente al otro.
+        cada jugador hace indiferente al otro entre sus estrategias.
       </p>
 
-      {/* Para J2: encontrar q */}
-      <div style={s.card}>
-        <div style={{ ...s.playerTag, background: playerBg[1], color: playerColors[1], border: `1px solid ${playerColors[1]}33`, marginBottom: 12 }}>
-          Encontrar q — probabilidad de J2 ({colGroup})
-        </div>
-        <p style={s.stepText}>
-          Igualamos las utilidades esperadas de J1 entre sus estrategias para encontrar
-          la probabilidad <strong>q</strong> con la que J2 juega cada columna:
-        </p>
+      {/* J1 — encontrar q */}
+      {renderMixed(mixedJ2, playerColors[1], playerBg[1], colGroup, "columnas de J2")}
 
-        {mixedJ2 && !mixedJ2.general && (
-          <div>
-            {mixedJ2.steps.map((step, i) => (
-              <div key={i} style={{ ...s.stepRow, fontFamily: "monospace", fontSize: 13, padding: "5px 10px" }}>
-                {i === 0 ? <strong>{step}</strong> : step}
-              </div>
-            ))}
-            <div style={{
-              ...s.verifyBox,
-              background: mixedJ2.valid ? "#eff6ff" : "#fef2f2",
-              borderColor: mixedJ2.valid ? "#2563eb" : "#dc2626",
-              color: mixedJ2.valid ? "#1d4ed8" : "#dc2626"
-            }}>
-              {mixedJ2.valid
-                ? `q = ${mixedJ2.prob.toFixed(4)}   |   1 - q = ${mixedJ2.complement.toFixed(4)}`
-                : "q fuera de rango [0,1] — revisar matriz"
-              }
-            </div>
-          </div>
-        )}
+      {/* J2 — encontrar p */}
+      {renderMixed(mixedJ1, playerColors[0], playerBg[0], rowGroup, "filas de J1")}
 
-        {mixedJ2?.general && (
-          <div>
-            <p style={{ fontSize: 13, color: "#374151", marginBottom: 8 }}>
-              Matriz {numRows}×{numCols} — sistema de ecuaciones:
-            </p>
-            {mixedJ2.results.map((r, i) => (
-              <div key={i} style={{ ...s.stepRow, fontFamily: "monospace", fontSize: 13, padding: "5px 10px" }}>
-                {r.steps[0]}
-              </div>
-            ))}
-            <p style={{ fontSize: 12, color: "#6b7280", marginTop: 8 }}>
-              Resolver el sistema con la restricción q1 + q2 + ... + qn = 1
-            </p>
-          </div>
-        )}
-
-        {!mixedJ2 && (
-          <p style={{ fontSize: 13, color: "#dc2626" }}>No se pudo calcular — denominador cero.</p>
-        )}
-      </div>
-
-      {/* Para J1: encontrar p */}
-      <div style={s.card}>
-        <div style={{ ...s.playerTag, background: playerBg[0], color: playerColors[0], border: `1px solid ${playerColors[0]}33`, marginBottom: 12 }}>
-          Encontrar p — probabilidad de J1 ({rowGroup})
-        </div>
-        <p style={s.stepText}>
-          Igualamos las utilidades esperadas de J2 entre sus estrategias para encontrar
-          la probabilidad <strong>p</strong> con la que J1 juega cada fila:
-        </p>
-
-        {mixedJ1 && !mixedJ1.general && (
-          <div>
-            {mixedJ1.steps.map((step, i) => (
-              <div key={i} style={{ ...s.stepRow, fontFamily: "monospace", fontSize: 13, padding: "5px 10px" }}>
-                {i === 0 ? <strong>{step}</strong> : step}
-              </div>
-            ))}
-            <div style={{
-              ...s.verifyBox,
-              background: mixedJ1.valid ? "#eff6ff" : "#fef2f2",
-              borderColor: mixedJ1.valid ? "#2563eb" : "#dc2626",
-              color: mixedJ1.valid ? "#1d4ed8" : "#dc2626"
-            }}>
-              {mixedJ1.valid
-                ? `p = ${mixedJ1.prob.toFixed(4)}   |   1 - p = ${mixedJ1.complement.toFixed(4)}`
-                : "p fuera de rango [0,1] — revisar matriz"
-              }
-            </div>
-          </div>
-        )}
-
-        {mixedJ1?.general && (
-          <div>
-            <p style={{ fontSize: 13, color: "#374151", marginBottom: 8 }}>
-              Matriz {numRows}×{numCols} — sistema de ecuaciones:
-            </p>
-            {mixedJ1.results.map((r, i) => (
-              <div key={i} style={{ ...s.stepRow, fontFamily: "monospace", fontSize: 13, padding: "5px 10px" }}>
-                {r.steps[0]}
-              </div>
-            ))}
-            <p style={{ fontSize: 12, color: "#6b7280", marginTop: 8 }}>
-              Resolver el sistema con la restricción p1 + p2 + ... + pm = 1
-            </p>
-          </div>
-        )}
-
-        {!mixedJ1 && (
-          <p style={{ fontSize: 13, color: "#dc2626" }}>No se pudo calcular — denominador cero.</p>
-        )}
-      </div>
-
-      {/* Resultado final ENEM */}
+      {/* Resultado final */}
       {mixedJ2 && mixedJ1 && !mixedJ2.general && !mixedJ1.general && mixedJ2.valid && mixedJ1.valid && (
-        <div style={{ ...s.verifyBox, fontSize: 15, fontWeight: 600 }}>
-          Equilibrio de Nash mixto: (p = {mixedJ1.prob.toFixed(4)}, q = {mixedJ2.prob.toFixed(4)})
+        <div style={{ ...s.verifyBox, fontSize: 14, fontWeight: 600, background: "#eff6ff", borderColor: "#2563eb", color: "#1d4ed8" }}>
+          Equilibrio de Nash mixto → J1: ({mixedJ1.prob.toFixed(3)}, {mixedJ1.complement.toFixed(3)}) | J2: ({mixedJ2.prob.toFixed(3)}, {mixedJ2.complement.toFixed(3)})
         </div>
       )}
     </div>
   );
+};
+
+// Estilos auxiliares para AnalysisENEM — agrégalos fuera del componente
+const stepLabel = {
+  fontSize: 11,
+  fontWeight: 600,
+  color: "#6b7280",
+  textTransform: "uppercase",
+  letterSpacing: "0.06em",
+  marginBottom: 6,
+  marginTop: 0
+};
+
+const stepBox = {
+  fontFamily: "monospace",
+  fontSize: 13,
+  background: "#f8fafc",
+  border: "1px solid #e2e8f0",
+  borderRadius: 6,
+  padding: "7px 12px",
+  marginBottom: 4,
+  color: "#374151"
+};
+
+const codeStyle = {
+  fontFamily: "monospace",
+  fontSize: 13,
+  background: "#f1f5f9",
+  borderRadius: 5,
+  padding: "3px 8px",
+  color: "#374151"
+};
 
   // ── TAB 3: CONCLUSIONES ───────────────────────────────────────
-  const TabConclusions = () => (
+  const TabConclusions = () => {
+  // Utilidades esperadas en equilibrio mixto
+  const euJ1 = !hasENEP && mixedJ1 && !mixedJ1.general && mixedJ1.valid
+    ? colNames.map((_, j) => {
+        const eu = matrix.reduce((sum, row, i) => {
+          const prob = i === 0 ? mixedJ1.prob : (1 - mixedJ1.prob);
+          return sum + getVal(row[j], 0) * prob;
+        }, 0);
+        return { label: colNames[j], eu };
+      })
+    : null;
+
+  const euJ2 = !hasENEP && mixedJ2 && !mixedJ2.general && mixedJ2.valid
+    ? matrix.map((row, i) => {
+        const eu = row.reduce((sum, cell, j) => {
+          const prob = j === 0 ? mixedJ2.prob : (1 - mixedJ2.prob);
+          return sum + getVal(cell, 1) * prob;
+        }, 0);
+        return { label: rowNames[i], eu };
+      })
+    : null;
+
+  return (
     <div>
       <p style={s.sectionLabel}>Conclusiones y recomendaciones</p>
 
@@ -502,8 +585,8 @@ const NashAnalysis = ({ nashData, onBack }) => {
         </div>
         <p style={{ fontSize: 13, color: "#374151", lineHeight: 1.6 }}>
           {hasENEP
-            ? "Un equilibrio en estrategias puras significa que existe al menos una combinación de estrategias donde ningún jugador tiene incentivo a cambiar unilateralmente su decisión."
-            : "Un equilibrio en estrategias mixtas implica que cada jugador debe aleatorizar entre sus estrategias con probabilidades específicas para que el otro sea indiferente entre las suyas."
+            ? "Existe al menos una combinación de estrategias donde ningún jugador tiene incentivo a cambiar unilateralmente su decisión."
+            : "Cada jugador debe aleatorizar entre sus estrategias con probabilidades específicas para que el otro sea indiferente entre las suyas."
           }
         </p>
       </div>
@@ -514,14 +597,30 @@ const NashAnalysis = ({ nashData, onBack }) => {
         const controlled = k === 0 ? "filas" : k === 1 ? "columnas" : "estrategias globales";
 
         let recommendation = "";
+        let perfil = null;
+
         if (hasENEP) {
           const bestStrategies = [...new Set(nashCells.map(c => k === 0 ? rowNames[c.i] : colNames[c.j]))];
           recommendation = `Estrategia${bestStrategies.length > 1 ? "s" : ""} óptima${bestStrategies.length > 1 ? "s" : ""}: ${bestStrategies.join(", ")}.`;
         } else {
           if (k === 0 && mixedJ1 && !mixedJ1.general && mixedJ1.valid) {
-            recommendation = `Jugar ${rowNames[0]} con probabilidad p = ${mixedJ1.prob.toFixed(3)} y ${rowNames[1]} con probabilidad 1-p = ${mixedJ1.complement.toFixed(3)}.`;
+            recommendation = `Jugar ${rowNames[0]} con p = ${mixedJ1.prob.toFixed(3)} y ${rowNames[1] || "fila 2"} con 1-p = ${mixedJ1.complement.toFixed(3)}.`;
+            perfil = {
+              probs: [
+                { label: rowNames[0], prob: mixedJ1.prob },
+                { label: rowNames[1] || "Fila 2", prob: mixedJ1.complement }
+              ],
+              eu: euJ1
+            };
           } else if (k === 1 && mixedJ2 && !mixedJ2.general && mixedJ2.valid) {
-            recommendation = `Jugar ${colNames[0]} con probabilidad q = ${mixedJ2.prob.toFixed(3)} y ${colNames[1]} con probabilidad 1-q = ${mixedJ2.complement.toFixed(3)}.`;
+            recommendation = `Jugar ${colNames[0]} con q = ${mixedJ2.prob.toFixed(3)} y ${colNames[1] || "col 2"} con 1-q = ${mixedJ2.complement.toFixed(3)}.`;
+            perfil = {
+              probs: [
+                { label: colNames[0], prob: mixedJ2.prob },
+                { label: colNames[1] || "Col 2", prob: mixedJ2.complement }
+              ],
+              eu: euJ2
+            };
           } else {
             recommendation = "Resolver el sistema de ecuaciones para obtener las probabilidades óptimas.";
           }
@@ -533,15 +632,81 @@ const NashAnalysis = ({ nashData, onBack }) => {
               <div style={{ width: 10, height: 10, borderRadius: "50%", background: playerColors[k] }} />
               <p style={{ ...s.cardTitle, margin: 0 }}>J{k + 1} — {label}</p>
             </div>
-            <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 6 }}>
+            <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 8 }}>
               Controla las <strong>{controlled}</strong> de la matriz.
             </p>
-            <div style={{ ...s.verifyBox, background: playerBg[k], borderColor: playerColors[k] + "44", color: playerColors[k] }}>
+
+            {/* Recomendación */}
+            <div style={{ ...s.verifyBox, background: playerBg[k], borderColor: playerColors[k] + "44", color: playerColors[k], marginBottom: perfil ? 12 : 0 }}>
               {recommendation}
             </div>
+
+            {/* Perfil de equilibrio — solo ENEM */}
+            {perfil && (
+              <>
+                <p style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", marginTop: 12, marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  Perfil de equilibrio
+                </p>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+                  {perfil.probs.map((pr, idx) => (
+                    <div key={idx} style={{
+                      background: playerBg[k], border: `1px solid ${playerColors[k]}33`,
+                      borderRadius: 10, padding: "8px 14px", textAlign: "center"
+                    }}>
+                      <div style={{ fontSize: 11, color: playerColors[k], fontWeight: 600, marginBottom: 2 }}>{pr.label}</div>
+                      <div style={{ fontSize: 18, fontWeight: 700, color: playerColors[k] }}>
+                        {pr.prob.toFixed(3)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Utilidad esperada por estrategia */}
+                {perfil.eu && (
+                  <>
+                    <p style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                      Utilidad esperada en equilibrio
+                    </p>
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
+                      {perfil.eu.map((e, idx) => (
+                        <div key={idx} style={{
+                          background: "#f8fafc", border: "1px solid #e2e8f0",
+                          borderRadius: 8, padding: "6px 12px",
+                          fontSize: 13, color: "#374151"
+                        }}>
+                          <span style={{ color: "#6b7280", marginRight: 6 }}>{e.label}:</span>
+                          <strong>{parseFloat(e.eu).toFixed(3)}</strong>
+                        </div>
+                      ))}
+                    </div>
+                    <p style={{ fontSize: 12, color: "#6b7280", fontStyle: "italic" }}>
+                      En equilibrio mixto, la utilidad esperada es igual en todas las estrategias — el jugador rival es indiferente.
+                    </p>
+                  </>
+                )}
+              </>
+            )}
           </div>
         );
       })}
+
+      {/* Perfil completo del juego — solo ENEM */}
+      {!hasENEP && mixedJ1 && mixedJ2 && !mixedJ1.general && !mixedJ2.general && mixedJ1.valid && mixedJ2.valid && (
+        <div style={{ ...s.card, border: "1px solid #bfdbfe", background: "#eff6ff" }}>
+          <p style={{ ...s.cardTitle, color: "#1d4ed8" }}>Perfil de equilibrio del juego</p>
+          <p style={{ fontSize: 13, color: "#1e40af", marginBottom: 10 }}>
+            El equilibrio de Nash en estrategias mixtas es:
+          </p>
+          <div style={{ fontFamily: "monospace", fontSize: 14, color: "#1d4ed8", background: "#dbeafe", borderRadius: 8, padding: "10px 14px", marginBottom: 10 }}>
+            J1: ({rowNames[0]} = {mixedJ1.prob.toFixed(3)}, {rowNames[1] || "fila 2"} = {mixedJ1.complement.toFixed(3)})
+            {"  |  "}
+            J2: ({colNames[0]} = {mixedJ2.prob.toFixed(3)}, {colNames[1] || "col 2"} = {mixedJ2.complement.toFixed(3)})
+          </div>
+          <p style={{ fontSize: 12, color: "#3b82f6", fontStyle: "italic" }}>
+            Ningún jugador puede mejorar su utilidad esperada desviándose unilateralmente de este perfil.
+          </p>
+        </div>
+      )}
 
       {/* Recomendación general */}
       <div style={{ ...s.card, background: "#f8fafc", border: "1px solid #e2e8f0" }}>
@@ -551,12 +716,13 @@ const NashAnalysis = ({ nashData, onBack }) => {
             ? `Existe un único equilibrio de Nash estable en (${rowNames[nashCells[0].i]}, ${colNames[nashCells[0].j]}). Esta es la solución racional predecible del juego — ambos jugadores convergerán a esta combinación bajo racionalidad común.`
             : hasENEP && nashCells.length > 1
             ? `Existen múltiples equilibrios de Nash. En juegos de suma cero esto implica equivalencia e intercambiabilidad — todos los equilibrios proporcionan las mismas utilidades. Cualquiera de ellos es igualmente válido.`
-            : `Al no existir equilibrio puro, la solución requiere estrategias mixtas. Cada jugador debe aleatorizar para evitar ser explotado por el otro. Las probabilidades calculadas garantizan que ningún jugador pueda mejorar cambiando su distribución.`
+            : `Al no existir equilibrio puro, la solución requiere estrategias mixtas. Cada jugador debe aleatorizar para evitar ser explotado. Las probabilidades calculadas garantizan que ningún jugador pueda mejorar cambiando su distribución.`
           }
         </p>
       </div>
     </div>
   );
+};
 
   return (
     <div style={s.container}>
