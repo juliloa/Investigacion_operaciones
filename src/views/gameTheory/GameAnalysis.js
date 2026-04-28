@@ -1,5 +1,7 @@
 import React from "react";
 import { analyzeGame } from "./gameTheoryUtils";
+import EquilibriumMatrix from "../../components/EquilibriumMatrix";
+
 
 const formatNumber = (value) => Number(value).toFixed(2);
 
@@ -160,67 +162,6 @@ const ReductionFlow = ({ labelRemoved, removed, kept, axisLabel }) => {
   );
 };
 
-const SaddleGraph = ({ rowNames, colNames, saddleKeys }) => {
-  const width = 780;
-  const height = 280;
-  const leftX = 120;
-  const rightX = 660;
-  const topPad = 40;
-
-  const rowStep = rowNames.length > 1 ? (height - topPad * 2) / (rowNames.length - 1) : 0;
-  const colStep = colNames.length > 1 ? (height - topPad * 2) / (colNames.length - 1) : 0;
-
-  const rowY = rowNames.map((_, i) => topPad + rowStep * i);
-  const colY = colNames.map((_, j) => topPad + colStep * j);
-
-  return (
-    <div style={panel}>
-      <h3 style={panelTitle}>Grafica del punto silla</h3>
-      <svg viewBox={`0 0 ${width} ${height}`} style={saddleSvg} role="img" aria-label="Relacion de estrategias en punto silla">
-        <rect x="0" y="0" width={width} height={height} fill="#ffffff" />
-
-        <text x={leftX - 40} y={24} style={graphTitle}>Filas</text>
-        <text x={rightX + 16} y={24} style={graphTitle}>Columnas</text>
-
-        {rowNames.map((name, i) => (
-          <g key={`row-${name}`}>
-            <circle cx={leftX} cy={rowY[i]} r="11" fill="#2563eb" />
-            <text x={leftX - 16} y={rowY[i] + 4} textAnchor="end" style={nodeLabel}>{name}</text>
-          </g>
-        ))}
-
-        {colNames.map((name, j) => (
-          <g key={`col-${name}`}>
-            <circle cx={rightX} cy={colY[j]} r="11" fill="#0891b2" />
-            <text x={rightX + 16} y={colY[j] + 4} style={nodeLabel}>{name}</text>
-          </g>
-        ))}
-
-        {Object.keys(saddleKeys).map((key) => {
-          const [rowIndex, colIndex] = key.split("-").map((v) => Number(v));
-          return (
-            <g key={`edge-${key}`}>
-              <line
-                x1={leftX + 12}
-                y1={rowY[rowIndex]}
-                x2={rightX - 12}
-                y2={colY[colIndex]}
-                stroke="#16a34a"
-                strokeWidth="3"
-              />
-              <circle cx={(leftX + rightX) / 2} cy={(rowY[rowIndex] + colY[colIndex]) / 2} r="6" fill="#16a34a" />
-            </g>
-          );
-        })}
-      </svg>
-
-      <p style={graphHint}>
-        Cada linea verde conecta una fila y una columna que forman punto silla.
-      </p>
-    </div>
-  );
-};
-
 const StepCard = ({ step, index }) => {
   const isRows = step.action === "rows-maximin";
   const isCols = step.action === "cols-minimax";
@@ -247,7 +188,7 @@ const StepCard = ({ step, index }) => {
         <strong style={stepTitle}>
           {isRows && "Eliminacion por dominancia (filas)"}
           {isCols && "Eliminacion por dominancia (columnas)"}
-          {isTerminal && "Cierre del proceso"}
+          {isTerminal && "Proceso finalizado"}
         </strong>
       </div>
 
@@ -389,7 +330,7 @@ const GameAnalysis = ({ matrix, onBack, onOpenAlgebraic }) => {
             Se detecto punto silla en la matriz original, por lo tanto no se realiza reduccion.
           </p>
           <p style={infoText}>
-            La grafica siguiente marca la celda de equilibrio en estrategias puras.
+            La visualización siguiente marca la celda de equilibrio en estrategias puras.
           </p>
         </div>
 
@@ -408,18 +349,13 @@ const GameAnalysis = ({ matrix, onBack, onOpenAlgebraic }) => {
           </div>
         </div>
 
-        <MatrixTable
+        <EquilibriumMatrix
           matrix={originalMatrix}
           rowNames={rowNames}
           colNames={colNames}
-          title="Matriz con punto silla"
-          highlights={saddlePoints}
-        />
-
-        <SaddleGraph
-          rowNames={rowNames}
-          colNames={colNames}
-          saddleKeys={saddlePoints}
+          rowMin={result.rowMin}
+          colMax={result.colMax}
+          saddleCells={saddlePoints}
         />
 
         <div style={panel}>
@@ -483,7 +419,7 @@ const GameAnalysis = ({ matrix, onBack, onOpenAlgebraic }) => {
         <h3 style={panelTitle}>Desarrollo paso a paso</h3>
 
         {eliminationSteps.length === 0 ? (
-          <p style={muted}>No hubo eliminaciones ni cierres de proceso.</p>
+          <p style={muted}>No hubo eliminaciones ni más iteraciones del proceso.</p>
         ) : (
           <>
             {eliminationSteps
@@ -774,31 +710,6 @@ const flowHint = {
   margin: "8px 0 0 0",
   color: "#4e6b84",
   fontSize: "13px"
-};
-
-const saddleSvg = {
-  width: "100%",
-  border: "1px solid #dbe7f3",
-  borderRadius: "10px",
-  background: "#ffffff"
-};
-
-const graphTitle = {
-  fill: "#1f415d",
-  fontSize: "13px",
-  fontWeight: 700
-};
-
-const nodeLabel = {
-  fill: "#12324a",
-  fontSize: "12px",
-  fontWeight: 600
-};
-
-const graphHint = {
-  margin: "8px 0 0 0",
-  color: "#5f7c96",
-  lineHeight: "1.45"
 };
 
 const animationStyles = `

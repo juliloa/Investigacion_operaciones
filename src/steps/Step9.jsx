@@ -31,7 +31,7 @@ const Step9 = ({ data, next, prev }) => {
   const P_baja_fav = safeDiv(P_baja * P_fav_baja, P_fav);
 
   const P_alta_desf = safeDiv(P_alta * (1 - P_fav_alta), P_desf);
-  const P_baja_desf = safeDiv(P_baja * (1 - P_fav_alta), P_desf);
+  const P_baja_desf = safeDiv(P_baja * (1 - P_fav_baja), P_desf);
 
   const VE_fav = alternatives.map((alt, i) => {
     return payoff[i][0] * P_alta_fav + payoff[i][1] * P_baja_fav;
