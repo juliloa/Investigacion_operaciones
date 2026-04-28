@@ -1,10 +1,6 @@
 import React, { useState } from "react";
-import MixedStrategies from "./MixedStrategies";
 
 const GameTheoryScreen = ({ setStep, gameData, setGameData }) => {
-
-  const [view, setView] = useState("analysis");
-
   const createMatrix = (r, c) =>
     Array(r).fill().map(() => Array(c).fill(""));
 
@@ -99,23 +95,6 @@ const GameTheoryScreen = ({ setStep, gameData, setGameData }) => {
   const minimax = Math.min(...colMax);
 
   const hasSaddlePoint = maximin === minimax;
-
-  // DATOS PARA MIXED
-  const currentGameData = {
-    matrix,
-    rowNames,
-    colNames
-  };
-
-  // 🔥 VISTA MIXTA
-  if (view === "mixed") {
-    return (
-      <MixedStrategies
-        gameData={currentGameData}
-        onBack={() => setView("analysis")}
-      />
-    );
-  }
 
   return (
     <div style={styles.container}>
@@ -259,14 +238,14 @@ const GameTheoryScreen = ({ setStep, gameData, setGameData }) => {
           Ver analisis completo
         </button>
 
-        {!hasSaddlePoint && matrix.length === 2 && matrix[0].length === 2 && (
-          <button
-            onClick={() => setView("mixed")}
-            style={styles.analysisBtn}
-          >
-            Ver Estrategias Mixtas
-          </button>
-        )}
+        <button
+          style={{ ...styles.analysisBtn, marginLeft: "10px", background: "#0f5e9c" }}
+          onClick={() => {
+            setStep(103);
+          }}
+        >
+          Equilibrio de Nash
+        </button>
       </div>
     </div>
   );

@@ -370,7 +370,7 @@ const AlgebraicMethod = ({ gameData, onBack, onGoData }) => {
             </p>
             <p style={text}>
               <strong>Analisis:</strong> Como existe un punto silla en la matriz reducida (1x1), 
-              el equilibrio se alcanza con estrategias puras. No hay necesidad de estrategias mixtas 
+              el equilibrio se alcanza con estrategias puras. No hace falta otro método 
               porque ambos jugadores tienen una unica opcion optima.
             </p>
           </div>
@@ -501,7 +501,7 @@ const AlgebraicMethod = ({ gameData, onBack, onGoData }) => {
                     <p style={text}><strong>Analisis de la grafica completa (todas las estrategias):</strong></p>
                     <p style={text}>
                       La linea superior (envolvente) representa la mejor estrategia de filas para cada valor de p.
-                      Los puntos donde las lineas se cruzan son los puntos de equilibrio en estrategias mixtas.
+                      Los puntos donde las lineas se cruzan marcan cambios de estrategia en el análisis.
                     </p>
                     {algebraicComplete.strategyIntervals.map((interval, index) => (
                       <p key={index} style={text}>
@@ -644,7 +644,7 @@ const AlgebraicMethod = ({ gameData, onBack, onGoData }) => {
             <p style={text}>
               <strong>Resumen del equilibrio:</strong> La decision final se apoya en la envolvente superior de rectas: 
               en cada rango de p se elige la estrategia que maximiza el pago esperado. 
-              El equilibrio de Nash en estrategias mixtas se encuentra en los puntos donde las rectas se cruzan.
+              El equilibrio se interpreta a partir de los puntos donde las rectas se cruzan.
               Si p = {algebraicFinal.intersections[0]?.x.toFixed(2) || "N/A"}, entonces el valor del juego es {algebraicFinal.intersections[0]?.y.toFixed(2) || "N/A"}.
             </p>
 

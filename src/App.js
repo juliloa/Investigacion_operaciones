@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import MixedStrategies from "./views/gameTheory/MixedStrategies";
 import { defaultData } from "./data/defaultData";
 import Sidebar from "./components/Sidebar";
 
@@ -18,6 +17,8 @@ import Step10 from "./steps/Step10";
 import GameTheoryScreen from "./views/gameTheory/GameTheoryScreen";
 import GameAnalysis from "./views/gameTheory/GameAnalysis";
 import AlgebraicMethod from "./views/gameTheory/AlgebraicMethod";
+import NashEquilibrium from "./views/gameTheory/NashEquilibrium";
+import NashAnalysis from "./views/gameTheory/NashAnalysis";
 
 function App() {
   const [step, setStep] = useState(() => {
@@ -28,6 +29,24 @@ function App() {
       return 0;
     }
   });
+
+  const [nashData, setNashData] = useState(() => {
+    try {
+      const saved = localStorage.getItem("io_nash_data");
+      return saved ? JSON.parse(saved) : {
+        numPlayers: 2,
+        matrix: [[["", ""], ["", ""]], [["", ""], ["", ""]]],
+        rowNames: ["Estrategia 1", "Estrategia 2"],
+        colNames: ["Estrategia 1", "Estrategia 2"],
+        rowGroup: "Jugador 1",
+        colGroup: "Jugador 2",
+      };
+    } catch { return null; }
+  });
+
+  useEffect(() => {
+    localStorage.setItem("io_nash_data", JSON.stringify(nashData));
+  }, [nashData]);
 
   const [data, setData] = useState(() => {
     try {
@@ -98,7 +117,6 @@ function App() {
             matrix={gameMatrix}
             onBack={() => setStep(100)}
             onOpenAlgebraic={() => setStep(102)}
-            onOpenMixed={() => setStep(103)} // 👈 IMPORTANTE
           />
         );
 
@@ -113,12 +131,21 @@ function App() {
 
       case 103:
         return (
-          <MixedStrategies
-            gameData={gameMatrix}
-            onBack={() => setStep(101)}
+          <NashEquilibrium
+            nashData={nashData}
+            setNashData={setNashData}
+            onBack={() => setStep(100)}
+            onGoAnalysis={() => setStep(104)}
           />
         );
 
+      case 104:
+        return (
+          <NashAnalysis
+            nashData={nashData}
+            onBack={() => setStep(103)}
+          />
+        );
       default:
         return <Step1 {...props} />;
     }
