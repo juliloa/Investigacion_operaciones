@@ -19,6 +19,8 @@ import GameAnalysis from "./views/gameTheory/GameAnalysis";
 import AlgebraicMethod from "./views/gameTheory/AlgebraicMethod";
 import NashEquilibrium from "./views/gameTheory/NashEquilibrium";
 import NashAnalysis from "./views/gameTheory/NashAnalysis";
+import PoissonData from "./views/queues/PoissonData";
+import PoissonAnalysis from "./views/queues/PoissonAnalysis";
 
 function App() {
   const [step, setStep] = useState(() => {
@@ -29,6 +31,27 @@ function App() {
       return 0;
     }
   });
+
+
+  // Estado persistente para Poisson
+  const [poissonData, setPoissonData] = useState(() => {
+    try {
+      const saved = localStorage.getItem("io_poisson");
+      return saved ? JSON.parse(saved) : {
+        mode: "exact",       // exact | cumulative | less
+        n: "",
+        p: "",
+        x: "",
+        lambda: "",
+        manualLambda: false,
+        ruleOf3: { eventsIn: "", timeIn: "", timeFor: "", unit: "min" }
+      };
+    } catch { return null; }
+  });
+
+  useEffect(() => {
+    localStorage.setItem("io_poisson", JSON.stringify(poissonData));
+  }, [poissonData]);
 
   const [nashData, setNashData] = useState(() => {
     try {
@@ -146,9 +169,28 @@ function App() {
             onBack={() => setStep(103)}
           />
         );
+
+      case 200:
+        return (
+          <PoissonData
+            poissonData={poissonData}
+            setPoissonData={setPoissonData}
+            onNext={() => setStep(201)}
+          />
+        );
+
+      case 201:
+        return (
+          <PoissonAnalysis
+            poissonData={poissonData}
+            onBack={() => setStep(200)}
+          />
+        );
+        
       default:
         return <Step1 {...props} />;
     }
+
   };
 
   return (
