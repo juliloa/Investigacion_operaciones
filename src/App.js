@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-
+import MixedStrategies from "./views/gameTheory/MixedStrategies";
 import { defaultData } from "./data/defaultData";
 import Sidebar from "./components/Sidebar";
 
@@ -14,7 +14,7 @@ import Step8 from "./steps/Step8";
 import Step9 from "./steps/Step9";
 import Step10 from "./steps/Step10";
 
-//  Teoría del Juego
+// Teoría del Juego
 import GameTheoryScreen from "./views/gameTheory/GameTheoryScreen";
 import GameAnalysis from "./views/gameTheory/GameAnalysis";
 import AlgebraicMethod from "./views/gameTheory/AlgebraicMethod";
@@ -59,14 +59,16 @@ function App() {
     localStorage.setItem("io_game_data", JSON.stringify(gameMatrix));
   }, [gameMatrix]);
 
-  const next = () => setStep(step + 1);
-  const prev = () => setStep(step - 1);
+  const next = () => setStep((s) => s + 1);
+  const prev = () => setStep((s) => s - 1);
 
   const renderStep = () => {
     const props = { data, setData, next, prev };
 
-    //  DECISIÓN (0 - 9)
     switch (step) {
+      // =========================
+      // DECISIÓN (0 - 9)
+      // =========================
       case 0: return <Step1 {...props} />;
       case 1: return <Step2 {...props} />;
       case 2: return <Step3 {...props} />;
@@ -78,7 +80,9 @@ function App() {
       case 8: return <Step9 {...props} />;
       case 9: return <Step10 {...props} />;
 
-      //  TEORÍA DEL JUEGO (100 - 199)
+      // =========================
+      // TEORÍA DEL JUEGO (100+)
+      // =========================
       case 100:
         return (
           <GameTheoryScreen
@@ -87,14 +91,17 @@ function App() {
             setGameData={setGameMatrix}
           />
         );
+
       case 101:
         return (
           <GameAnalysis
             matrix={gameMatrix}
             onBack={() => setStep(100)}
             onOpenAlgebraic={() => setStep(102)}
+            onOpenMixed={() => setStep(103)} // 👈 IMPORTANTE
           />
         );
+
       case 102:
         return (
           <AlgebraicMethod
@@ -104,7 +111,16 @@ function App() {
           />
         );
 
-      default: return <Step1 {...props} />;
+      case 103:
+        return (
+          <MixedStrategies
+            gameData={gameMatrix}
+            onBack={() => setStep(101)}
+          />
+        );
+
+      default:
+        return <Step1 {...props} />;
     }
   };
 
@@ -113,7 +129,7 @@ function App() {
       {/* SIDEBAR */}
       <Sidebar currentStep={step} setStep={setStep} />
 
-      {/* CONTENIDO */}
+      {/* CONTENIDO PRINCIPAL */}
       <div style={content}>
         {renderStep()}
       </div>
@@ -123,10 +139,12 @@ function App() {
 
 export default App;
 
-//  estilos
+// =========================
+// ESTILO CONTENIDO
+// =========================
 
 const content = {
   marginLeft: "260px",
   padding: "30px",
-  width: "100%"
+  width: "100%",
 };

@@ -1,6 +1,9 @@
 import React, { useState } from "react";
+import MixedStrategies from "./MixedStrategies";
 
 const GameTheoryScreen = ({ setStep, gameData, setGameData }) => {
+
+  const [view, setView] = useState("analysis");
 
   const createMatrix = (r, c) =>
     Array(r).fill().map(() => Array(c).fill(""));
@@ -35,7 +38,7 @@ const GameTheoryScreen = ({ setStep, gameData, setGameData }) => {
     });
   };
 
-  //  FILA
+  // FILA
   const addRow = () => {
     const nextMatrix = [...matrix, Array(colNames.length).fill("")];
     const nextRowNames = [...rowNames, `Estrategia ${rowNames.length + 1}`];
@@ -55,7 +58,7 @@ const GameTheoryScreen = ({ setStep, gameData, setGameData }) => {
     persistGameData({ nextMatrix, nextRowNames });
   };
 
-  //  COLUMNA
+  // COLUMNA
   const addColumn = () => {
     const nextMatrix = matrix.map(row => [...row, ""]);
     const nextColNames = [...colNames, `Estrategia ${colNames.length + 1}`];
@@ -82,7 +85,7 @@ const GameTheoryScreen = ({ setStep, gameData, setGameData }) => {
     persistGameData({ nextMatrix });
   };
 
-  //  CÁLCULOS
+  // CÁLCULOS
   const rowMin = matrix.map(row =>
     Math.min(...row.map(v => parseFloat(v) || 0))
   );
@@ -97,6 +100,23 @@ const GameTheoryScreen = ({ setStep, gameData, setGameData }) => {
 
   const hasSaddlePoint = maximin === minimax;
 
+  // DATOS PARA MIXED
+  const currentGameData = {
+    matrix,
+    rowNames,
+    colNames
+  };
+
+  // 🔥 VISTA MIXTA
+  if (view === "mixed") {
+    return (
+      <MixedStrategies
+        gameData={currentGameData}
+        onBack={() => setView("analysis")}
+      />
+    );
+  }
+
   return (
     <div style={styles.container}>
       <h2 style={styles.title}>Teoría de Juegos</h2>
@@ -107,10 +127,7 @@ const GameTheoryScreen = ({ setStep, gameData, setGameData }) => {
           Este modulo analiza juegos de suma cero con estrategias puras y apoyo grafico algebraico.
         </p>
         <p style={styles.guideText}><strong>Datos:</strong> Define nombres de estrategias y completa la matriz de pagos.</p>
-        <p style={styles.guideText}><strong>Analisis:</strong> Primero verifica punto silla; si no existe, aplica eliminacion sucesiva por dominancia estricta.</p>
-        <p style={styles.guideText}><strong>Regla de eliminacion:</strong> solo se elimina una estrategia cuando domina elemento a elemento (todas las posiciones cumplen).</p>
-        <p style={styles.guideText}><strong>Metodo algebraico:</strong> compara grafica completa y grafica de matriz final reducida para identificar cruces e intervalos optimos.</p>
-        <p style={styles.guideText}><strong>Persistencia:</strong> los datos se guardan automaticamente al editar, cambiar vista o recargar.</p>
+        <p style={styles.guideText}><strong>Analisis:</strong> Primero verifica punto silla; si no existe, aplica eliminacion sucesiva.</p>
       </div>
 
       {/* CONTROLES */}
@@ -121,7 +138,7 @@ const GameTheoryScreen = ({ setStep, gameData, setGameData }) => {
         <button style={styles.btn} onClick={removeColumn}>Eliminar columna</button>
       </div>
 
-      {/* TABLA */}
+      {/* TABLA COMPLETA */}
       <div style={styles.tableContainer}>
         <table style={styles.table}>
           <thead>
@@ -196,9 +213,7 @@ const GameTheoryScreen = ({ setStep, gameData, setGameData }) => {
                     <input
                       type="number"
                       value={cell}
-                      onChange={(e) =>
-                        handleChange(i, j, e.target.value)
-                      }
+                      onChange={(e) => handleChange(i, j, e.target.value)}
                       style={styles.input}
                     />
                   </td>
@@ -208,7 +223,6 @@ const GameTheoryScreen = ({ setStep, gameData, setGameData }) => {
               </tr>
             ))}
 
-            {/* FILA FINAL */}
             <tr>
               <th style={styles.totalHeader}>Máximo de columna</th>
 
@@ -218,13 +232,13 @@ const GameTheoryScreen = ({ setStep, gameData, setGameData }) => {
                 </td>
               ))}
 
-              <td style={styles.totalCell}></td>
+              <td></td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      {/* RESULTADO */}
+      {/* RESULTADOS */}
       <div style={styles.resultBox}>
         <p><b>Maximin:</b> {maximin}</p>
         <p><b>Minimax:</b> {minimax}</p>
@@ -244,6 +258,15 @@ const GameTheoryScreen = ({ setStep, gameData, setGameData }) => {
         >
           Ver analisis completo
         </button>
+
+        {!hasSaddlePoint && matrix.length === 2 && matrix[0].length === 2 && (
+          <button
+            onClick={() => setView("mixed")}
+            style={styles.analysisBtn}
+          >
+            Ver Estrategias Mixtas
+          </button>
+        )}
       </div>
     </div>
   );
@@ -252,7 +275,7 @@ const GameTheoryScreen = ({ setStep, gameData, setGameData }) => {
 export default GameTheoryScreen;
 
 //////////////////////////////////////////////////
-//  ESTILOS
+// ESTILOS
 
 const styles = {
   container: {
@@ -260,13 +283,11 @@ const styles = {
     background: "#f4f6fb",
     fontFamily: "Inter, sans-serif"
   },
-
   title: {
     fontSize: "24px",
     fontWeight: "800",
     marginBottom: "20px"
   },
-
   guideCard: {
     background: "#f7fbff",
     border: "1px solid #cfe1f2",
@@ -274,26 +295,22 @@ const styles = {
     padding: "14px",
     marginBottom: "16px"
   },
-
   guideTitle: {
     margin: "0 0 8px 0",
     color: "#133a5a",
     fontSize: "18px"
   },
-
   guideText: {
     margin: "5px 0",
     color: "#24445d",
     lineHeight: "1.45",
     fontSize: "13px"
   },
-
   controls: {
     display: "flex",
     gap: "10px",
     marginBottom: "15px"
   },
-
   btn: {
     padding: "9px 14px",
     borderRadius: "10px",
@@ -303,33 +320,28 @@ const styles = {
     cursor: "pointer",
     fontWeight: "600"
   },
-
   tableContainer: {
     borderRadius: "14px",
     overflow: "hidden",
     boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
     background: "#fff"
   },
-
   table: {
     width: "100%",
     borderCollapse: "collapse",
     fontSize: "14px"
   },
-
   groupHeader: {
     background: "#0f172a",
     color: "#fff",
     padding: "12px",
     textAlign: "center"
   },
-
   groupSide: {
     background: "#0f172a",
     color: "#fff",
     textAlign: "center"
   },
-
   groupInput: {
     background: "transparent",
     border: "none",
@@ -339,7 +351,6 @@ const styles = {
     outline: "none",
     width: "100%"
   },
-
   groupInputSide: {
     background: "transparent",
     border: "none",
@@ -349,14 +360,12 @@ const styles = {
     outline: "none",
     width: "100%"
   },
-
   header: {
     background: "#f1f5f9",
     padding: "10px",
     textAlign: "center",
     fontWeight: "700"
   },
-
   headerInput: {
     border: "none",
     background: "transparent",
@@ -365,18 +374,15 @@ const styles = {
     outline: "none",
     width: "100%"
   },
-
   rowHeader: {
     background: "#f8fafc",
     padding: "10px",
     fontWeight: "700"
   },
-
   cell: {
     textAlign: "center",
     padding: "5px"
   },
-
   input: {
     width: "60px",
     padding: "5px",
@@ -384,7 +390,6 @@ const styles = {
     borderRadius: "6px",
     border: "1px solid #ccc"
   },
-
   totalHeader: {
     background: "#0f172a",
     color: "#fff",
@@ -392,17 +397,14 @@ const styles = {
     textAlign: "center",
     fontWeight: "700"
   },
-
   totalCell: {
     background: "#e2e8f0",
     textAlign: "center",
     fontWeight: "700"
   },
-
   corner: {
     background: "#0f172a"
   },
-
   resultBox: {
     marginTop: "20px",
     background: "#fff",
@@ -410,17 +412,14 @@ const styles = {
     borderRadius: "12px",
     boxShadow: "0 6px 15px rgba(0,0,0,0.06)"
   },
-
   success: {
     color: "#22c55e",
     fontWeight: "700"
   },
-
   error: {
     color: "#ef4444",
     fontWeight: "700"
   },
-
   analysisBtn: {
     marginTop: "10px",
     padding: "10px 16px",

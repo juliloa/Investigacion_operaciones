@@ -334,42 +334,70 @@ const gameTheorySteps = [
   { number: "01", label: "Datos" },
   { number: "02", label: "Análisis" },
   { number: "03", label: "Método algebraico" },
+  { number: "04", label: "Estrategias mixtas" },
 ];
 
+/* =========================
+   ICONO
+========================= */
+
 const Chevron = () => (
-  <svg className="sb-chevron" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M4 6L8 10L12 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  <svg className="sb-chevron" viewBox="0 0 16 16" fill="none">
+    <path
+      d="M4 6L8 10L12 6"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </svg>
 );
 
-const NavGroup = ({ label, steps, baseIndex, currentStep, setStep, badgeCount }) => {
+/* =========================
+   NAV GROUP
+========================= */
+
+const NavGroup = ({
+  label,
+  steps,
+  baseIndex,
+  currentStep,
+  setStep,
+  badgeCount,
+}) => {
   const [open, setOpen] = useState(false);
 
   return (
     <div className="sb-group">
+      {/* HEADER GRUPO */}
       <button
         className={`sb-group-btn${open ? " open" : ""}`}
-        onClick={() => setOpen(v => !v)}
+        onClick={() => setOpen((v) => !v)}
       >
         <div className="sb-group-left">
           <div className="sb-group-pip" />
           <span className="sb-group-label">{label}</span>
         </div>
+
         <span className="sb-group-badge">{badgeCount}</span>
         <Chevron />
       </button>
 
+      {/* STEPS */}
       <div
         className="sb-steps"
         style={{
           maxHeight: open ? `${steps.length * 38}px` : "0px",
           opacity: open ? 1 : 0,
+          overflow: "hidden",
+          transition: "all 0.3s ease",
         }}
       >
         <div className="sb-steps-inner">
-          {steps.map((step, i) => {
+          {steps.map((stepItem, i) => {
             const idx = baseIndex + i;
             const active = currentStep === idx;
+
             return (
               <div
                 key={idx}
@@ -377,8 +405,8 @@ const NavGroup = ({ label, steps, baseIndex, currentStep, setStep, badgeCount })
                 onClick={() => setStep(idx)}
               >
                 <div className="sb-step-dot" />
-                <span className="sb-step-num">{step.number}</span>
-                <span className="sb-step-label">{step.label}</span>
+                <span className="sb-step-num">{stepItem.number}</span>
+                <span className="sb-step-label">{stepItem.label}</span>
               </div>
             );
           })}
@@ -388,18 +416,30 @@ const NavGroup = ({ label, steps, baseIndex, currentStep, setStep, badgeCount })
   );
 };
 
+/* =========================
+   SIDEBAR PRINCIPAL
+========================= */
+
 const Sidebar = ({ currentStep, setStep }) => {
   return (
     <>
       <style>{style}</style>
+
       <aside className="sb-wrap">
         <div className="sb-inner">
+
+          {/* BRAND */}
           <div className="sb-brand">
             <p className="sb-brand-eyebrow">Herramienta analítica</p>
-            <h1 className="sb-brand-name"> Inv.<em>Operaciones</em></h1>
+            <h1 className="sb-brand-name">
+              Inv.<em>Operaciones</em>
+            </h1>
           </div>
 
+          {/* NAV */}
           <nav className="sb-nav">
+
+            {/* DECISIÓN */}
             <NavGroup
               label="Decisión"
               steps={decisionSteps}
@@ -408,21 +448,26 @@ const Sidebar = ({ currentStep, setStep }) => {
               setStep={setStep}
               badgeCount="10"
             />
+
             <div className="sb-divider" />
+
+            {/* TEORÍA DEL JUEGO */}
             <NavGroup
               label="Teoría del Juego"
               steps={gameTheorySteps}
               baseIndex={100}
               currentStep={currentStep}
               setStep={setStep}
-              badgeCount="3"
+              badgeCount="4"
             />
           </nav>
 
+          {/* FOOTER */}
           <div className="sb-footer">
             <span className="sb-footer-text">2026</span>
             <div className="sb-footer-dot" />
           </div>
+
         </div>
       </aside>
     </>
