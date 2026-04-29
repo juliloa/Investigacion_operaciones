@@ -19,8 +19,10 @@ import GameAnalysis from "./views/gameTheory/GameAnalysis";
 import AlgebraicMethod from "./views/gameTheory/AlgebraicMethod";
 import NashEquilibrium from "./views/gameTheory/NashEquilibrium";
 import NashAnalysis from "./views/gameTheory/NashAnalysis";
-import PoissonData from "./views/queues/PoissonData";
-import PoissonAnalysis from "./views/queues/PoissonAnalysis";
+import CanalesSimples from "./views/queues/CanalesSimples";
+import CanalesSimpleAnalysis from "./views/queues/CanalesSimpleAnalysis";
+import CanalesMultiples from "./views/queues/CanalesMultiples";
+import CanalesMultiplesAnalysis from "./views/queues/CanalesMultiplesAnalysis";
 
 function App() {
   const [step, setStep] = useState(() => {
@@ -32,26 +34,46 @@ function App() {
     }
   });
 
-
-  // Estado persistente para Poisson
-  const [poissonData, setPoissonData] = useState(() => {
+  const [canalesData, setCanalesData] = useState(() => {
     try {
-      const saved = localStorage.getItem("io_poisson");
+      const saved = localStorage.getItem("io_canales");
       return saved ? JSON.parse(saved) : {
-        mode: "exact",       // exact | cumulative | less
-        n: "",
-        p: "",
+        llegadas: { cantidad: "", tiempo: "", unidad: "min" },
+        servicio: { cantidad: "", tiempo: "", unidad: "min" },
+        unidadBase: null, // "min" | "hora" | "seg" | "día" — la que eligió el usuario
+        calcular: { poisson: true, exponencial: true, mm1: true },
         x: "",
-        lambda: "",
-        manualLambda: false,
-        ruleOf3: { eventsIn: "", timeIn: "", timeFor: "", unit: "min" }
+        modoPoisson: "exact",
+        t: "",
+        pnCondicion: { modo: "greater_eq", valor: "3" }, // condición extra Pn
+      };
+    } catch { return null; }
+  });
+
+  const [canalesMultiplesData, setCanalesMultiplesData] = useState(() => {
+    try {
+      const saved = localStorage.getItem("io_canales_mmk");
+      return saved ? JSON.parse(saved) : {
+        llegadas: { cantidad: "", tiempo: "", unidad: "min" },
+        servicio: { cantidad: "", tiempo: "", unidad: "min" },
+        unidadBase: null,
+        calcular: { poisson: false, exponencial: false, mmk: true },
+        x: "",
+        modoPoisson: "exact",
+        t: "",
+        numServidores: 2,
+        pnCondicion: { modo: "greater_eq", valor: "3" },
       };
     } catch { return null; }
   });
 
   useEffect(() => {
-    localStorage.setItem("io_poisson", JSON.stringify(poissonData));
-  }, [poissonData]);
+    localStorage.setItem("io_canales", JSON.stringify(canalesData));
+  }, [canalesData]);
+
+  useEffect(() => {
+    localStorage.setItem("io_canales_mmk", JSON.stringify(canalesMultiplesData));
+  }, [canalesMultiplesData]);
 
   const [nashData, setNashData] = useState(() => {
     try {
@@ -172,21 +194,38 @@ function App() {
 
       case 200:
         return (
-          <PoissonData
-            poissonData={poissonData}
-            setPoissonData={setPoissonData}
+          <CanalesSimples
+            data={canalesData}
+            setData={setCanalesData}
             onNext={() => setStep(201)}
           />
         );
 
       case 201:
         return (
-          <PoissonAnalysis
-            poissonData={poissonData}
+          <CanalesSimpleAnalysis
+            data={canalesData}
             onBack={() => setStep(200)}
           />
         );
-        
+
+      case 204:
+        return (
+          <CanalesMultiples
+            data={canalesMultiplesData}
+            setData={setCanalesMultiplesData}
+            onNext={() => setStep(205)}
+          />
+        );
+
+      case 205:
+        return (
+          <CanalesMultiplesAnalysis
+            data={canalesMultiplesData}
+            onBack={() => setStep(204)}
+          />
+        );
+
       default:
         return <Step1 {...props} />;
     }

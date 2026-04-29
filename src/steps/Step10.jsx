@@ -2,8 +2,8 @@ import React from "react";
 import jsPDF from "jspdf";
 
 const safeDiv = (a, b) => (b === 0 ? 0 : a / b);
-const asPercent = (value) => `${(value * 100).toFixed(1)}%`;
-const asMoney = (value) => `$${value.toFixed(2)}`;
+const asPercent = (value) => `${(value * 100).toFixed(4)}%`;
+const asMoney = (value) => `$${value.toFixed(4)}`;
 
 const Step10 = ({ data, prev }) => {
   const alternatives = data.alternatives || [];
@@ -306,7 +306,7 @@ const Step10 = ({ data, prev }) => {
         doc.setFont("helvetica", "normal");
         doc.setFontSize(8.5);
         doc.text(`${altLabel}`, branchX + 2, branchY - 1.2);
-        doc.text(`EV=${ev.toFixed(2)}`, leafX + 2, branchY - 1.2);
+        doc.text(`EV=${ev.toFixed(4)}`, leafX + 2, branchY - 1.2);
       }
 
       doc.setFillColor(19, 141, 141);
@@ -319,7 +319,7 @@ const Step10 = ({ data, prev }) => {
         leafX + 42,
         boxY + 50.3
       );
-      doc.text(`EV=${bestWithoutStudyValue.toFixed(2)}`, leafX + 42, boxY + 54.2);
+      doc.text(`EV=${bestWithoutStudyValue.toFixed(4)}`, leafX + 42, boxY + 54.2);
 
       y = boxY + boxHeight + 4;
     };
@@ -359,8 +359,8 @@ const Step10 = ({ data, prev }) => {
       doc.setTextColor(...palette.text);
       doc.setFont("helvetica", "normal");
       doc.setFontSize(8.5);
-      doc.text(`F (${probabilityFavorableResult.toFixed(3)})`, resultNodeX + 5, favorableY + 1.2);
-      doc.text(`U (${probabilityUnfavorableResult.toFixed(3)})`, resultNodeX + 5, unfavorableY + 1.2);
+      doc.text(`F (${probabilityFavorableResult.toFixed(4)})`, resultNodeX + 5, favorableY + 1.2);
+      doc.text(`U (${probabilityUnfavorableResult.toFixed(4)})`, resultNodeX + 5, unfavorableY + 1.2);
 
       const alternativesCount = Math.min(alternatives.length, 3);
       const branchSpacing = 10;
@@ -393,9 +393,9 @@ const Step10 = ({ data, prev }) => {
         doc.line(actionX + 22, yUnfavAlt, payoffX, yUnfavAlt);
 
         doc.setFont("helvetica", isBestFav ? "bold" : "normal");
-        doc.text(`EV=${evFav.toFixed(2)}`, payoffX + 2, yFavAlt + 1.2);
+        doc.text(`EV=${evFav.toFixed(4)}`, payoffX + 2, yFavAlt + 1.2);
         doc.setFont("helvetica", isBestUnfav ? "bold" : "normal");
-        doc.text(`EV=${evUnfav.toFixed(2)}`, payoffX + 2, yUnfavAlt + 1.2);
+        doc.text(`EV=${evUnfav.toFixed(4)}`, payoffX + 2, yUnfavAlt + 1.2);
       }
 
       doc.setFont("helvetica", "normal");
@@ -405,7 +405,7 @@ const Step10 = ({ data, prev }) => {
       doc.setTextColor(255, 255, 255);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(8.5);
-      doc.text(`VE total con estudio = ${expectedValueWithStudy.toFixed(2)}`, payoffX, boxY + 86.2);
+      doc.text(`VE total con estudio = ${expectedValueWithStudy.toFixed(4)}`, payoffX, boxY + 86.2);
 
       y = boxY + boxHeight + 4;
     };
@@ -454,15 +454,15 @@ const Step10 = ({ data, prev }) => {
     y += 7 + recommendationLines.length * 4.6;
 
     drawSectionHeader("2. Datos y supuestos del problema");
-    addLabelValue("Estado 1", `${states[0] || "Favorable"} (p=${probabilityFavorableState.toFixed(3)})`);
-    addLabelValue("Estado 2", `${states[1] || "Desfavorable"} (p=${probabilityUnfavorableState.toFixed(3)})`);
+    addLabelValue("Estado 1", `${states[0] || "Favorable"} (p=${probabilityFavorableState.toFixed(4)})`);
+    addLabelValue("Estado 2", `${states[1] || "Desfavorable"} (p=${probabilityUnfavorableState.toFixed(4)})`);
     addLabelValue(
       "P(Resultado favorable | Estado favorable)",
-      favorableDetectionRate.toFixed(3)
+      favorableDetectionRate.toFixed(4)
     );
     addLabelValue(
       "P(Resultado favorable | Estado desfavorable)",
-      unfavorableFalsePositiveRate.toFixed(3)
+      unfavorableFalsePositiveRate.toFixed(4)
     );
 
     drawSectionHeader("3. Matriz de pagos y valores esperados");
@@ -472,11 +472,11 @@ const Step10 = ({ data, prev }) => {
 
       return [
         name,
-        favorablePayoff.toFixed(2),
-        unfavorablePayoff.toFixed(2),
-        expectedValueWithoutStudy[i].toFixed(2),
-        expectedValueWhenFavorableResult[i].toFixed(2),
-        expectedValueWhenUnfavorableResult[i].toFixed(2)
+        favorablePayoff.toFixed(4),
+        unfavorablePayoff.toFixed(4),
+        expectedValueWithoutStudy[i].toFixed(4),
+        expectedValueWhenFavorableResult[i].toFixed(4),
+        expectedValueWhenUnfavorableResult[i].toFixed(4)
       ];
     });
 
@@ -502,8 +502,8 @@ const Step10 = ({ data, prev }) => {
       "Si el resultado es desfavorable",
       `${bestWhenUnfavorableResultAlternative} (${asMoney(bestWhenUnfavorableResultValue)})`
     );
-    addLabelValue("P(resultado favorable)", probabilityFavorableResult.toFixed(3));
-    addLabelValue("P(resultado desfavorable)", probabilityUnfavorableResult.toFixed(3));
+    addLabelValue("P(resultado favorable)", probabilityFavorableResult.toFixed(4));
+    addLabelValue("P(resultado desfavorable)", probabilityUnfavorableResult.toFixed(4));
 
     drawSectionHeader("5. Calidad del estudio (Step 7)");
     drawSimpleTable(
@@ -556,10 +556,10 @@ const Step10 = ({ data, prev }) => {
       <div style={card}>
         <h2 style={cardTitle}>Parametros usados del estudio</h2>
         <p style={paragraph}>
-          P(Resultado favorable | Estado favorable): {favorableDetectionRate.toFixed(3)}
+          P(Resultado favorable | Estado favorable): {favorableDetectionRate.toFixed(4)}
         </p>
         <p style={paragraph}>
-          P(Resultado favorable | Estado desfavorable): {unfavorableFalsePositiveRate.toFixed(3)}
+          P(Resultado favorable | Estado desfavorable): {unfavorableFalsePositiveRate.toFixed(4)}
         </p>
         <p style={paragraph}>
           Estos valores provienen del Step 7 y se integran automaticamente al informe PDF.
@@ -678,3 +678,4 @@ const btnSecondary = {
   cursor: "pointer",
   fontWeight: 600
 };
+

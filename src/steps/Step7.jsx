@@ -72,7 +72,7 @@ const Step7 = ({ data, setData, next, prev }) => {
                 }
                 style={inputStyle}
               />
-              <span style={chip}>{(favorableDetectionRate * 100).toFixed(1)}%</span>
+              <span style={chip}>{(favorableDetectionRate * 100).toFixed(4)}%</span>
             </div>
           </div>
 
@@ -91,7 +91,7 @@ const Step7 = ({ data, setData, next, prev }) => {
                 style={inputStyle}
               />
               <span style={chip}>
-                {(unfavorableFalsePositiveRate * 100).toFixed(1)}%
+                {(unfavorableFalsePositiveRate * 100).toFixed(4)}%
               </span>
             </div>
           </div>
@@ -137,22 +137,22 @@ const Step7 = ({ data, setData, next, prev }) => {
         <div style={metricsGrid}>
           <MetricCard
             label="Precision"
-            value={`${(precision * 100).toFixed(1)}%`}
+            value={`${(precision * 100).toFixed(4)}%`}
             detail="TP / (TP + FP)"
           />
           <MetricCard
             label="Recall"
-            value={`${(recall * 100).toFixed(1)}%`}
+            value={`${(recall * 100).toFixed(4)}%`}
             detail="TP / (TP + FN)"
           />
           <MetricCard
             label="Exactitud"
-            value={`${(accuracy * 100).toFixed(1)}%`}
+            value={`${(accuracy * 100).toFixed(4)}%`}
             detail="(TP + TN) / Total"
           />
           <MetricCard
             label="Especificidad"
-            value={`${(specificity * 100).toFixed(1)}%`}
+            value={`${(specificity * 100).toFixed(4)}%`}
             detail="TN / (TN + FP)"
           />
         </div>

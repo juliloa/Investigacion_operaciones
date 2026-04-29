@@ -49,7 +49,7 @@ const Step9 = ({ data, next, prev }) => {
 
   return (
     <div style={container}>
-      <h1 style={title}>Mejor Decisión</h1>
+      <h1 style={title}>Mejor DecisiÃ³n</h1>
 
       {/* SIN ESTUDIO */}
       <div style={card}>
@@ -57,13 +57,13 @@ const Step9 = ({ data, next, prev }) => {
 
         {alternatives.map((alt, i) => (
           <p key={i} style={item}>
-            <strong>{alt}:</strong> {VE_no_estudio[i].toFixed(2)}
+            <strong>{alt}:</strong> {VE_no_estudio[i].toFixed(4)}
           </p>
         ))}
 
         <div style={resultBox}>
           <strong>
-            Mejor: {bestAltNoStudy} ({bestNoStudy.toFixed(2)})
+            Mejor: {bestAltNoStudy} ({bestNoStudy.toFixed(4)})
           </strong>
         </div>
       </div>
@@ -72,35 +72,35 @@ const Step9 = ({ data, next, prev }) => {
       <div style={card}>
         <h2 style={subtitle}>Con Estudio</h2>
 
-        <p style={item}>Escenario Favorable → VE = {bestFav.toFixed(2)}</p>
-        <p style={item}>Escenario Desfavorable → VE = {bestDesf.toFixed(2)}</p>
+        <p style={item}>Escenario Favorable â†’ VE = {bestFav.toFixed(4)}</p>
+        <p style={item}>Escenario Desfavorable â†’ VE = {bestDesf.toFixed(4)}</p>
 
         <div style={resultBox}>
           <strong>
-            VE total con estudio = {VE_con_estudio.toFixed(2)}
+            VE total con estudio = {VE_con_estudio.toFixed(4)}
           </strong>
         </div>
       </div>
 
-      {/* CONCLUSIÓN */}
+      {/* CONCLUSIÃ“N */}
       <div style={card}>
-        <h2 style={subtitle}>Conclusión</h2>
+        <h2 style={subtitle}>ConclusiÃ³n</h2>
 
         {VE_con_estudio > bestNoStudy ? (
           <p style={{ ...message, color: "#28a745" }}>
-            ✔ Conviene realizar el estudio de mercado, ya que mejora el valor esperado.
+            âœ” Conviene realizar el estudio de mercado, ya que mejora el valor esperado.
           </p>
         ) : (
           <p style={{ ...message, color: "#dc3545" }}>
-            ✖ No conviene realizar el estudio de mercado, no aporta mejora.
+            âœ– No conviene realizar el estudio de mercado, no aporta mejora.
           </p>
         )}
       </div>
 
       {/* BOTONES */}
       <div style={buttons}>
-        <button onClick={prev} style={btnSecondary}>← Volver</button>
-        <button onClick={next} style={btnPrimary}>Continuar →</button>
+        <button onClick={prev} style={btnSecondary}>â† Volver</button>
+        <button onClick={next} style={btnPrimary}>Continuar â†’</button>
       </div>
     </div>
   );

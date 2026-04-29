@@ -41,15 +41,15 @@ const Step8 = ({ data, next, prev }) => {
   const bestDesfIdx = EV_desf.indexOf(Math.max(...EV_desf));
   const bestNoIdx   = EV_no.indexOf(Math.max(...EV_no));
 
-  // ─────────────────────────────────────────────
-  // Layout del árbol (todas las medidas en px del viewBox 900×560)
-  // ─────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Layout del Ã¡rbol (todas las medidas en px del viewBox 900Ã—560)
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const ROOT_X = 30, ROOT_Y = 240, ROOT_W = 90, ROOT_H = 44;
 
   // Nodos azar de primer nivel
   const CHANCE1 = [
-    { id: "fav",  label: `F  p=${P_fav.toFixed(3)}`,  cy: 120, color: "#0f6e56", textColor: "#e1f5ee" },
-    { id: "desf", label: `U  p=${P_desf.toFixed(3)}`, cy: 290, color: "#993c1d", textColor: "#faece7" },
+    { id: "fav",  label: `F  p=${P_fav.toFixed(4)}`,  cy: 120, color: "#0f6e56", textColor: "#e1f5ee" },
+    { id: "desf", label: `U  p=${P_desf.toFixed(4)}`, cy: 290, color: "#993c1d", textColor: "#faece7" },
     { id: "sin",  label: "Sin estudio",                cy: 458, color: "#5f5e5a", textColor: "#f1efe8" },
   ];
   const C1_X = 190, C1_R = 22;
@@ -67,40 +67,40 @@ const Step8 = ({ data, next, prev }) => {
   const altOffsets = [-52, 0, 52];
 
   const datasets = [
-    { evs: EV_fav,  probs: [P_alta_fav.toFixed(3), P_baja_fav.toFixed(3)],   baseY: 120 },
-    { evs: EV_desf, probs: [P_alta_desf.toFixed(3), P_baja_desf.toFixed(3)], baseY: 290 },
-    { evs: EV_no,   probs: [P_alta.toFixed(3), P_baja.toFixed(3)],            baseY: 458 },
+    { evs: EV_fav,  probs: [P_alta_fav.toFixed(4), P_baja_fav.toFixed(4)],   baseY: 120 },
+    { evs: EV_desf, probs: [P_alta_desf.toFixed(4), P_baja_desf.toFixed(4)], baseY: 290 },
+    { evs: EV_no,   probs: [P_alta.toFixed(4), P_baja.toFixed(4)],            baseY: 458 },
   ];
 
   const bestIdxs = [bestFavIdx, bestDesfIdx, bestNoIdx];
 
   return (
     <div style={container}>
-      <h1 style={title}>Árbol de Decisión con Estudio de Mercado</h1>
+      <h1 style={title}>Ãrbol de DecisiÃ³n con Estudio de Mercado</h1>
 
-      {/* ─── ÁRBOL SVG ─── */}
+      {/* â”€â”€â”€ ÃRBOL SVG â”€â”€â”€ */}
       <div style={card}>
         <svg
           viewBox="0 0 900 560"
           style={{ width: "100%", fontFamily: "inherit" }}
         >
-          {/* ── Nodo raíz ── */}
+          {/* â”€â”€ Nodo raÃ­z â”€â”€ */}
           <rect x={ROOT_X} y={ROOT_Y} width={ROOT_W} height={ROOT_H} rx="6"
                 fill="#185fa5" stroke="#0c447c" strokeWidth="1.5"/>
           <text x={ROOT_X + ROOT_W / 2} y={ROOT_Y + ROOT_H / 2}
                 textAnchor="middle" dominantBaseline="central"
-                fill="#e6f1fb" fontSize="13" fontWeight="600">Decisión</text>
+                fill="#e6f1fb" fontSize="13" fontWeight="600">DecisiÃ³n</text>
 
-          {/* ── Ramas de primer nivel ── */}
+          {/* â”€â”€ Ramas de primer nivel â”€â”€ */}
           {CHANCE1.map((c1) => {
             const fromX = ROOT_X + ROOT_W;
             const fromY = ROOT_Y + ROOT_H / 2;
             return (
               <g key={c1.id}>
-                {/* Línea raíz → nodo azar */}
+                {/* LÃ­nea raÃ­z â†’ nodo azar */}
                 <path d={`M${fromX},${fromY} L${C1_X - C1_R},${c1.cy}`}
                       stroke="#888" strokeWidth="1.4" fill="none"/>
-                {/* Nodo azar (círculo) */}
+                {/* Nodo azar (cÃ­rculo) */}
                 <circle cx={C1_X} cy={c1.cy} r={C1_R}
                         fill={c1.color} stroke={c1.color} strokeWidth="1"/>
                 <text x={C1_X} y={c1.cy} textAnchor="middle"
@@ -111,14 +111,14 @@ const Step8 = ({ data, next, prev }) => {
                 {/* Etiqueta probabilidad */}
                 <text x={C1_X - 50} y={(fromY + c1.cy) / 2 - 6}
                       textAnchor="middle" fill="#888" fontSize="10">
-                  {c1.id === "fav" ? `F  ${P_fav.toFixed(3)}` :
-                   c1.id === "desf" ? `U  ${P_desf.toFixed(3)}` : "Sin estudio"}
+                  {c1.id === "fav" ? `F  ${P_fav.toFixed(4)}` :
+                   c1.id === "desf" ? `U  ${P_desf.toFixed(4)}` : "Sin estudio"}
                 </text>
               </g>
             );
           })}
 
-          {/* ── Ramas de segundo nivel: alternativas ── */}
+          {/* â”€â”€ Ramas de segundo nivel: alternativas â”€â”€ */}
           {datasets.map((ds, di) => {
             const c1y = CHANCE1[di].cy;
             return alternatives.map((alt, ai) => {
@@ -129,10 +129,10 @@ const Step8 = ({ data, next, prev }) => {
               const isBest = ai === bestIdxs[di];
               return (
                 <g key={`${di}-${ai}`}>
-                  {/* Línea nodo azar → alt */}
+                  {/* LÃ­nea nodo azar â†’ alt */}
                   <path d={`M${C1_X + C1_R},${c1y} L${C2_X - C2_R},${altY}`}
                         stroke="#aaa" strokeWidth="1" fill="none"/>
-                  {/* Nodo azar alternativa (círculo pequeño) */}
+                  {/* Nodo azar alternativa (cÃ­rculo pequeÃ±o) */}
                   <circle cx={C2_X} cy={altY} r={C2_R}
                           fill={ALT_COLORS[ai]} stroke={ALT_COLORS[ai]} strokeWidth="0.8"/>
                   <text x={C2_X} y={altY} textAnchor="middle"
@@ -140,7 +140,7 @@ const Step8 = ({ data, next, prev }) => {
                     {alt}
                   </text>
 
-                  {/* Líneas payoff (2 sub-ramas: S1 y S2) */}
+                  {/* LÃ­neas payoff (2 sub-ramas: S1 y S2) */}
                   {[p0, p1].map((pv, pi) => {
                     const pyY = altY - 20 + pi * 40;
                     return (
@@ -170,7 +170,7 @@ const Step8 = ({ data, next, prev }) => {
                         dominantBaseline="central"
                         fill={isBest ? "#e1f5ee" : "#444"}
                         fontSize="11" fontWeight={isBest ? "700" : "500"}>
-                    EV={ds.evs[ai].toFixed(2)}  {isBest ? "" : ""}
+                    EV={ds.evs[ai].toFixed(4)}  {isBest ? "" : ""}
                   </text>
 
                   {/* Flecha hacia caja EV */}
@@ -181,7 +181,7 @@ const Step8 = ({ data, next, prev }) => {
             });
           })}
 
-          {/* ── Resumen mejores EVs por rama ── */}
+          {/* â”€â”€ Resumen mejores EVs por rama â”€â”€ */}
           {[
             { label: `Mejor: ${alternatives[bestFavIdx]}`,  y: 58,  ev: EV_fav[bestFavIdx] },
             { label: `Mejor: ${alternatives[bestDesfIdx]}`, y: 228, ev: EV_desf[bestDesfIdx] },
@@ -193,13 +193,13 @@ const Step8 = ({ data, next, prev }) => {
               <text x={BEST_X + 64} y={r.y + 10} textAnchor="middle"
                     fill="#faeeda" fontSize="10" fontWeight="600">{r.label}</text>
               <text x={BEST_X + 64} y={r.y + 24} textAnchor="middle"
-                    fill="#fac775" fontSize="10">EV = {r.ev.toFixed(2)}</text>
+                    fill="#fac775" fontSize="10">EV = {r.ev.toFixed(4)}</text>
             </g>
           ))}
 
-          {/* ── Leyenda ── */}
+          {/* â”€â”€ Leyenda â”€â”€ */}
           <rect x="30" y="520" width="12" height="12" rx="2" fill="#185fa5"/>
-          <text x="48" y="531" fill="#888" fontSize="10">Nodo decisión</text>
+          <text x="48" y="531" fill="#888" fontSize="10">Nodo decisiÃ³n</text>
           <circle cx="148" cy="526" r="7" fill="#5f5e5a"/>
           <text x="160" y="531" fill="#888" fontSize="10">Nodo azar (1er nivel)</text>
           <circle cx="310" cy="526" r="7" fill="#185fa5"/>
@@ -207,19 +207,19 @@ const Step8 = ({ data, next, prev }) => {
           <rect x="440" y="519" width="12" height="14" rx="2" fill="#0f6e56"/>
           <text x="458" y="531" fill="#888" fontSize="10">Mejor EV por rama</text>
           <rect x="566" y="519" width="12" height="14" rx="2" fill="#ba7517"/>
-          <text x="584" y="531" fill="#888" fontSize="10">Resumen decisión</text>
+          <text x="584" y="531" fill="#888" fontSize="10">Resumen decisiÃ³n</text>
         </svg>
       </div>
 
-      {/* ─── PASO A PASO ─── */}
+      {/* â”€â”€â”€ PASO A PASO â”€â”€â”€ */}
       <div style={card}>
-        <h2 style={sectionTitle}>Cálculos paso a paso</h2>
+        <h2 style={sectionTitle}>CÃ¡lculos paso a paso</h2>
 
         <div style={stepGrid}>
           <div style={stepBox("#e6f1fb")}>
             <h3 style={{ margin: "0 0 8px", color: "#185fa5" }}>1. Probabilidades</h3>
-            <p style={formula}>P(F) = {P_alta}×0.9 + {P_baja}×0.25 = <strong>{P_fav.toFixed(4)}</strong></p>
-            <p style={formula}>P(U) = 1 − P(F) = <strong>{P_desf.toFixed(4)}</strong></p>
+            <p style={formula}>P(F) = {P_alta}Ã—0.9 + {P_baja}Ã—0.25 = <strong>{P_fav.toFixed(4)}</strong></p>
+            <p style={formula}>P(U) = 1 âˆ’ P(F) = <strong>{P_desf.toFixed(4)}</strong></p>
           </div>
 
           <div style={stepBox("#e1f5ee")}>
@@ -234,7 +234,7 @@ const Step8 = ({ data, next, prev }) => {
             <h3 style={{ margin: "0 0 8px", color: "#3b6d11" }}>3. EV Favorable</h3>
             {alternatives.map((alt, i) => (
               <p key={i} style={{ ...formula, fontWeight: i === bestFavIdx ? "700" : "400" }}>
-                {alt}: {EV_fav[i].toFixed(2)} {i === bestFavIdx ? "" : ""}
+                {alt}: {EV_fav[i].toFixed(4)} {i === bestFavIdx ? "" : ""}
               </p>
             ))}
           </div>
@@ -243,7 +243,7 @@ const Step8 = ({ data, next, prev }) => {
             <h3 style={{ margin: "0 0 8px", color: "#993c1d" }}>4. EV Desfavorable</h3>
             {alternatives.map((alt, i) => (
               <p key={i} style={{ ...formula, fontWeight: i === bestDesfIdx ? "700" : "400" }}>
-                {alt}: {EV_desf[i].toFixed(2)} {i === bestDesfIdx ? "" : ""}
+                {alt}: {EV_desf[i].toFixed(4)} {i === bestDesfIdx ? "" : ""}
               </p>
             ))}
           </div>
@@ -252,17 +252,17 @@ const Step8 = ({ data, next, prev }) => {
             <h3 style={{ margin: "0 0 8px", color: "#854f0b" }}>5. EV Sin estudio</h3>
             {alternatives.map((alt, i) => (
               <p key={i} style={{ ...formula, fontWeight: i === bestNoIdx ? "700" : "400" }}>
-                {alt}: {EV_no[i].toFixed(2)} {i === bestNoIdx ? "" : ""}
+                {alt}: {EV_no[i].toFixed(4)} {i === bestNoIdx ? "" : ""}
               </p>
             ))}
           </div>
         </div>
       </div>
 
-      {/* ─── BOTONES ─── */}
+      {/* â”€â”€â”€ BOTONES â”€â”€â”€ */}
       <div style={buttons}>
-        <button onClick={prev} style={btnSecondary}>← Volver</button>
-        <button onClick={next} style={btnPrimary}>Continuar →</button>
+        <button onClick={prev} style={btnSecondary}>â† Volver</button>
+        <button onClick={next} style={btnPrimary}>Continuar â†’</button>
       </div>
     </div>
   );
@@ -270,7 +270,7 @@ const Step8 = ({ data, next, prev }) => {
 
 export default Step8;
 
-// ─── Estilos ───────────────────────────────────
+// â”€â”€â”€ Estilos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const container = { display: "flex", flexDirection: "column", gap: "20px" };
 
 const title = { margin: "0 0 4px", fontSize: "20px", fontWeight: "700", color: "#1a1a2e" };

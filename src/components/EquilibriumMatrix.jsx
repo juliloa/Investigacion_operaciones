@@ -1,6 +1,6 @@
 import React from "react";
 
-const format = (v) => Number(v).toFixed(2);
+const format = (v) => Number(v).toFixed(4);
 
 const EquilibriumMatrix = ({ matrix, rowNames, colNames, rowMin, colMax, saddleCells = {} }) => {
   const cols = colNames.length;

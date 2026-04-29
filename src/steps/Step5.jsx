@@ -229,7 +229,7 @@ const Step5 = ({ data, next, prev }) => {
                 </div>
 
                 <div className="result">
-                  p = {it.p.toFixed(3)}
+                  p = {it.p.toFixed(4)}
                 </div>
 
               </div>
@@ -241,9 +241,9 @@ const Step5 = ({ data, next, prev }) => {
           )}
         </div>
 
-        {/* INTERPRETACIÓN */}
+        {/* INTERPRETACIÃ“N */}
         <div className="card">
-          <div className="card-title">Interpretación</div>
+          <div className="card-title">InterpretaciÃ³n</div>
 
           <div className="interpretation">
             <h3>Punto de corte</h3>
@@ -255,14 +255,14 @@ const Step5 = ({ data, next, prev }) => {
           <div className="interpretation">
             <h3>Utilidad</h3>
             <p className="text">
-              Permite identificar en qué rango de p cada alternativa es mejor.
+              Permite identificar en quÃ© rango de p cada alternativa es mejor.
             </p>
           </div>
 
           <div className="interpretation">
             <h3>Siguiente paso</h3>
             <p className="text">
-              En la gráfica veremos visualmente estas intersecciones.
+              En la grÃ¡fica veremos visualmente estas intersecciones.
             </p>
           </div>
         </div>
@@ -270,11 +270,11 @@ const Step5 = ({ data, next, prev }) => {
         {/* BOTONES */}
         <div className="buttons">
           <button className="btn btn-secondary" onClick={prev}>
-            ← Volver
+            â† Volver
           </button>
 
           <button className="btn btn-primary" onClick={next}>
-            Continuar →
+            Continuar â†’
           </button>
         </div>
 
