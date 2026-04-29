@@ -16,11 +16,11 @@ const Step4 = ({ data, next, prev }) => {
 
   return (
     <div style={container}>
-      <h1>Árbol de Decisión con Valores</h1>
+      <h1>Ãrbol de DecisiÃ³n con Valores</h1>
 
       <div style={card}>
 
-        {/* ───── ÁRBOL (SVG LIMPIO) ───── */}
+        {/* â”€â”€â”€â”€â”€ ÃRBOL (SVG LIMPIO) â”€â”€â”€â”€â”€ */}
         <svg viewBox="0 0 900 400" style={{ width: "100%" }}>
 
           {alternatives.map((alt, i) => {
@@ -29,7 +29,7 @@ const Step4 = ({ data, next, prev }) => {
             return (
               <g key={i}>
 
-                {/* Líneas desde raíz */}
+                {/* LÃ­neas desde raÃ­z */}
                 <line x1="80" y1="200" x2="220" y2={y} stroke="#aaa" />
 
                 {/* Nodo alternativa */}
@@ -68,8 +68,8 @@ const Step4 = ({ data, next, prev }) => {
                       </text>
 
                       <text x="550" y={yState} fontSize="10">
-                        {payoff[i][j]} × {probabilities[j]} ={" "}
-                        {results[i].calc[j].toFixed(2)}
+                        {payoff[i][j]} Ã— {probabilities[j]} ={" "}
+                        {results[i].calc[j].toFixed(4)}
                       </text>
                     </g>
                   );
@@ -97,7 +97,7 @@ const Step4 = ({ data, next, prev }) => {
                     fill={results[i].total === best ? "#fff" : "#333"}
                     fontWeight="600"
                   >
-                    VE = {results[i].total.toFixed(2)}
+                    VE = {results[i].total.toFixed(4)}
                   </text>
 
                   {/*  Mejor (separado) */}
@@ -119,7 +119,7 @@ const Step4 = ({ data, next, prev }) => {
             );
           })}
 
-          {/* Nodo raíz */}
+          {/* Nodo raÃ­z */}
           <circle cx="80" cy="200" r="18" fill="#185fa5" />
           <text
             x="80"
@@ -138,7 +138,7 @@ const Step4 = ({ data, next, prev }) => {
 
       {/*  PASO A PASO COMPLETO */}
       <div style={card}>
-        <h2> Paso a paso del cálculo</h2>
+        <h2> Paso a paso del cÃ¡lculo</h2>
 
         {alternatives.map((alt, i) => (
           <div key={i} style={{ marginBottom: "20px" }}>
@@ -146,15 +146,15 @@ const Step4 = ({ data, next, prev }) => {
 
             {states.map((state, j) => (
               <p key={j}>
-                {state}: {payoff[i][j]} × {probabilities[j]} ={" "}
-                <strong>{results[i].calc[j].toFixed(2)}</strong>
+                {state}: {payoff[i][j]} Ã— {probabilities[j]} ={" "}
+                <strong>{results[i].calc[j].toFixed(4)}</strong>
               </p>
             ))}
 
             <p>
               <strong>
-                Total VE = {results[i].calc.map(x => x.toFixed(2)).join(" + ")} ={" "}
-                {results[i].total.toFixed(2)}
+                Total VE = {results[i].calc.map(x => x.toFixed(4)).join(" + ")} ={" "}
+                {results[i].total.toFixed(4)}
               </strong>
             </p>
           </div>
@@ -167,20 +167,20 @@ const Step4 = ({ data, next, prev }) => {
 
         {results.map((r, i) => (
           <p key={i}>
-            {r.name}: VE = <strong>{r.total.toFixed(2)}</strong>
+            {r.name}: VE = <strong>{r.total.toFixed(4)}</strong>
           </p>
         ))}
 
         <h3>
            Mejor alternativa:{" "}
           {results.find(r => r.total === best)?.name} (
-          {best.toFixed(2)})
+          {best.toFixed(4)})
         </h3>
       </div>
 
-      {/*  INTERPRETACIÓN */}
+      {/*  INTERPRETACIÃ“N */}
       <div style={card}>
-        <h2>Interpretación</h2>
+        <h2>InterpretaciÃ³n</h2>
 
         <p>
           El valor esperado representa el beneficio promedio considerando las probabilidades de cada estado.
@@ -197,8 +197,8 @@ const Step4 = ({ data, next, prev }) => {
 
       {/* BOTONES */}
       <div style={buttons}>
-        <button onClick={prev} style={btnSecondary}>← Volver</button>
-        <button onClick={next} style={btnPrimary}>Continuar →</button>
+        <button onClick={prev} style={btnSecondary}>â† Volver</button>
+        <button onClick={next} style={btnPrimary}>Continuar â†’</button>
       </div>
     </div>
   );

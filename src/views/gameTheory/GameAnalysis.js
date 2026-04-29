@@ -3,7 +3,7 @@ import { analyzeGame } from "./gameTheoryUtils";
 import EquilibriumMatrix from "../../components/EquilibriumMatrix";
 
 
-const formatNumber = (value) => Number(value).toFixed(2);
+const formatNumber = (value) => Number(value).toFixed(4);
 
 const asSet = (items) => new Set(items || []);
 
@@ -148,7 +148,7 @@ const ReductionFlow = ({ labelRemoved, removed, kept, axisLabel }) => {
             <span key={name} style={removedChip}>{name}</span>
           ))}
         </div>
-        <span style={flowArrow}>→</span>
+        <span style={flowArrow}>â†’</span>
         <div style={flowSide}>
           {kept.map((name) => (
             <span key={name} style={keptChip}>{name}</span>
@@ -330,7 +330,7 @@ const GameAnalysis = ({ matrix, onBack, onOpenAlgebraic }) => {
             Se detecto punto silla en la matriz original, por lo tanto no se realiza reduccion.
           </p>
           <p style={infoText}>
-            La visualización siguiente marca la celda de equilibrio en estrategias puras.
+            La visualizaciÃ³n siguiente marca la celda de equilibrio en estrategias puras.
           </p>
         </div>
 
@@ -419,7 +419,7 @@ const GameAnalysis = ({ matrix, onBack, onOpenAlgebraic }) => {
         <h3 style={panelTitle}>Desarrollo paso a paso</h3>
 
         {eliminationSteps.length === 0 ? (
-          <p style={muted}>No hubo eliminaciones ni más iteraciones del proceso.</p>
+          <p style={muted}>No hubo eliminaciones ni mÃ¡s iteraciones del proceso.</p>
         ) : (
           <>
             {eliminationSteps
@@ -430,8 +430,8 @@ const GameAnalysis = ({ matrix, onBack, onOpenAlgebraic }) => {
 
             {eliminationSteps.some((step) => step.action === "no-more-eliminations") && (
               <p style={muted}>
-                Se llegó a la matriz final y ya no se pueden hacer más iteraciones de reducción.
-                Por eso el proceso se detiene aquí (p.ej., 2x2). Esta observación se informa una sola vez.
+                Se llegÃ³ a la matriz final y ya no se pueden hacer mÃ¡s iteraciones de reducciÃ³n.
+                Por eso el proceso se detiene aquÃ­ (p.ej., 2x2). Esta observaciÃ³n se informa una sola vez.
               </p>
             )}
           </>
@@ -783,3 +783,4 @@ const buttonSecondary = {
   ...buttonPrimary,
   background: "#1f4f78"
 };
+

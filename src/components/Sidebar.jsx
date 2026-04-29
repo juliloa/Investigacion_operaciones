@@ -244,14 +244,9 @@ const gameTheoryCoreSteps = [
   { number: "03", label: "Método algebraico", step: 102 },
 ];
 
-const poissonSteps = [
+const canalesSimpleSteps = [
   { number: "01", label: "Datos", step: 200 },
   { number: "02", label: "Análisis", step: 201 },
-];
-
-const mm1Steps = [
-  { number: "01", label: "Datos", step: 202 },
-  { number: "02", label: "Análisis", step: 203 },
 ];
 
 const mmkSteps = [
@@ -358,11 +353,6 @@ const QueueSubGroup = ({ label, steps, currentStep, setStep }) => {
 
 // ── NAV GROUP GENÉRICO ───────────────────────────────────────────
 const NavGroup = ({ label, steps, baseIndex, currentStep, setStep, badgeCount, children }) => {
-  const isAnyActive = steps
-    ? steps.some((_, i) => currentStep === baseIndex + i)
-    : false;
-
-  const childActive = !isAnyActive && [103, 104].includes(currentStep);
   const [open, setOpen] = useState(false);
 
   return (
@@ -437,10 +427,6 @@ const Sidebar = ({ currentStep, setStep }) => {
               badgeCount="10"
             />
 
-            <div className="sb-divider" />
-
-            <div className="sb-divider" />
-
             {/* TEORÍA DEL JUEGO */}
             <NavGroup
               label="Teoría del Juego"
@@ -463,14 +449,8 @@ const Sidebar = ({ currentStep, setStep }) => {
               badgeCount="6"
             >
               <QueueSubGroup
-                label="Poisson"
-                steps={poissonSteps}
-                currentStep={currentStep}
-                setStep={setStep}
-              />
-              <QueueSubGroup
-                label="Líneas de espera M/M/1"
-                steps={mm1Steps}
+                label="Canal Simple M/M/1"
+                steps={canalesSimpleSteps}
                 currentStep={currentStep}
                 setStep={setStep}
               />

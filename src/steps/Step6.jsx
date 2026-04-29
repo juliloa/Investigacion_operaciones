@@ -31,10 +31,10 @@ const Step6 = ({ data, next, prev }) => {
   //  Eje X (probabilidad del estado favorable)
   const probabilityLabels = [];
   for (let p = 0; p <= 1; p += 0.02) {
-    probabilityLabels.push(parseFloat(p.toFixed(2)));
+    probabilityLabels.push(parseFloat(p.toFixed(4)));
   }
 
-  //  Datasets (LÍNEAS de valor esperado)
+  //  Datasets (LÃNEAS de valor esperado)
   const datasets = linearFunctions.map((f, i) => ({
     label: f.name,
     data: probabilityLabels.map(p => ({
@@ -61,8 +61,8 @@ const Step6 = ({ data, next, prev }) => {
         const intersectionValue = f1.intercept + f1.slope * intersectionProbability;
 
         intersectionPoints.push({
-          x: parseFloat(intersectionProbability.toFixed(3)),
-          y: parseFloat(intersectionValue.toFixed(2))
+          x: parseFloat(intersectionProbability.toFixed(4)),
+          y: parseFloat(intersectionValue.toFixed(4))
         });
       }
     }
@@ -79,14 +79,14 @@ const Step6 = ({ data, next, prev }) => {
     type: "scatter"
   };
 
-  // Opciones del gráfico
+  // Opciones del grÃ¡fico
   const chartOptions = {
     responsive: true,
     plugins: {
       tooltip: {
         callbacks: {
           label: function(context) {
-            return `VE: ${context.parsed.y.toFixed(2)}`;
+            return `VE: ${context.parsed.y.toFixed(4)}`;
           },
           afterBody: function(context) {
             const probabilityValue = context[0].parsed.x;
@@ -120,22 +120,22 @@ const Step6 = ({ data, next, prev }) => {
 
   return (
     <div style={container}>
-      <h1>Gráfica de Valor Esperado</h1>
+      <h1>GrÃ¡fica de Valor Esperado</h1>
 
-      {/* Gráfico interactivo con Chart.js */}
+      {/* GrÃ¡fico interactivo con Chart.js */}
       <div style={card}>
-        <h2>Gráfico Interactivo</h2>
+        <h2>GrÃ¡fico Interactivo</h2>
         <Line data={{ datasets: [...datasets, cutPointsDataset] }} options={chartOptions} />
       </div>
 
-      {/*  Interpretación */}
+      {/*  InterpretaciÃ³n */}
       <div style={card}>
-        <h2>Interpretación de la Gráfica</h2>
+        <h2>InterpretaciÃ³n de la GrÃ¡fica</h2>
 
         <div style={interpretationBox}>
-          <h3>Líneas Lineales</h3>
+          <h3>LÃ­neas Lineales</h3>
           <p>
-            Cada línea representa el valor esperado de una alternativa como función de <strong>p</strong>.
+            Cada lÃ­nea representa el valor esperado de una alternativa como funciÃ³n de <strong>p</strong>.
             La pendiente positiva significa que la alternativa mejora con mayor probabilidad del estado favorable.
           </p>
         </div>
@@ -143,16 +143,16 @@ const Step6 = ({ data, next, prev }) => {
         <div style={interpretationBox}>
           <h3>Puntos de Corte (Intersecciones)</h3>
           <p>
-            Los puntos negros indican dónde dos alternativas tienen el mismo valor esperado.
-            Esto marca los "umbrales de decisión" donde cambia cuál es la mejor alternativa.
+            Los puntos negros indican dÃ³nde dos alternativas tienen el mismo valor esperado.
+            Esto marca los "umbrales de decisiÃ³n" donde cambia cuÃ¡l es la mejor alternativa.
           </p>
         </div>
 
         <div style={interpretationBox}>
-          <h3>Región Óptima</h3>
+          <h3>RegiÃ³n Ã“ptima</h3>
           <p>
-            Para cada valor de p, la alternativa óptima es la que tiene la línea más alta.
-            Hover sobre el gráfico para ver cuál es la mejor alternativa en cada punto.
+            Para cada valor de p, la alternativa Ã³ptima es la que tiene la lÃ­nea mÃ¡s alta.
+            Hover sobre el grÃ¡fico para ver cuÃ¡l es la mejor alternativa en cada punto.
           </p>
         </div>
 
@@ -164,18 +164,18 @@ const Step6 = ({ data, next, prev }) => {
             borderRadius: "8px"
           }}
         >
-          <h3>Consejo de Decisión</h3>
+          <h3>Consejo de DecisiÃ³n</h3>
           <p>
-            Si tienes confianza en tu estimación de <strong>p</strong>, elige la alternativa
-            cuya línea esté más arriba en ese valor de p.
+            Si tienes confianza en tu estimaciÃ³n de <strong>p</strong>, elige la alternativa
+            cuya lÃ­nea estÃ© mÃ¡s arriba en ese valor de p.
           </p>
         </div>
       </div>
 
       {/* BOTONES */}
       <div style={buttons}>
-        <button onClick={prev} style={btnSecondary}>← Volver</button>
-        <button onClick={next} style={btnPrimary}>Continuar →</button>
+        <button onClick={prev} style={btnSecondary}>â† Volver</button>
+        <button onClick={next} style={btnPrimary}>Continuar â†’</button>
       </div>
     </div>
   );

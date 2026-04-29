@@ -1,10 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { analyzeGame } from "./gameTheoryUtils";
 
 const COLORS = ["#1d4ed8", "#dc2626", "#059669", "#7c3aed", "#ea580c", "#0891b2"];
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
-const format = (value) => Number(value).toFixed(2);
+const format = (value) => Number(value).toFixed(4);
 
 const projectMatrixToColumns = (matrix, sourceColNames, targetColNames) => {
   if (!Array.isArray(matrix) || !matrix.length || !Array.isArray(sourceColNames)) {
@@ -112,17 +112,32 @@ const buildAlgebraicData = (matrix, rowNames) => {
     });
   }
 
+  const enrichedIntersections = intersections.map((point) => {
+    const breakpointIndex = breakpoints.findIndex((value) => Math.abs(value - point.x) < 1e-6);
+    const leftInterval = breakpointIndex > 0 ? strategyIntervals[breakpointIndex - 1] : null;
+    const rightInterval = breakpointIndex >= 0 ? strategyIntervals[breakpointIndex] : null;
+
+    return {
+      ...point,
+      leftWinners: leftInterval?.winners || [],
+      rightWinners: rightInterval?.winners || [],
+      leftValue: leftInterval?.value ?? null,
+      rightValue: rightInterval?.value ?? null
+    };
+  });
+
   return {
     isApplicable: true,
     lines,
-    intersections,
+    intersections: enrichedIntersections,
     yMin,
     yMax,
     strategyIntervals
   };
 };
 
-const AlgebraicChart = ({ lines, intersections, yMin, yMax }) => {
+const AlgebraicChart = ({ lines, intersections, yMin, yMax, strategyIntervals = [] }) => {
+  const [hoveredPoint, setHoveredPoint] = useState(null);
   const width = 820;
   const height = 420;
   const margin = { top: 24, right: 24, bottom: 56, left: 68 };
@@ -137,105 +152,175 @@ const AlgebraicChart = ({ lines, intersections, yMin, yMax }) => {
     yMin + ((yMax - yMin) * i) / yTicks
   );
 
+  const activePoint = hoveredPoint
+    ? {
+        ...hoveredPoint,
+        lineValues: lines.map((line) => ({
+          name: line.name,
+          color: line.color,
+          value: line.m * hoveredPoint.x + line.c
+        }))
+      }
+    : null;
+
+  const activeIndex = activePoint
+    ? intersections.findIndex((point) => Math.abs(point.x - activePoint.x) < 1e-6 && Math.abs(point.y - activePoint.y) < 1e-6)
+    : -1;
+
+  const activeInterval = activePoint && activeIndex >= 0 && strategyIntervals.length
+    ? {
+        left: strategyIntervals[Math.max(0, activeIndex - 1)] || null,
+        right: strategyIntervals[Math.min(strategyIntervals.length - 1, activeIndex)] || null
+      }
+    : null;
+
+  const winnerLabel = activeInterval?.right?.winners?.length
+    ? activeInterval.right.winners.join(" o ")
+    : activePoint?.lineValues?.length
+      ? activePoint.lineValues.reduce((best, current) => (current.value > best.value ? current : best), activePoint.lineValues[0])?.name
+      : null;
+
+  const tooltipLeft = activePoint ? Math.min(Math.max(toX(activePoint.x) + 14, 12), width - 286) : 0;
+  const tooltipTop = activePoint ? Math.min(Math.max(toY(activePoint.y) - 18, 12), height - 184) : 0;
+
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} style={svgStyle} role="img" aria-label="Grafico metodo algebraico">
-      <rect x="0" y="0" width={width} height={height} fill="#ffffff" />
-
-      {yTickValues.map((tick, index) => (
-        <g key={`yt-${index}`}>
-          <line
-            x1={margin.left}
-            y1={toY(tick)}
-            x2={width - margin.right}
-            y2={toY(tick)}
-            stroke="#e2e8f0"
-            strokeWidth="1"
-          />
-          <text x={margin.left - 8} y={toY(tick) + 4} textAnchor="end" style={axisLabel}>
-            {format(tick)}
-          </text>
-        </g>
-      ))}
-
-      <line x1={margin.left} y1={margin.top} x2={margin.left} y2={height - margin.bottom} stroke="#0f172a" strokeWidth="1.6" />
-      <line x1={margin.left} y1={height - margin.bottom} x2={width - margin.right} y2={height - margin.bottom} stroke="#0f172a" strokeWidth="1.6" />
-
-      {[0, 0.25, 0.5, 0.75, 1].map((tick) => (
-        <g key={`xt-${tick}`}>
-          <line
-            x1={toX(tick)}
-            y1={height - margin.bottom}
-            x2={toX(tick)}
-            y2={height - margin.bottom + 6}
-            stroke="#0f172a"
-            strokeWidth="1"
-          />
-          <text x={toX(tick)} y={height - margin.bottom + 22} textAnchor="middle" style={axisLabel}>
-            {tick.toFixed(2)}
-          </text>
-        </g>
-      ))}
-
-      {lines.map((line) => (
-        <g key={line.name}>
-          <line
-            x1={toX(0)}
-            y1={toY(line.yAt0)}
-            x2={toX(1)}
-            y2={toY(line.yAt1)}
-            stroke={line.color}
-            strokeWidth="2.8"
-          />
-          <circle cx={toX(0)} cy={toY(line.yAt0)} r="4" fill={line.color} />
-          <circle cx={toX(1)} cy={toY(line.yAt1)} r="4" fill={line.color} />
-        </g>
-      ))}
-
-      {intersections.map((point, index) => (
-        <g key={`in-${index}`}>
-          {/* Línea punteada desde p hacia la intersección */}
-          <line
-            x1={toX(point.x)}
-            y1={height - margin.bottom}
-            x2={toX(point.x)}
-            y2={toY(point.y)}
-            stroke="#6b7280"
-            strokeWidth="1.2"
-            strokeDasharray="4,4"
-          />
-          {/* Línea punteada desde (1-p) hacia la intersección */}
-          <line
-            x1={toX(1 - point.x)}
-            y1={height - margin.bottom}
-            x2={toX(point.x)}
-            y2={toY(point.y)}
-            stroke="#6b7280"
-            strokeWidth="1.2"
-            strokeDasharray="4,4"
-          />
-          <circle cx={toX(point.x)} cy={toY(point.y)} r="5" fill="#111827" />
-          <text x={toX(point.x) + 8} y={toY(point.y) - 8} style={pointLabel}>
-            p={point.x.toFixed(2)}, 1-p={format(1 - point.x)}
-          </text>
-          <text x={toX(point.x) + 8} y={toY(point.y) + 14} style={pointLabel}>
-            Valor={point.y.toFixed(2)}
-          </text>
-        </g>
-      ))}
-
-      <text x={width / 2} y={height - 12} textAnchor="middle" style={axisTitle}>
-        p (probabilidad de la primera columna) | (1-p) para la segunda columna
-      </text>
-      <text
-        x="18"
-        y={height / 2}
-        textAnchor="middle"
-        transform={`rotate(-90, 18, ${height / 2})`}
-        style={axisTitle}
+    <div style={chartWrap}>
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        style={svgStyle}
+        role="img"
+        aria-label="Grafico metodo algebraico"
+        onMouseLeave={() => setHoveredPoint(null)}
       >
-        Valor esperado para cada estrategia de fila
-      </text>
-    </svg>
+        <rect x="0" y="0" width={width} height={height} fill="#ffffff" />
+
+        {yTickValues.map((tick, index) => (
+          <g key={`yt-${index}`}>
+            <line
+              x1={margin.left}
+              y1={toY(tick)}
+              x2={width - margin.right}
+              y2={toY(tick)}
+              stroke="#e2e8f0"
+              strokeWidth="1"
+            />
+            <text x={margin.left - 8} y={toY(tick) + 4} textAnchor="end" style={axisLabel}>
+              {format(tick)}
+            </text>
+          </g>
+        ))}
+
+        <line x1={margin.left} y1={margin.top} x2={margin.left} y2={height - margin.bottom} stroke="#0f172a" strokeWidth="1.6" />
+        <line x1={margin.left} y1={height - margin.bottom} x2={width - margin.right} y2={height - margin.bottom} stroke="#0f172a" strokeWidth="1.6" />
+
+        {[0, 0.25, 0.5, 0.75, 1].map((tick) => (
+          <g key={`xt-${tick}`}>
+            <line
+              x1={toX(tick)}
+              y1={height - margin.bottom}
+              x2={toX(tick)}
+              y2={height - margin.bottom + 6}
+              stroke="#0f172a"
+              strokeWidth="1"
+            />
+            <text x={toX(tick)} y={height - margin.bottom + 22} textAnchor="middle" style={axisLabel}>
+              {tick.toFixed(4)}
+            </text>
+          </g>
+        ))}
+
+        {lines.map((line) => (
+          <g key={line.name}>
+            <line
+              x1={toX(0)}
+              y1={toY(line.yAt0)}
+              x2={toX(1)}
+              y2={toY(line.yAt1)}
+              stroke={line.color}
+              strokeWidth="2.8"
+            />
+            <circle cx={toX(0)} cy={toY(line.yAt0)} r="4" fill={line.color} />
+            <circle cx={toX(1)} cy={toY(line.yAt1)} r="4" fill={line.color} />
+          </g>
+        ))}
+
+        {intersections.map((point, index) => (
+          <g
+            key={`in-${index}`}
+            onMouseEnter={() => setHoveredPoint(point)}
+            onMouseMove={() => setHoveredPoint(point)}
+            onMouseLeave={() => setHoveredPoint(null)}
+            style={{ cursor: "pointer" }}
+          >
+            {/* LÃ­nea punteada desde p hacia la intersecciÃ³n */}
+            <line
+              x1={toX(point.x)}
+              y1={height - margin.bottom}
+              x2={toX(point.x)}
+              y2={toY(point.y)}
+              stroke="#6b7280"
+              strokeWidth="1.2"
+              strokeDasharray="4,4"
+            />
+            {/* LÃ­nea punteada desde (1-p) hacia la intersecciÃ³n */}
+            <line
+              x1={toX(1 - point.x)}
+              y1={height - margin.bottom}
+              x2={toX(point.x)}
+              y2={toY(point.y)}
+              stroke="#6b7280"
+              strokeWidth="1.2"
+              strokeDasharray="4,4"
+            />
+            <circle cx={toX(point.x)} cy={toY(point.y)} r="8" fill="transparent" />
+            <circle cx={toX(point.x)} cy={toY(point.y)} r="5" fill="#111827" />
+          </g>
+        ))}
+
+        <text x={width / 2} y={height - 12} textAnchor="middle" style={axisTitle}>
+          p (probabilidad de la primera columna) | (1-p) para la segunda columna
+        </text>
+        <text
+          x="18"
+          y={height / 2}
+          textAnchor="middle"
+          transform={`rotate(-90, 18, ${height / 2})`}
+          style={axisTitle}
+        >
+          Valor esperado para cada estrategia de fila
+        </text>
+      </svg>
+
+      {activePoint && (
+        <div style={{ ...tooltipBox, left: tooltipLeft, top: tooltipTop }}>
+          <div style={tooltipHeader}>Punto de cruce</div>
+          <div style={tooltipLine}><strong>p:</strong> {format(activePoint.x)}</div>
+          <div style={tooltipLine}><strong>1-p:</strong> {format(1 - activePoint.x)}</div>
+          <div style={tooltipLine}><strong>Valor:</strong> {format(activePoint.y)}</div>
+
+          <div style={tooltipSectionTitle}>Ganancias</div>
+          {activePoint.lineValues.map((item) => (
+            <div key={item.name} style={tooltipLine}>
+              <span style={{ color: item.color, fontWeight: 700 }}>{item.name}:</span> {format(item.value)}
+            </div>
+          ))}
+
+          <div style={tooltipSectionTitle}>Conclusión</div>
+          <div style={tooltipLine}>
+            {activePoint.leftWinners?.length && activePoint.rightWinners?.length && activePoint.leftWinners.join(", ") !== activePoint.rightWinners.join(", ")
+              ? `En este cruce cambian las mejores respuestas: a la izquierda conviene ${activePoint.leftWinners.join(" o ")} y a la derecha ${activePoint.rightWinners.join(" o ")}.`
+              : `En este punto se igualan las utilidades de ${activePoint.pair.join(" y ")}.`}
+          </div>
+
+          <div style={tooltipSectionTitle}>Recomendación</div>
+          <div style={tooltipLine}>
+            {winnerLabel
+              ? `La estrategia dominante en este punto es ${winnerLabel}.`
+              : "Revisar la envolvente superior para definir la mejor respuesta."}
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 
@@ -370,7 +455,7 @@ const AlgebraicMethod = ({ gameData, onBack, onGoData }) => {
             </p>
             <p style={text}>
               <strong>Analisis:</strong> Como existe un punto silla en la matriz reducida (1x1), 
-              el equilibrio se alcanza con estrategias puras. No hace falta otro método 
+              el equilibrio se alcanza con estrategias puras. No hace falta otro mÃ©todo 
               porque ambos jugadores tienen una unica opcion optima.
             </p>
           </div>
@@ -400,7 +485,7 @@ const AlgebraicMethod = ({ gameData, onBack, onGoData }) => {
             ))}
           </div>
 
-          {/* Comparación de matrices */}
+          {/* ComparaciÃ³n de matrices */}
           <div style={panel}>
             <h3 style={panelTitle}>Comparacion: Matriz Original vs Matriz Reducida</h3>
             
@@ -493,19 +578,20 @@ const AlgebraicMethod = ({ gameData, onBack, onGoData }) => {
                   intersections={algebraicComplete.intersections}
                   yMin={algebraicComplete.yMin}
                   yMax={algebraicComplete.yMax}
+                  strategyIntervals={algebraicComplete.strategyIntervals}
                 />
                 
-                {/* Análisis de la gráfica completa */}
+                {/* AnÃ¡lisis de la grÃ¡fica completa */}
                 {algebraicComplete.strategyIntervals.length > 0 && (
                   <div style={listBlock}>
                     <p style={text}><strong>Analisis de la grafica completa (todas las estrategias):</strong></p>
                     <p style={text}>
                       La linea superior (envolvente) representa la mejor estrategia de filas para cada valor de p.
-                      Los puntos donde las lineas se cruzan marcan cambios de estrategia en el análisis.
+                      Los puntos donde las lineas se cruzan marcan cambios de estrategia en el anÃ¡lisis.
                     </p>
                     {algebraicComplete.strategyIntervals.map((interval, index) => (
                       <p key={index} style={text}>
-                        - En p ∈ [{format(interval.left)}, {format(interval.right)}] 
+                        - En p âˆˆ [{format(interval.left)}, {format(interval.right)}] 
                         (primera columna: {format(interval.left*100)}%-{format(interval.right*100)}%, 
                         segunda columna: {format((1-interval.right)*100)}%-{format((1-interval.left)*100)}%):
                         estrategia optima = <strong>{interval.winners.join(" o ")}</strong>, valor = {format(interval.value)}
@@ -535,6 +621,7 @@ const AlgebraicMethod = ({ gameData, onBack, onGoData }) => {
               intersections={algebraicFinal.intersections}
               yMin={algebraicFinal.yMin}
               yMax={algebraicFinal.yMax}
+              strategyIntervals={algebraicFinal.strategyIntervals}
             />
             <StrategyLegend
               lines={algebraicFinal.lines}
@@ -550,15 +637,15 @@ const AlgebraicMethod = ({ gameData, onBack, onGoData }) => {
                 <p style={text}><strong>Puntos de corte en matriz reducida:</strong></p>
                 {algebraicFinal.intersections.map((point, index) => (
                   <p key={index} style={text}>
-                    - Cruce {index + 1}: {point.pair[0]} con {point.pair[1]} en p = {point.x.toFixed(3)} ({format(point.x*100)}%) 
-                    y 1-p = {format(1-point.x)} ({format((1-point.x)*100)}%), valor = {point.y.toFixed(3)}.
+                    - Cruce {index + 1}: {point.pair[0]} con {point.pair[1]} en p = {point.x.toFixed(4)} ({format(point.x*100)}%) 
+                    y 1-p = {format(1-point.x)} ({format((1-point.x)*100)}%), valor = {point.y.toFixed(4)}.
                   </p>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Análisis comparativo */}
+          {/* AnÃ¡lisis comparativo */}
           <div style={panel}>
             <h3 style={panelTitle}>Analisis Comparativo: Grafica Completa vs Grafica Reducida</h3>
             
@@ -602,7 +689,7 @@ const AlgebraicMethod = ({ gameData, onBack, onGoData }) => {
               </p>
             )}
 
-            {/* Análisis de intervalos y equilibrio */}
+            {/* AnÃ¡lisis de intervalos y equilibrio */}
             {algebraicFinal.strategyIntervals.length > 0 && (
               <>
                 <p style={text}>
@@ -610,31 +697,31 @@ const AlgebraicMethod = ({ gameData, onBack, onGoData }) => {
                 </p>
                 {algebraicFinal.strategyIntervals.map((interval, index) => (
                   <p key={index} style={text}>
-                    - Para p en [{interval.left.toFixed(3)}, {interval.right.toFixed(3)}] 
+                    - Para p en [{interval.left.toFixed(4)}, {interval.right.toFixed(4)}] 
                     (es decir, probabilidad de la primera columna entre {format(interval.left*100)}% y {format(interval.right*100)}%),
                     la mejor estrategia de filas es <strong>{interval.winners.join(" o ")}</strong> 
-                    con valor esperado aproximado de {interval.value.toFixed(3)}.
+                    con valor esperado aproximado de {interval.value.toFixed(4)}.
                   </p>
                 ))}
               </>
             )}
 
-            {/* Análisis de los puntos de corte */}
+            {/* AnÃ¡lisis de los puntos de corte */}
             {algebraicFinal.intersections.length > 0 && (
               <div style={listBlock}>
                 <p style={text}><strong>Puntos de corte (donde cambia la estrategia optima):</strong></p>
                 {algebraicFinal.intersections.map((point, index) => (
                   <p key={index} style={text}>
                     - Cruce {index + 1} entre {point.pair[0]} y {point.pair[1]}:<br/>
-                    &nbsp;&nbsp;p = {point.x.toFixed(3)} ({format(point.x*100)}% para primera columna)<br/>
+                    &nbsp;&nbsp;p = {point.x.toFixed(4)} ({format(point.x*100)}% para primera columna)<br/>
                     &nbsp;&nbsp;1-p = {format(1 - point.x)} ({format((1-point.x)*100)}% para segunda columna)<br/>
-                    &nbsp;&nbsp;Valor del juego en este punto: {point.y.toFixed(3)}
+                    &nbsp;&nbsp;Valor del juego en este punto: {point.y.toFixed(4)}
                   </p>
                 ))}
               </div>
             )}
 
-            {/* Recomendación de equilibrio */}
+            {/* RecomendaciÃ³n de equilibrio */}
             <p style={text}>
               <strong>Recomendacion de equilibrio:</strong> La estrategia optima depende del valor de p (probabilidad de usar la primera columna).
               Si el jugador de columnas elige p = 0.7 (70% probabilidad primera columna), entonces 1-p = 0.3 (30% probabilidad segunda columna).
@@ -645,7 +732,7 @@ const AlgebraicMethod = ({ gameData, onBack, onGoData }) => {
               <strong>Resumen del equilibrio:</strong> La decision final se apoya en la envolvente superior de rectas: 
               en cada rango de p se elige la estrategia que maximiza el pago esperado. 
               El equilibrio se interpreta a partir de los puntos donde las rectas se cruzan.
-              Si p = {algebraicFinal.intersections[0]?.x.toFixed(2) || "N/A"}, entonces el valor del juego es {algebraicFinal.intersections[0]?.y.toFixed(2) || "N/A"}.
+              Si p = {algebraicFinal.intersections[0]?.x.toFixed(4) || "N/A"}, entonces el valor del juego es {algebraicFinal.intersections[0]?.y.toFixed(4) || "N/A"}.
             </p>
 
             {/* Tabla resumen de equilibrio */}
@@ -780,11 +867,52 @@ const dot = {
   flexShrink: 0
 };
 
+const chartWrap = {
+  position: "relative"
+};
+
 const svgStyle = {
   width: "100%",
   border: "1px solid #dbe7f3",
   borderRadius: "8px",
   background: "#ffffff"
+};
+
+const tooltipBox = {
+  position: "absolute",
+  width: "270px",
+  padding: "12px 14px",
+  borderRadius: "10px",
+  background: "rgba(15, 23, 42, 0.95)",
+  color: "#fff",
+  boxShadow: "0 12px 30px rgba(15, 23, 42, 0.22)",
+  border: "1px solid rgba(255, 255, 255, 0.12)",
+  pointerEvents: "none",
+  zIndex: 5
+};
+
+const tooltipHeader = {
+  fontSize: "12px",
+  fontWeight: 800,
+  letterSpacing: "0.03em",
+  textTransform: "uppercase",
+  marginBottom: "8px"
+};
+
+const tooltipLine = {
+  fontSize: "12px",
+  lineHeight: 1.45,
+  marginBottom: "4px"
+};
+
+const tooltipSectionTitle = {
+  marginTop: "8px",
+  marginBottom: "4px",
+  fontSize: "11px",
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
+  color: "#cbd5e1",
+  fontWeight: 700
 };
 
 const axisLabel = {
@@ -868,3 +996,4 @@ const buttonSecondary = {
   ...buttonPrimary,
   background: "#1f4f78"
 };
+
