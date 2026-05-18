@@ -23,48 +23,55 @@ import CanalesSimples from "./views/queues/CanalesSimples";
 import CanalesSimpleAnalysis from "./views/queues/CanalesSimpleAnalysis";
 import CanalesMultiples from "./views/queues/CanalesMultiples";
 import CanalesMultiplesAnalysis from "./views/queues/CanalesMultiplesAnalysis";
+import { safeJsonParse, toInteger } from "./utils/validation";
+
+const defaultCanalesData = {
+  llegadas: { cantidad: "", tiempo: "", unidad: "min" },
+  servicio: { cantidad: "", tiempo: "", unidad: "min" },
+  unidadBase: null,
+  calcular: { poisson: true, exponencial: true, mm1: true },
+  x: "",
+  modoPoisson: "exact",
+  t: "",
+  pnCondicion: { modo: "greater_eq", valor: "3" },
+};
+
+const defaultCanalesMultiplesData = {
+  llegadas: { cantidad: "", tiempo: "", unidad: "min" },
+  servicio: { cantidad: "", tiempo: "", unidad: "min" },
+  unidadBase: null,
+  calcular: { poisson: false, exponencial: false, mmk: true },
+  x: "",
+  modoPoisson: "exact",
+  t: "",
+  numServidores: 2,
+  pnCondicion: { modo: "greater_eq", valor: "3" },
+};
+
+const readStorage = (key, fallback) => {
+  try {
+    const parsed = safeJsonParse(localStorage.getItem(key), fallback);
+    return parsed ?? fallback;
+  } catch {
+    return fallback;
+  }
+};
+
+const allowedSteps = new Set([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 100, 101, 102, 103, 104, 200, 201, 204, 205]);
 
 function App() {
   const [step, setStep] = useState(() => {
-    try {
-      const saved = localStorage.getItem("io_step");
-      return saved ? parseInt(saved, 10) : 0;
-    } catch {
-      return 0;
-    }
+    const saved = readStorage("io_step", 0);
+    const parsed = toInteger(saved, 0);
+    return Number.isInteger(parsed) && allowedSteps.has(parsed) ? parsed : 0;
   });
 
   const [canalesData, setCanalesData] = useState(() => {
-    try {
-      const saved = localStorage.getItem("io_canales");
-      return saved ? JSON.parse(saved) : {
-        llegadas: { cantidad: "", tiempo: "", unidad: "min" },
-        servicio: { cantidad: "", tiempo: "", unidad: "min" },
-        unidadBase: null, // "min" | "hora" | "seg" | "día" — la que eligió el usuario
-        calcular: { poisson: true, exponencial: true, mm1: true },
-        x: "",
-        modoPoisson: "exact",
-        t: "",
-        pnCondicion: { modo: "greater_eq", valor: "3" }, // condición extra Pn
-      };
-    } catch { return null; }
+    return readStorage("io_canales", defaultCanalesData);
   });
 
   const [canalesMultiplesData, setCanalesMultiplesData] = useState(() => {
-    try {
-      const saved = localStorage.getItem("io_canales_mmk");
-      return saved ? JSON.parse(saved) : {
-        llegadas: { cantidad: "", tiempo: "", unidad: "min" },
-        servicio: { cantidad: "", tiempo: "", unidad: "min" },
-        unidadBase: null,
-        calcular: { poisson: false, exponencial: false, mmk: true },
-        x: "",
-        modoPoisson: "exact",
-        t: "",
-        numServidores: 2,
-        pnCondicion: { modo: "greater_eq", valor: "3" },
-      };
-    } catch { return null; }
+    return readStorage("io_canales_mmk", defaultCanalesMultiplesData);
   });
 
   useEffect(() => {
@@ -76,17 +83,14 @@ function App() {
   }, [canalesMultiplesData]);
 
   const [nashData, setNashData] = useState(() => {
-    try {
-      const saved = localStorage.getItem("io_nash_data");
-      return saved ? JSON.parse(saved) : {
-        numPlayers: 2,
-        matrix: [[["", ""], ["", ""]], [["", ""], ["", ""]]],
-        rowNames: ["Estrategia 1", "Estrategia 2"],
-        colNames: ["Estrategia 1", "Estrategia 2"],
-        rowGroup: "Jugador 1",
-        colGroup: "Jugador 2",
-      };
-    } catch { return null; }
+    return readStorage("io_nash_data", {
+      numPlayers: 2,
+      matrix: [[["", ""], ["", ""]], [["", ""], ["", ""]]],
+      rowNames: ["Estrategia 1", "Estrategia 2"],
+      colNames: ["Estrategia 1", "Estrategia 2"],
+      rowGroup: "Jugador 1",
+      colGroup: "Jugador 2",
+    });
   });
 
   useEffect(() => {
@@ -94,33 +98,35 @@ function App() {
   }, [nashData]);
 
   const [data, setData] = useState(() => {
-    try {
-      const saved = localStorage.getItem("io_data");
-      return saved ? JSON.parse(saved) : defaultData;
-    } catch {
-      return defaultData;
-    }
+    return readStorage("io_data", defaultData);
   });
 
   const [gameMatrix, setGameMatrix] = useState(() => {
-    try {
-      const saved = localStorage.getItem("io_game_data");
-      return saved ? JSON.parse(saved) : null;
-    } catch {
-      return null;
-    }
+    return readStorage("io_game_data", null);
   });
 
   useEffect(() => {
-    localStorage.setItem("io_step", String(step));
+    try {
+      localStorage.setItem("io_step", String(step));
+    } catch {
+      // Ignorar errores de almacenamiento para no romper la navegación.
+    }
   }, [step]);
 
   useEffect(() => {
-    localStorage.setItem("io_data", JSON.stringify(data));
+    try {
+      localStorage.setItem("io_data", JSON.stringify(data));
+    } catch {
+      // Ignorar errores de almacenamiento para no romper la navegación.
+    }
   }, [data]);
 
   useEffect(() => {
-    localStorage.setItem("io_game_data", JSON.stringify(gameMatrix));
+    try {
+      localStorage.setItem("io_game_data", JSON.stringify(gameMatrix));
+    } catch {
+      // Ignorar errores de almacenamiento para no romper la navegación.
+    }
   }, [gameMatrix]);
 
   const next = () => setStep((s) => s + 1);

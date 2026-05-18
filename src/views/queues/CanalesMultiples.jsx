@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { toFiniteNumber } from "../../utils/validation";
 
 const MODOS_POISSON = [
     { key: "exact", label: "P(x = n)", desc: "Exacta" },
@@ -16,8 +17,10 @@ const UNIT_FACTORS = {
 };
 
 const convertRate = (cantidad, tiempo, fromUnit, toUnit) => {
-    if (!cantidad || !tiempo || parseFloat(tiempo) === 0) return null;
-    const ratePerSec = parseFloat(cantidad) / (parseFloat(tiempo) * UNIT_FACTORS[fromUnit]);
+    const qty = toFiniteNumber(cantidad, null);
+    const duration = toFiniteNumber(tiempo, null);
+    if (!Number.isFinite(qty) || !Number.isFinite(duration) || qty < 0 || duration <= 0) return null;
+    const ratePerSec = qty / (duration * UNIT_FACTORS[fromUnit]);
     return ratePerSec * UNIT_FACTORS[toUnit];
 };
 
@@ -43,6 +46,9 @@ const CanalesMultiples = ({ data, setData, onNext }) => {
     } = data;
 
     const pnModo = pnCondicion.modo || "greater_eq";
+    const xValue = toFiniteNumber(x, NaN);
+    const tValue = toFiniteNumber(t, NaN);
+    const pnValue = toFiniteNumber(pnCondicion.valor, NaN);
 
     // ── Detectar diferencia de unidades ──────────────────────────
     const unidadesDiferentes = llegadas.unidad && servicio.unidad &&
@@ -64,21 +70,38 @@ const CanalesMultiples = ({ data, setData, onNext }) => {
     const muOrig = servicio.cantidad && servicio.tiempo
         ? parseFloat(servicio.cantidad) / parseFloat(servicio.tiempo) : null;
 
+    const invalidX = calcular.poisson && (!Number.isInteger(xValue) || xValue < 0);
+    const invalidT = calcular.exponencial && (!Number.isFinite(tValue) || tValue < 0);
+    const invalidPn = calcular.mmk && (!Number.isInteger(pnValue) || pnValue < 0);
+    const validationMessage = invalidX
+        ? "x debe ser un número entero no negativo para Poisson."
+        : invalidT
+            ? "t debe ser un número no negativo para la distribución exponencial."
+            : invalidPn
+                ? "Pn requiere un valor entero no negativo."
+                : "";
+
     const canContinue = lambda !== null && lambda > 0 &&
         mu !== null && mu > 0 &&
         numServidores > 0 &&
         (!unidadesDiferentes || unidadBase !== null) &&
         (calcular.poisson || calcular.exponencial || calcular.mmk) &&
         (!calcular.mmk || (rho !== null && serverUtilization !== null && serverUtilization < 1)) &&
-        (!calcular.poisson || x !== "") &&
-        (!calcular.exponencial || t !== "");
+        (!calcular.poisson || !invalidX) &&
+        (!calcular.exponencial || !invalidT) &&
+        (!calcular.mmk || !invalidPn) &&
+        validationMessage === "";
 
     // Cargar datos M/M/1 anterior
     const loadPreviousData = () => {
-        const prev = localStorage.getItem("io_canales");
-        if (prev) {
-            const prevData = JSON.parse(prev);
-            setData(prevData);
+        try {
+            const prev = localStorage.getItem("io_canales");
+            if (prev) {
+                const prevData = JSON.parse(prev);
+                setData(prevData);
+                setShowPreviousOption(false);
+            }
+        } catch {
             setShowPreviousOption(false);
         }
     };
@@ -437,6 +460,11 @@ const CanalesMultiples = ({ data, setData, onNext }) => {
                         {calcular.mmk && serverUtilization >= 1 && (
                             <div style={s.errorBox}>
                                 Para M/M/k se requiere ρ/k &lt; 1. Actualmente ρ/k = {serverUtilization?.toFixed(4)}.
+                            </div>
+                        )}
+                        {validationMessage && (
+                            <div style={s.errorBox}>
+                                ⚠ {validationMessage}
                             </div>
                         )}
 

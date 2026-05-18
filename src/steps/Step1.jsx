@@ -1,5 +1,6 @@
 import React from "react";
 import EditableMatrix from "../components/EditableMatrix";
+import { isProbability, toFiniteNumber } from "../utils/validation";
 
 const Step1 = ({ data, setData, next }) => {
   const { alternatives, states, probabilities, payoff } = data;
@@ -20,14 +21,14 @@ const Step1 = ({ data, setData, next }) => {
   //  PROBABILIDADES
   const updateProbability = (i, value) => {
     const newProb = [...probabilities];
-    newProb[i] = Number(value);
+    newProb[i] = toFiniteNumber(value, NaN);
     setData({ ...data, probabilities: newProb });
   };
 
   //  PAYOFF
   const updatePayoff = (i, j, value) => {
     const newPayoff = [...payoff];
-    newPayoff[i][j] = Number(value);
+    newPayoff[i][j] = toFiniteNumber(value, NaN);
     setData({ ...data, payoff: newPayoff });
   };
 
@@ -69,8 +70,15 @@ const Step1 = ({ data, setData, next }) => {
     });
   };
 
-  const totalProb = probabilities.reduce((a, b) => a + b, 0);
-  const isValid = totalProb === 1;
+  const totalProb = probabilities.reduce((a, b) => a + toFiniteNumber(b, 0), 0);
+  const invalidProbabilityIndex = probabilities.findIndex((value) => !isProbability(value));
+  const totalProbOk = Math.abs(totalProb - 1) < 0.0001;
+  const validationMessage = invalidProbabilityIndex !== -1
+    ? `La probabilidad de ${states[invalidProbabilityIndex] || `estado ${invalidProbabilityIndex + 1}`} debe estar entre 0 y 1.`
+    : !totalProbOk
+      ? "La suma de las probabilidades debe ser 1."
+      : "";
+  const isValid = validationMessage === "";
 
   return (
     <div style={container}>
@@ -140,8 +148,13 @@ const Step1 = ({ data, setData, next }) => {
         ))}
 
         <p style={{ color: isValid ? "#2e7d32" : "#c62828", fontSize: "14px" }}>
-          Suma probabilidades: {totalProb}
+          Suma probabilidades: {totalProb.toFixed(4)}
         </p>
+        {!isValid && (
+          <p style={{ color: "#c62828", fontSize: "13px", marginTop: "8px" }}>
+            ⚠ {validationMessage}
+          </p>
+        )}
       </div>
 
       {/* MATRIZ */}
@@ -160,8 +173,13 @@ const Step1 = ({ data, setData, next }) => {
 
       {/* BOTÓN */}
       <div style={resultBox}>
-        <p><b>Suma probabilidades:</b> {totalProb}</p>
+        <p><b>Suma probabilidades:</b> {totalProb.toFixed(4)}</p>
         <p><b>Estados:</b> {states.length}</p>
+        {!isValid && (
+          <p style={{ color: "#c62828", fontSize: "13px", margin: "0 0 8px 0" }}>
+            ⚠ {validationMessage}
+          </p>
+        )}
 
         <button
           onClick={next}

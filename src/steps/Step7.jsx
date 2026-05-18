@@ -11,14 +11,20 @@ const Step7 = ({ data, setData, next, prev }) => {
   const probabilityFavorableState = data.probabilities?.[0] ?? 0;
   const probabilityUnfavorableState = data.probabilities?.[1] ?? 0;
 
+  // ⚠️ validación mínima real (esto te faltaba)
+  if (!data.probabilities || data.probabilities.length < 2) {
+    return <div>Se requieren al menos 2 estados (favorable y desfavorable)</div>;
+  }
+
   const studyConfig = data.studyConfig || {
     favorableDetectionRate: 0.9,
     unfavorableFalsePositiveRate: 0.25
   };
 
-  const favorableDetectionRate = studyConfig.favorableDetectionRate ?? 0.9;
-  const unfavorableFalsePositiveRate =
-    studyConfig.unfavorableFalsePositiveRate ?? 0.25;
+  const favorableDetectionRate = clamp01(studyConfig.favorableDetectionRate ?? 0.9);
+  const unfavorableFalsePositiveRate = clamp01(
+    studyConfig.unfavorableFalsePositiveRate ?? 0.25
+  );
 
   const updateStudyConfig = (field, rawValue) => {
     const parsedValue = clamp01(Number(rawValue));
@@ -32,6 +38,7 @@ const Step7 = ({ data, setData, next, prev }) => {
     });
   };
 
+  // MATRIZ DE CONFUSIÓN
   const truePositive = probabilityFavorableState * favorableDetectionRate;
   const falseNegative = probabilityFavorableState * (1 - favorableDetectionRate);
   const falsePositive =
@@ -39,6 +46,7 @@ const Step7 = ({ data, setData, next, prev }) => {
   const trueNegative =
     probabilityUnfavorableState * (1 - unfavorableFalsePositiveRate);
 
+  // MÉTRICAS
   const precision = safeDiv(truePositive, truePositive + falsePositive);
   const recall = safeDiv(truePositive, truePositive + falseNegative);
   const accuracy = safeDiv(
@@ -49,17 +57,19 @@ const Step7 = ({ data, setData, next, prev }) => {
 
   return (
     <div style={container}>
-      <h1 style={title}>Matriz de confusion y calidad del estudio</h1>
+      <h1 style={title}>Matriz de confusión y calidad del estudio</h1>
 
       <div style={card}>
-        <h2 style={cardTitle}>Parametros del estudio</h2>
+        <h2 style={cardTitle}>Parámetros del estudio</h2>
         <p style={mutedText}>
-          Estos parametros se guardan y se usan en los pasos 8, 9 y en el informe PDF final.
+          Estos parámetros se guardan y se usan en los pasos 8, 9 y en el informe PDF final.
         </p>
 
         <div style={parameterGrid}>
           <div style={parameterItem}>
-            <label style={labelStyle}>P(Resultado favorable | Estado favorable)</label>
+            <label style={labelStyle}>
+              P(Resultado favorable | Estado favorable)
+            </label>
             <div style={inputRow}>
               <input
                 type="number"
@@ -72,12 +82,16 @@ const Step7 = ({ data, setData, next, prev }) => {
                 }
                 style={inputStyle}
               />
-              <span style={chip}>{(favorableDetectionRate * 100).toFixed(4)}%</span>
+              <span style={chip}>
+                {(favorableDetectionRate * 100).toFixed(2)}%
+              </span>
             </div>
           </div>
 
           <div style={parameterItem}>
-            <label style={labelStyle}>P(Resultado favorable | Estado desfavorable)</label>
+            <label style={labelStyle}>
+              P(Resultado favorable | Estado desfavorable)
+            </label>
             <div style={inputRow}>
               <input
                 type="number"
@@ -86,12 +100,15 @@ const Step7 = ({ data, setData, next, prev }) => {
                 step="0.01"
                 value={unfavorableFalsePositiveRate}
                 onChange={(e) =>
-                  updateStudyConfig("unfavorableFalsePositiveRate", e.target.value)
+                  updateStudyConfig(
+                    "unfavorableFalsePositiveRate",
+                    e.target.value
+                  )
                 }
                 style={inputStyle}
               />
               <span style={chip}>
-                {(unfavorableFalsePositiveRate * 100).toFixed(4)}%
+                {(unfavorableFalsePositiveRate * 100).toFixed(2)}%
               </span>
             </div>
           </div>
@@ -99,7 +116,7 @@ const Step7 = ({ data, setData, next, prev }) => {
       </div>
 
       <div style={card}>
-        <h2 style={cardTitle}>Matriz de confusion</h2>
+        <h2 style={cardTitle}>Matriz de confusión</h2>
         <table style={table}>
           <thead>
             <tr>
@@ -112,20 +129,36 @@ const Step7 = ({ data, setData, next, prev }) => {
           <tbody>
             <tr>
               <td style={tdRowHeader}>Real favorable</td>
-              <td style={{ ...td, ...tdGood }}>TP: {truePositive.toFixed(4)}</td>
-              <td style={{ ...td, ...tdBad }}>FN: {falseNegative.toFixed(4)}</td>
-              <td style={td}>{probabilityFavorableState.toFixed(4)}</td>
+              <td style={{ ...td, ...tdGood }}>
+                TP: {truePositive.toFixed(4)}
+              </td>
+              <td style={{ ...td, ...tdBad }}>
+                FN: {falseNegative.toFixed(4)}
+              </td>
+              <td style={td}>
+                {probabilityFavorableState.toFixed(4)}
+              </td>
             </tr>
             <tr>
               <td style={tdRowHeader}>Real desfavorable</td>
-              <td style={{ ...td, ...tdBad }}>FP: {falsePositive.toFixed(4)}</td>
-              <td style={{ ...td, ...tdGood }}>TN: {trueNegative.toFixed(4)}</td>
-              <td style={td}>{probabilityUnfavorableState.toFixed(4)}</td>
+              <td style={{ ...td, ...tdBad }}>
+                FP: {falsePositive.toFixed(4)}
+              </td>
+              <td style={{ ...td, ...tdGood }}>
+                TN: {trueNegative.toFixed(4)}
+              </td>
+              <td style={td}>
+                {probabilityUnfavorableState.toFixed(4)}
+              </td>
             </tr>
             <tr>
               <td style={tdRowHeader}>Total predicho</td>
-              <td style={td}>{(truePositive + falsePositive).toFixed(4)}</td>
-              <td style={td}>{(falseNegative + trueNegative).toFixed(4)}</td>
+              <td style={td}>
+                {(truePositive + falsePositive).toFixed(4)}
+              </td>
+              <td style={td}>
+                {(falseNegative + trueNegative).toFixed(4)}
+              </td>
               <td style={td}>1.0000</td>
             </tr>
           </tbody>
@@ -133,26 +166,26 @@ const Step7 = ({ data, setData, next, prev }) => {
       </div>
 
       <div style={card}>
-        <h2 style={cardTitle}>Metricas clave</h2>
+        <h2 style={cardTitle}>Métricas clave</h2>
         <div style={metricsGrid}>
           <MetricCard
-            label="Precision"
-            value={`${(precision * 100).toFixed(4)}%`}
+            label="Precisión"
+            value={`${(precision * 100).toFixed(2)}%`}
             detail="TP / (TP + FP)"
           />
           <MetricCard
             label="Recall"
-            value={`${(recall * 100).toFixed(4)}%`}
+            value={`${(recall * 100).toFixed(2)}%`}
             detail="TP / (TP + FN)"
           />
           <MetricCard
             label="Exactitud"
-            value={`${(accuracy * 100).toFixed(4)}%`}
+            value={`${(accuracy * 100).toFixed(2)}%`}
             detail="(TP + TN) / Total"
           />
           <MetricCard
             label="Especificidad"
-            value={`${(specificity * 100).toFixed(4)}%`}
+            value={`${(specificity * 100).toFixed(2)}%`}
             detail="TN / (TN + FP)"
           />
         </div>
@@ -161,14 +194,18 @@ const Step7 = ({ data, setData, next, prev }) => {
       <div style={card}>
         <h2 style={cardTitle}>Lectura ejecutiva</h2>
         <p style={summaryText}>
-          Si tu objetivo es evitar falsos positivos, prioriza la especificidad. Si tu objetivo es capturar
-          oportunidades favorables, prioriza recall. Estos mismos resultados se integran automaticamente al PDF final.
+          Si tu objetivo es evitar falsos positivos, prioriza la especificidad.
+          Si tu objetivo es capturar oportunidades favorables, prioriza el recall.
         </p>
       </div>
 
       <div style={buttons}>
-        <button onClick={prev} style={btnSecondary}>Volver</button>
-        <button onClick={next} style={btnPrimary}>Continuar</button>
+        <button onClick={prev} style={btnSecondary}>
+          Volver
+        </button>
+        <button onClick={next} style={btnPrimary}>
+          Continuar
+        </button>
       </div>
     </div>
   );
@@ -181,6 +218,8 @@ const MetricCard = ({ label, value, detail }) => (
     <p style={metricDetail}>{detail}</p>
   </div>
 );
+
+
 
 export default Step7;
 

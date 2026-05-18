@@ -146,6 +146,12 @@ const style = `
 }
 `;
 
+const formatFormula = (b, m) => {
+  if (m === 0) return `VE = ${b}`;
+  if (m > 0) return `VE = ${b} + ${m}p`;
+  return `VE = ${b} - ${Math.abs(m)}p`;
+};
+
 const Step5 = ({ data, next, prev }) => {
   const { alternatives, payoff } = data;
 
@@ -167,10 +173,18 @@ const Step5 = ({ data, next, prev }) => {
       const f1 = linearFunctions[i];
       const f2 = linearFunctions[j];
 
-      const p =
-        (f2.intercept - f1.intercept) / (f1.slope - f2.slope);
+      const denom = f1.slope - f2.slope;
 
-      intersectionPoints.push({ f1, f2, p });
+      // ✔️ evitar división por cero
+      if (Math.abs(denom) < 1e-9) continue;
+
+      const p =
+        (f2.intercept - f1.intercept) / denom;
+
+      // ✔️ solo valores válidos
+      if (p >= 0 && p <= 1) {
+        intersectionPoints.push({ f1, f2, p });
+      }
     }
   }
 
@@ -180,7 +194,6 @@ const Step5 = ({ data, next, prev }) => {
 
       <div className="step5-container">
 
-        {/* FUNCIONES */}
         <div className="card">
           <div className="card-title">Funciones lineales</div>
 
@@ -190,18 +203,17 @@ const Step5 = ({ data, next, prev }) => {
               <div className="function-name">{f.name}</div>
 
               <div className="formula">
-                VE = {f.intercept} + {f.slope}p
+                {formatFormula(f.intercept, f.slope)}
               </div>
 
               <div className="meta">
-                Intercept: {f.intercept} | Pendiente: {f.slope}
+                Intercepto: {f.intercept} | Pendiente: {f.slope}
               </div>
 
             </div>
           ))}
         </div>
 
-        {/* INTERSECCIONES */}
         <div className="card">
           <div className="card-title">Puntos de corte</div>
 
@@ -214,18 +226,7 @@ const Step5 = ({ data, next, prev }) => {
                 </div>
 
                 <div className="equation">
-                  {it.f1.intercept} + {it.f1.slope}p =
-                  {it.f2.intercept} + {it.f2.slope}p
-                </div>
-
-                <div className="equation">
-                  {it.f1.slope}p - {it.f2.slope}p =
-                  {it.f2.intercept} - {it.f1.intercept}
-                </div>
-
-                <div className="equation">
-                  p({it.f1.slope - it.f2.slope}) =
-                  {it.f2.intercept - it.f1.intercept}
+                  {formatFormula(it.f1.intercept, it.f1.slope)} = {formatFormula(it.f2.intercept, it.f2.slope)}
                 </div>
 
                 <div className="result">
@@ -236,14 +237,13 @@ const Step5 = ({ data, next, prev }) => {
             ))
           ) : (
             <p className="empty">
-              No hay intersecciones entre las alternativas
+              No hay intersecciones válidas en el rango [0,1]
             </p>
           )}
         </div>
 
-        {/* INTERPRETACIÃ“N */}
         <div className="card">
-          <div className="card-title">InterpretaciÃ³n</div>
+          <div className="card-title">Interpretación</div>
 
           <div className="interpretation">
             <h3>Punto de corte</h3>
@@ -255,26 +255,25 @@ const Step5 = ({ data, next, prev }) => {
           <div className="interpretation">
             <h3>Utilidad</h3>
             <p className="text">
-              Permite identificar en quÃ© rango de p cada alternativa es mejor.
+              Permite identificar en qué rango de p cada alternativa es mejor.
             </p>
           </div>
 
           <div className="interpretation">
             <h3>Siguiente paso</h3>
             <p className="text">
-              En la grÃ¡fica veremos visualmente estas intersecciones.
+              En la gráfica veremos visualmente estas intersecciones.
             </p>
           </div>
         </div>
 
-        {/* BOTONES */}
         <div className="buttons">
           <button className="btn btn-secondary" onClick={prev}>
-            â† Volver
+            ← Volver
           </button>
 
           <button className="btn btn-primary" onClick={next}>
-            Continuar â†’
+            Continuar →
           </button>
         </div>
 

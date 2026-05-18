@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { isFiniteNumber, toFiniteNumber } from "../../utils/validation";
 
 const GameTheoryScreen = ({ setStep, gameData, setGameData }) => {
   const createMatrix = (r, c) =>
@@ -82,19 +83,24 @@ const GameTheoryScreen = ({ setStep, gameData, setGameData }) => {
   };
 
   // CÁLCULOS
-  const rowMin = matrix.map(row =>
-    Math.min(...row.map(v => parseFloat(v) || 0))
-  );
+  const normalizedMatrix = matrix.map((row) => row.map((value) => toFiniteNumber(value, null)));
+  const matrixHasInvalidValue = normalizedMatrix.some((row) => row.some((value) => !isFiniteNumber(value)));
+  const matrixShapeValid = normalizedMatrix.length > 0 && normalizedMatrix.every((row) => Array.isArray(row) && row.length === colNames.length);
+
+  const rowMin = normalizedMatrix.map((row) => (
+    row.every(isFiniteNumber) ? Math.min(...row) : null
+  ));
 
   const colMax = colNames.map((_, j) => {
-    const column = matrix.map(row => parseFloat(row[j]) || 0);
-    return Math.max(...column);
+    const column = normalizedMatrix.map((row) => row[j]);
+    return column.every(isFiniteNumber) ? Math.max(...column) : null;
   });
 
-  const maximin = Math.max(...rowMin);
-  const minimax = Math.min(...colMax);
+  const maximin = rowMin.every(isFiniteNumber) ? Math.max(...rowMin) : null;
+  const minimax = colMax.every(isFiniteNumber) ? Math.min(...colMax) : null;
 
-  const hasSaddlePoint = maximin === minimax;
+  const hasSaddlePoint = maximin !== null && minimax !== null && maximin === minimax;
+  const analysisBlocked = matrixHasInvalidValue || !matrixShapeValid;
 
   return (
     <div style={styles.container}>
@@ -107,6 +113,11 @@ const GameTheoryScreen = ({ setStep, gameData, setGameData }) => {
         </p>
         <p style={styles.guideText}><strong>Datos:</strong> Define nombres de estrategias y completa la matriz de pagos.</p>
         <p style={styles.guideText}><strong>Analisis:</strong> Primero verifica punto silla; si no existe, aplica eliminacion sucesiva.</p>
+        {analysisBlocked && (
+          <p style={{ ...styles.guideText, color: "#b91c1c", fontWeight: 700 }}>
+            ⚠ Completa la matriz con valores numéricos finitos antes de analizar. No se permiten celdas vacías ni texto.
+          </p>
+        )}
       </div>
 
       {/* CONTROLES */}
@@ -230,6 +241,8 @@ const GameTheoryScreen = ({ setStep, gameData, setGameData }) => {
 
         <button
           style={styles.analysisBtn}
+          disabled={analysisBlocked}
+          aria-disabled={analysisBlocked}
           onClick={() => {
             persistGameData();
             setStep(101);
@@ -240,6 +253,8 @@ const GameTheoryScreen = ({ setStep, gameData, setGameData }) => {
 
         <button
           style={{ ...styles.analysisBtn, marginLeft: "10px", background: "#0f5e9c" }}
+          disabled={analysisBlocked}
+          aria-disabled={analysisBlocked}
           onClick={() => {
             setStep(103);
           }}

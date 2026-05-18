@@ -2,13 +2,13 @@ const toNumber = (cell) => {
   if (typeof cell === "number") return cell;
   if (typeof cell === "string") {
     const parsed = parseFloat(cell);
-    return Number.isNaN(parsed) ? 0 : parsed;
+    return Number.isNaN(parsed) ? NaN : parsed;
   }
   if (cell && typeof cell === "object" && "value" in cell) {
     const parsed = parseFloat(cell.value);
-    return Number.isNaN(parsed) ? 0 : parsed;
+    return Number.isNaN(parsed) ? NaN : parsed;
   }
-  return 0;
+  return NaN;
 };
 
 const cloneMatrix = (matrix) => matrix.map((row) => [...row]);
@@ -337,6 +337,7 @@ export const analyzeGame = (input) => {
   const numeric = rawMatrix.map((row) =>
     (Array.isArray(row) ? row : []).map((cell) => toNumber(cell))
   );
+  const hasInvalidValue = numeric.some((row) => row.some((value) => !Number.isFinite(value)));
 
   const rowNames =
     Array.isArray(payload.rowNames) && payload.rowNames.length === numeric.length
@@ -351,6 +352,32 @@ export const analyzeGame = (input) => {
 
   if (numeric.length === 0 || numeric[0]?.length === 0) {
     return {
+      error: null,
+      rowNames,
+      colNames,
+      originalMatrix: numeric,
+      rowMin: [],
+      colMax: [],
+      maximin: 0,
+      minimax: 0,
+      hasSaddle: false,
+      reducedMatrix: [],
+      reducedRowNames: [],
+      reducedColNames: [],
+      eliminationSteps: [],
+      reducedCriteria: {
+        rowMin: [],
+        colMax: [],
+        maximin: 0,
+        minimax: 0,
+        hasSaddle: false
+      }
+    };
+  }
+
+  if (hasInvalidValue) {
+    return {
+      error: "La matriz contiene celdas vacías o valores no numéricos. Completa todos los pagos con números finitos.",
       rowNames,
       colNames,
       originalMatrix: numeric,

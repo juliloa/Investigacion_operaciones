@@ -252,7 +252,7 @@ const AlgebraicChart = ({ lines, intersections, yMin, yMax, strategyIntervals = 
             onMouseLeave={() => setHoveredPoint(null)}
             style={{ cursor: "pointer" }}
           >
-            {/* LÃ­nea punteada desde p hacia la intersecciÃ³n */}
+            {/* Línea punteada desde p hacia la intersección */}
             <line
               x1={toX(point.x)}
               y1={height - margin.bottom}
@@ -262,7 +262,7 @@ const AlgebraicChart = ({ lines, intersections, yMin, yMax, strategyIntervals = 
               strokeWidth="1.2"
               strokeDasharray="4,4"
             />
-            {/* LÃ­nea punteada desde (1-p) hacia la intersecciÃ³n */}
+            {/* Línea punteada desde (1-p) hacia la intersección */}
             <line
               x1={toX(1 - point.x)}
               y1={height - margin.bottom}
@@ -455,7 +455,7 @@ const AlgebraicMethod = ({ gameData, onBack, onGoData }) => {
             </p>
             <p style={text}>
               <strong>Analisis:</strong> Como existe un punto silla en la matriz reducida (1x1), 
-              el equilibrio se alcanza con estrategias puras. No hace falta otro mÃ©todo 
+              el equilibrio se alcanza con estrategias puras. No hace falta otro método 
               porque ambos jugadores tienen una unica opcion optima.
             </p>
           </div>
@@ -485,7 +485,7 @@ const AlgebraicMethod = ({ gameData, onBack, onGoData }) => {
             ))}
           </div>
 
-          {/* ComparaciÃ³n de matrices */}
+          {/* Comparación de matrices */}
           <div style={panel}>
             <h3 style={panelTitle}>Comparacion: Matriz Original vs Matriz Reducida</h3>
             
@@ -581,17 +581,17 @@ const AlgebraicMethod = ({ gameData, onBack, onGoData }) => {
                   strategyIntervals={algebraicComplete.strategyIntervals}
                 />
                 
-                {/* AnÃ¡lisis de la grÃ¡fica completa */}
+                {/* Análisis de la gráfica completa */}
                 {algebraicComplete.strategyIntervals.length > 0 && (
                   <div style={listBlock}>
                     <p style={text}><strong>Analisis de la grafica completa (todas las estrategias):</strong></p>
                     <p style={text}>
                       La linea superior (envolvente) representa la mejor estrategia de filas para cada valor de p.
-                      Los puntos donde las lineas se cruzan marcan cambios de estrategia en el anÃ¡lisis.
+                      Los puntos donde las líneas se cruzan marcan cambios de estrategia en el análisis.
                     </p>
                     {algebraicComplete.strategyIntervals.map((interval, index) => (
                       <p key={index} style={text}>
-                        - En p âˆˆ [{format(interval.left)}, {format(interval.right)}] 
+                        - En p ∈ [{format(interval.left)}, {format(interval.right)}] 
                         (primera columna: {format(interval.left*100)}%-{format(interval.right*100)}%, 
                         segunda columna: {format((1-interval.right)*100)}%-{format((1-interval.left)*100)}%):
                         estrategia optima = <strong>{interval.winners.join(" o ")}</strong>, valor = {format(interval.value)}
@@ -645,7 +645,7 @@ const AlgebraicMethod = ({ gameData, onBack, onGoData }) => {
             )}
           </div>
 
-          {/* AnÃ¡lisis comparativo */}
+          {/* Análisis comparativo */}
           <div style={panel}>
             <h3 style={panelTitle}>Analisis Comparativo: Grafica Completa vs Grafica Reducida</h3>
             
@@ -689,7 +689,7 @@ const AlgebraicMethod = ({ gameData, onBack, onGoData }) => {
               </p>
             )}
 
-            {/* AnÃ¡lisis de intervalos y equilibrio */}
+            {/* Análisis de intervalos y equilibrio */}
             {algebraicFinal.strategyIntervals.length > 0 && (
               <>
                 <p style={text}>
@@ -706,7 +706,7 @@ const AlgebraicMethod = ({ gameData, onBack, onGoData }) => {
               </>
             )}
 
-            {/* AnÃ¡lisis de los puntos de corte */}
+            {/* Análisis de los puntos de corte */}
             {algebraicFinal.intersections.length > 0 && (
               <div style={listBlock}>
                 <p style={text}><strong>Puntos de corte (donde cambia la estrategia optima):</strong></p>
@@ -721,7 +721,7 @@ const AlgebraicMethod = ({ gameData, onBack, onGoData }) => {
               </div>
             )}
 
-            {/* RecomendaciÃ³n de equilibrio */}
+            {/* Recomendación de equilibrio */}
             <p style={text}>
               <strong>Recomendacion de equilibrio:</strong> La estrategia optima depende del valor de p (probabilidad de usar la primera columna).
               Si el jugador de columnas elige p = 0.7 (70% probabilidad primera columna), entonces 1-p = 0.3 (30% probabilidad segunda columna).

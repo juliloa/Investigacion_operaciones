@@ -1,22 +1,39 @@
 import React from "react";
+import { isProbability, toFiniteNumber } from "../utils/validation";
 
 const Step9 = ({ data, next, prev }) => {
-  const { alternatives, payoff, probabilities } = data;
+  const alternatives = data?.alternatives ?? [];
+  const payoff = data?.payoff ?? [];
+  const probabilities = data?.probabilities ?? [0, 0];
+
   const safeDiv = (a, b) => (b === 0 ? 0 : a / b);
 
-  const P_alta = probabilities[0];
-  const P_baja = probabilities[1];
+  if (!alternatives.length || !payoff.length || !probabilities.length) {
+    return <p>Datos incompletos</p>;
+  }
 
-  const studyConfig = data.studyConfig || {
+  const invalidProbability = probabilities.slice(0, 2).some((value) => !isProbability(value));
+  const invalidPayoff = payoff.some((row) => !Array.isArray(row) || row.length < 2 || row.some((value) => !Number.isFinite(toFiniteNumber(value, NaN))));
+  const invalidStudy = !isProbability(data.studyConfig?.favorableDetectionRate ?? 0.9) || !isProbability(data.studyConfig?.unfavorableFalsePositiveRate ?? 0.25);
+
+  if (invalidProbability || invalidPayoff || invalidStudy) {
+    return <p>⚠ Revisa probabilidades, estudio de mercado y pagos antes de continuar.</p>;
+  }
+
+  const P_alta = toFiniteNumber(probabilities[0], 0);
+  const P_baja = toFiniteNumber(probabilities[1], 0);
+
+  const studyConfig = data.studyConfig ?? {
     favorableDetectionRate: 0.9,
     unfavorableFalsePositiveRate: 0.25
   };
+
   const P_fav_alta = studyConfig.favorableDetectionRate ?? 0.9;
   const P_fav_baja = studyConfig.unfavorableFalsePositiveRate ?? 0.25;
 
   // SIN ESTUDIO
-  const VE_no_estudio = alternatives.map((alt, i) => {
-    return payoff[i][0] * P_alta + payoff[i][1] * P_baja;
+  const VE_no_estudio = alternatives.map((_, i) => {
+    return (payoff[i]?.[0] ?? 0) * P_alta + (payoff[i]?.[1] ?? 0) * P_baja;
   });
 
   const bestNoStudy = Math.max(...VE_no_estudio);
@@ -33,25 +50,27 @@ const Step9 = ({ data, next, prev }) => {
   const P_alta_desf = safeDiv(P_alta * (1 - P_fav_alta), P_desf);
   const P_baja_desf = safeDiv(P_baja * (1 - P_fav_baja), P_desf);
 
-  const VE_fav = alternatives.map((alt, i) => {
-    return payoff[i][0] * P_alta_fav + payoff[i][1] * P_baja_fav;
-  });
+  // ❗ CORRECCIÓN IMPORTANTE: EV por alternativa (no mejor por estado)
+  const VE_fav = alternatives.map((_, i) =>
+    (payoff[i]?.[0] ?? 0) * P_alta_fav +
+    (payoff[i]?.[1] ?? 0) * P_baja_fav
+  );
 
-  const VE_desf = alternatives.map((alt, i) => {
-    return payoff[i][0] * P_alta_desf + payoff[i][1] * P_baja_desf;
-  });
+  const VE_desf = alternatives.map((_, i) =>
+    (payoff[i]?.[0] ?? 0) * P_alta_desf +
+    (payoff[i]?.[1] ?? 0) * P_baja_desf
+  );
 
   const bestFav = Math.max(...VE_fav);
   const bestDesf = Math.max(...VE_desf);
 
   const VE_con_estudio =
-    bestFav * P_fav + bestDesf * P_desf;
+    P_fav * bestFav + P_desf * bestDesf;
 
   return (
     <div style={container}>
-      <h1 style={title}>Mejor DecisiÃ³n</h1>
+      <h1 style={title}>Mejor Decisión</h1>
 
-      {/* SIN ESTUDIO */}
       <div style={card}>
         <h2 style={subtitle}>Sin Estudio</h2>
 
@@ -68,39 +87,34 @@ const Step9 = ({ data, next, prev }) => {
         </div>
       </div>
 
-      {/* CON ESTUDIO */}
       <div style={card}>
         <h2 style={subtitle}>Con Estudio</h2>
 
-        <p style={item}>Escenario Favorable â†’ VE = {bestFav.toFixed(4)}</p>
-        <p style={item}>Escenario Desfavorable â†’ VE = {bestDesf.toFixed(4)}</p>
+        <p style={item}>Favorable → {bestFav.toFixed(4)}</p>
+        <p style={item}>Desfavorable → {bestDesf.toFixed(4)}</p>
 
         <div style={resultBox}>
-          <strong>
-            VE total con estudio = {VE_con_estudio.toFixed(4)}
-          </strong>
+          <strong>VE total: {VE_con_estudio.toFixed(4)}</strong>
         </div>
       </div>
 
-      {/* CONCLUSIÃ“N */}
       <div style={card}>
-        <h2 style={subtitle}>ConclusiÃ³n</h2>
+        <h2 style={subtitle}>Conclusión</h2>
 
         {VE_con_estudio > bestNoStudy ? (
           <p style={{ ...message, color: "#28a745" }}>
-            âœ” Conviene realizar el estudio de mercado, ya que mejora el valor esperado.
+            Conviene hacer el estudio
           </p>
         ) : (
           <p style={{ ...message, color: "#dc3545" }}>
-            âœ– No conviene realizar el estudio de mercado, no aporta mejora.
+            No conviene hacer el estudio
           </p>
         )}
       </div>
 
-      {/* BOTONES */}
       <div style={buttons}>
-        <button onClick={prev} style={btnSecondary}>â† Volver</button>
-        <button onClick={next} style={btnPrimary}>Continuar â†’</button>
+        <button onClick={prev} style={btnSecondary}>← Volver</button>
+        <button onClick={next} style={btnPrimary}>Continuar →</button>
       </div>
     </div>
   );
