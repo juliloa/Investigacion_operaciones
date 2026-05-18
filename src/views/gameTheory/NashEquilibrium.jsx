@@ -142,15 +142,19 @@ const NashEquilibrium = ({ nashData, setNashData, onBack, onGoAnalysis }) => {
       <h2 style={s.title}>Equilibrio de Nash</h2>
 
       {/* GUÍA */}
-      <div style={s.guideCard}>
-        <h3 style={s.guideTitle}>Guia de uso — Equilibrio de Nash</h3>
-        <p style={s.guideText}>Cada celda contiene un valor por jugador. Ingresa los pagos directamente en cada casilla.</p>
-        <p style={s.guideText}><strong>J1</strong> controla filas · <strong>J2</strong> controla columnas · <strong>J3+</strong> mejor respuesta general.</p>
-        <p style={s.guideText}><strong>ENEP</strong> = Estrategias Puras · <strong>ENEM</strong> = requiere mixtas.</p>
+      <div style={{ ...s.guideCard, borderLeft: "4px solid #3b82f6" }}>
+        <h3 style={s.guideTitle}>¿Cómo funciona esto?</h3>
+        <p style={s.guideText}>Esta herramienta busca la <strong>mejor jugada</strong> para todos. Llena la tabla con lo que gana cada jugador en cada caso.</p>
+        <ul style={{ margin: "5px 0", paddingLeft: "20px", fontSize: "13px", color: "#1e293b", lineHeight: "1.5" }}>
+            <li><strong>J1 (Filas):</strong> Trata de elegir la fila que le dé el número más alto.</li>
+            <li><strong>J2 (Columnas):</strong> Trata de elegir la columna que le dé el número más alto.</li>
+            <li><strong>ENEP:</strong> Significa que encontramos una jugada perfecta donde nadie quiere cambiar de decisión.</li>
+            <li><strong>ENEM:</strong> Significa que no hay una jugada perfecta, así que los jugadores tendrán que <em>mezclar</em> sus decisiones (jugar al azar con ciertas probabilidades).</li>
+        </ul>
         {analysisBlocked && (
-          <p style={{ ...s.guideText, color: "#b91c1c", fontWeight: 700 }}>
-            ⚠ Completa todas las celdas con números finitos antes de analizar. No se permiten vacíos ni texto.
-          </p>
+          <div style={{ marginTop: "10px", padding: "8px", background: "#fef2f2", color: "#b91c1c", borderRadius: "6px", fontWeight: 600, fontSize: "13px" }}>
+            ⚠ Faltan datos. Llena todas las celdas con números para poder analizar.
+          </div>
         )}
         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "10px" }}>
           {Array.from({ length: numPlayers }, (_, k) => (
@@ -308,45 +312,45 @@ const NashEquilibrium = ({ nashData, setNashData, onBack, onGoAnalysis }) => {
             <div style={s.stepExplanation}>
               <h4 style={s.stepTitle}>Analisis paso a paso</h4>
               
-              <div style={{ ...s.stepItem, borderLeft: "4px solid #2563eb", paddingLeft: 12, background: "#eff6ff", borderRadius: 8 }}>
+              <div style={{ ...s.stepItem, borderLeft: "4px solid #2563eb", paddingLeft: 12, background: "#eff6ff", borderRadius: 8, padding: "12px" }}>
                 <span style={{ ...s.stepNumber, background: "#2563eb" }}>1</span>
                 <div style={s.stepContent}>
-                  <strong style={{ color: "#2563eb" }}>Mejor opcion de {rowGroup} (J1):</strong>
-                  <p style={{ ...s.stepText, color: "#1e3a8a" }}>Para cada columna, {rowGroup} elige la fila con el numero mas alto. Esos numeros quedan con circulo azul.</p>
+                  <strong style={{ color: "#2563eb", fontSize: "14px" }}>La jugada maestra de {rowGroup} (J1):</strong>
+                  <p style={{ ...s.stepText, color: "#1e3a8a" }}>J1 se pregunta: <em>"Si J2 elige una columna específica, ¿cuál es mi mejor fila?"</em>. Encerramos esos números ganadores en un círculo azul.</p>
                   <div style={s.stepExample}>
                     {colNames.map((col, j) => (
                       <span key={j} style={{ ...s.exampleChip, background: "#dbeafe", color: "#1e3a8a" }}>
                         {bestRowForColJ1[j] === null
-                          ? `${col}: sin maximo claro (hay empate)`
-                          : `${col}: max ${colMaxJ1[j]} en (${rowNames[bestRowForColJ1[j]]}, ${col})`}
+                          ? `Si juegan ${col}: ¡Empate!`
+                          : `Si juegan ${col}: La mejor es ${rowNames[bestRowForColJ1[j]]} (Gana ${colMaxJ1[j]})`}
                       </span>
                     ))}
                   </div>
                 </div>
               </div>
 
-              <div style={{ ...s.stepItem, borderLeft: "4px solid #dc2626", paddingLeft: 12, background: "#fef2f2", borderRadius: 8 }}>
+              <div style={{ ...s.stepItem, borderLeft: "4px solid #dc2626", paddingLeft: 12, background: "#fef2f2", borderRadius: 8, padding: "12px" }}>
                 <span style={{ ...s.stepNumber, background: "#dc2626" }}>2</span>
                 <div style={s.stepContent}>
-                  <strong style={{ color: "#dc2626" }}>Mejor opcion de {colGroup} (J2):</strong>
-                  <p style={{ ...s.stepText, color: "#7f1d1d" }}>Para cada fila, {colGroup} elige la columna con el numero mas alto. Esos numeros quedan con circulo rojo.</p>
+                  <strong style={{ color: "#dc2626", fontSize: "14px" }}>La jugada maestra de {colGroup} (J2):</strong>
+                  <p style={{ ...s.stepText, color: "#7f1d1d" }}>J2 hace lo mismo: <em>"Si J1 elige una fila específica, ¿cuál es mi mejor columna?"</em>. Encerramos esos números en un círculo rojo.</p>
                   <div style={s.stepExample}>
                     {rowNames.map((row, i) => (
                       <span key={i} style={{ ...s.exampleChip, background: "#fee2e2", color: "#7f1d1d" }}>
                         {bestColForRowJ2[i] === null
-                          ? `${row}: sin maximo claro (hay empate)`
-                          : `${row}: max ${rowMaxJ2[i]} en (${row}, ${colNames[bestColForRowJ2[i]]})`}
+                          ? `Si juegan ${row}: ¡Empate!`
+                          : `Si juegan ${row}: La mejor es ${colNames[bestColForRowJ2[i]]} (Gana ${rowMaxJ2[i]})`}
                       </span>
                     ))}
                   </div>
                 </div>
               </div>
 
-              <div style={{ ...s.stepItem, borderLeft: "4px solid #16a34a", paddingLeft: 12, background: "#f0fdf4", borderRadius: 8 }}>
+              <div style={{ ...s.stepItem, borderLeft: "4px solid #16a34a", paddingLeft: 12, background: "#f0fdf4", borderRadius: 8, padding: "12px" }}>
                 <span style={{ ...s.stepNumber, background: "#16a34a" }}>3</span>
                 <div style={s.stepContent}>
-                  <strong style={{ color: "#16a34a" }}>Equilibrios = Cruces:</strong>
-                  <p style={{ ...s.stepText, color: "#14532d" }}>Un equilibrio ocurre donde coinciden ambos circulos. Esa celda se marca en verde.</p>
+                  <strong style={{ color: "#16a34a", fontSize: "14px" }}>El Choque Perfecto (Equilibrio de Nash):</strong>
+                  <p style={{ ...s.stepText, color: "#14532d" }}>Si en una misma celda coinciden el círculo azul y el círculo rojo, <strong>¡tenemos un Equilibrio!</strong> Esa celda se pinta de verde porque ninguno de los dos querrá cambiar su jugada si llegan ahí.</p>
                 </div>
               </div>
             </div>
@@ -375,13 +379,16 @@ const NashEquilibrium = ({ nashData, setNashData, onBack, onGoAnalysis }) => {
             ) : (
               <>
                 <div style={s.resultTypeBox_ENEM}>
-                  <p style={s.tagENEM}>✗ ENEM — No existe equilibrio en estrategias puras</p>
-                  <p style={{ fontSize: "13px", color: "#6b7280", marginBottom: "10px" }}>
-                    No hay celdas donde ambos jugadores elijan su mejor opcion al mismo tiempo. Este juego requiere usar <strong>estrategias mixtas</strong> (probabilidades).
+                  <p style={s.tagENEM}>✗ ENEM — ¡No hay un acuerdo directo!</p>
+                  <p style={{ fontSize: "13px", color: "#6b7280", marginBottom: "10px", lineHeight: "1.5" }}>
+                    No hay ninguna celda verde. Esto significa que si uno hace una jugada, el otro la contrarresta, y si el otro la contrarresta, el primero vuelve a cambiar... un ciclo infinito.
                   </p>
-                  <p style={{ fontSize: "12px", color: "#6b7280", fontStyle: "italic" }}>
-                    En una estrategia mixta, cada jugador reparte probabilidades entre sus opciones para que al otro le de igual que opcion elegir.
-                  </p>
+                  <div style={{ background: "#fef2f2", padding: "10px", borderRadius: "8px", borderLeft: "3px solid #dc2626" }}>
+                    <p style={{ margin: 0, fontSize: "13px", color: "#991b1b", fontWeight: 600 }}>¿La solución?</p>
+                    <p style={{ margin: "4px 0 0 0", fontSize: "12px", color: "#7f1d1d", lineHeight: "1.4" }}>
+                      Tienen que usar <strong>Estrategias Mixtas</strong>. Es decir, tirar una moneda o dados para jugar al azar y confundir al rival. Entra al "Análisis Completo" para calcular los porcentajes exactos.
+                    </p>
+                  </div>
                 </div>
               </>
             )}

@@ -29,18 +29,18 @@ const CanalesSimples = ({ data, setData, onNext }) => {
     const update = (patch) => setData(prev => ({ ...prev, ...patch }));
     const updateL = (patch) => setData(prev => ({ ...prev, llegadas: { ...prev.llegadas, ...patch } }));
     const updateS = (patch) => setData(prev => ({ ...prev, servicio: { ...prev.servicio, ...patch } }));
-    const updateC = (patch) => setData(prev => ({ ...prev, calcular: { ...prev.calcular, ...patch } }));
     const updatePnC = (patch) => setData(prev => ({ ...prev, pnCondicion: { ...prev.pnCondicion, ...patch } }));
+    const updateMI = (patch) => setData(prev => ({ ...prev, mejoraInterna: { ...prev.mejoraInterna, ...patch } }));
 
     const {
         llegadas,
         servicio,
-        calcular,
         x,
         modoPoisson,
         t,
         unidadBase,
-        pnCondicion = {}
+        pnCondicion = {},
+        mejoraInterna = { activa: false, tipo: "tasa", cantidad: "", tiempo: "", unidad: "min", porcentaje: "" }
     } = data;
 
     const pnModo = pnCondicion.modo || "greater_eq";
@@ -66,25 +66,28 @@ const CanalesSimples = ({ data, setData, onNext }) => {
     const muOrig = servicio.cantidad && servicio.tiempo
         ? parseFloat(servicio.cantidad) / parseFloat(servicio.tiempo) : null;
 
-    const invalidX = calcular.poisson && (!Number.isInteger(xValue) || xValue < 0);
-    const invalidT = calcular.exponencial && (!Number.isFinite(tValue) || tValue < 0);
-    const invalidPn = calcular.mm1 && (!Number.isInteger(pnValue) || pnValue < 0);
+    const invalidX = (!Number.isInteger(xValue) || xValue < 0);
+    const invalidT = (!Number.isFinite(tValue) || tValue < 0);
+    const invalidPn = (!Number.isInteger(pnValue) || pnValue < 0);
     const validationMessage = invalidX
         ? "x debe ser un número entero no negativo para Poisson."
         : invalidT
             ? "t debe ser un número no negativo para la distribución exponencial."
             : invalidPn
                 ? "Pn requiere un valor entero no negativo."
+                : mejoraInterna.activa && mejoraInterna.tipo === "tasa" && (!mejoraInterna.cantidad || !mejoraInterna.tiempo)
+                    ? "Completa los campos de cantidad y tiempo para la nueva tasa de servicio."
+                : mejoraInterna.activa && mejoraInterna.tipo === "porcentaje" && (!mejoraInterna.porcentaje || isNaN(mejoraInterna.porcentaje) || Number(mejoraInterna.porcentaje) <= 0)
+                    ? "Ingresa un porcentaje de mejora válido mayor a 0."
                 : "";
 
     const canContinue = lambda !== null && lambda > 0 &&
         mu !== null && mu > 0 &&
         (!unidadesDiferentes || unidadBase !== null) &&
-        (calcular.poisson || calcular.exponencial || calcular.mm1) &&
-        (!calcular.mm1 || (rho !== null && rho < 1)) &&
-        (!calcular.poisson || !invalidX) &&
-        (!calcular.exponencial || !invalidT) &&
-        (!calcular.mm1 || !invalidPn) &&
+        (rho !== null && rho < 1) &&
+        (!invalidX) &&
+        (!invalidT) &&
+        (!invalidPn) &&
         validationMessage === "";
 
     return (
@@ -191,6 +194,87 @@ const CanalesSimples = ({ data, setData, onNext }) => {
                 )}
             </div>
 
+            {/* ── MEJORA INTERNA (OPCIONAL) ── */}
+            <div style={{ ...s.card, background: mejoraInterna.activa ? "#f0fdf4" : "#f8fafc", borderColor: mejoraInterna.activa ? "#bbf7d0" : "#e2e8f0" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                    <div style={{ paddingRight: 20 }}>
+                        <p style={{ ...s.cardTitle, color: mejoraInterna.activa ? "#166534" : "#1e293b", fontSize: 15 }}>Análisis Comparativo: Mejora Interna del Servidor</p>
+                        <p style={{ ...s.guideText, color: mejoraInterna.activa ? "#14532d" : "#475569", marginTop: 4 }}>
+                            ¿Qué pasaría si el servidor actual fuera más rápido? Activa esta opción para simular un aumento en la capacidad de atención. 
+                            El sistema generará una tabla comparativa automática para mostrarte cómo se reducirían las filas y los tiempos de espera frente a tu configuración original.
+                        </p>
+                    </div>
+                    <label style={{ ...s.toggleSwitch, marginTop: 4 }}>
+                        <input
+                            type="checkbox"
+                            checked={mejoraInterna.activa}
+                            onChange={(e) => updateMI({ activa: e.target.checked })}
+                            style={{ display: "none" }}
+                        />
+                        <div style={{ ...s.toggleTrack, background: mejoraInterna.activa ? "#10b981" : "#cbd5e1" }}>
+                            <div style={{ ...s.toggleThumb, transform: mejoraInterna.activa ? "translateX(20px)" : "translateX(0)" }} />
+                        </div>
+                    </label>
+                </div>
+
+                {mejoraInterna.activa && (
+                    <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid #bbf7d0" }}>
+                        <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
+                            <button
+                                style={{ ...s.modeBtn, ...(mejoraInterna.tipo === "tasa" ? s.modeBtnActive : {}) }}
+                                onClick={() => updateMI({ tipo: "tasa" })}
+                            >
+                                <span style={{ fontSize: 13, fontWeight: 700 }}>Ingresar Nueva Tasa</span>
+                            </button>
+                            <button
+                                style={{ ...s.modeBtn, ...(mejoraInterna.tipo === "porcentaje" ? s.modeBtnActive : {}) }}
+                                onClick={() => updateMI({ tipo: "porcentaje" })}
+                            >
+                                <span style={{ fontSize: 13, fontWeight: 700 }}>Porcentaje de Mejora</span>
+                            </button>
+                        </div>
+
+                        {mejoraInterna.tipo === "tasa" ? (
+                            <div style={s.inputRow}>
+                                <div style={s.field}>
+                                    <label style={s.label}>¿Cuántos clientes podrá atender ahora?</label>
+                                    <input type="number" value={mejoraInterna.cantidad} onChange={e => updateMI({ cantidad: e.target.value })} style={s.input} placeholder="ej: 80" />
+                                </div>
+                                <div style={s.fieldSm}>
+                                    <label style={s.label}>En cuántos</label>
+                                    <input type="number" value={mejoraInterna.tiempo} onChange={e => updateMI({ tiempo: e.target.value })} style={s.inputSm} placeholder="ej: 60" />
+                                </div>
+                                <div style={s.fieldSm}>
+                                    <label style={s.label}>Unidad</label>
+                                    <select value={mejoraInterna.unidad} onChange={e => updateMI({ unidad: e.target.value })} style={s.select}>
+                                        <option value="seg">seg</option>
+                                        <option value="min">min</option>
+                                        <option value="hora">hora</option>
+                                        <option value="día">día</option>
+                                    </select>
+                                </div>
+                            </div>
+                        ) : (
+                            <div style={s.field}>
+                                <label style={s.label}>Porcentaje de mejora (% más rápido)</label>
+                                <div style={{ position: "relative", maxWidth: "200px" }}>
+                                    <input
+                                        type="number"
+                                        value={mejoraInterna.porcentaje}
+                                        onChange={e => updateMI({ porcentaje: e.target.value })}
+                                        style={{ ...s.input, paddingRight: "30px" }}
+                                        placeholder="ej: 20"
+                                        min="0"
+                                    />
+                                    <span style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", color: "#6b7280", fontWeight: 700 }}>%</span>
+                                </div>
+                                <p style={s.guideText}>Ej: Si el servidor atiende 10 clientes/hora, un 20% de mejora lo subirá a 12 clientes/hora.</p>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+
             {/* ── CONVERSIÓN DE UNIDADES ── */}
             {unidadesDiferentes && (
                 <div style={s.convCard}>
@@ -251,130 +335,96 @@ const CanalesSimples = ({ data, setData, onNext }) => {
                 </div>
             )}
 
-            {/* ── QUÉ CALCULAR ── */}
+            {/* ── PARÁMETROS ADICIONALES ── */}
             <div style={s.card}>
-                <p style={s.cardTitle}>¿Qué quieres calcular?</p>
-                <div style={s.checkGrid}>
-                    {[
-                        {
-                            key: "poisson", title: "Distribución de Poisson", formula: "Px = (λˣ · e^(−λ)) / x!",
-                            desc: "Probabilidad de que lleguen exactamente x clientes en un período.",
-                            when: "Cuando preguntan: ¿cuál es la probabilidad de que lleguen x clientes?"
-                        },
-                        {
-                            key: "exponencial", title: "Distribución Exponencial", formula: "P(T ≤ t) = 1 − e^(−μt)",
-                            desc: "Probabilidad de que un cliente sea atendido en a lo sumo t unidades de tiempo.",
-                            when: "Cuando preguntan: ¿cuál es la probabilidad de que el servicio tome menos de t minutos?"
-                        },
-                        {
-                            key: "mm1", title: "Sistema completo M/M/1", formula: "P₀, Lq, L, Wq, W, Pw, Pn",
-                            desc: "Las 7 métricas operativas del sistema.",
-                            when: "Cuando necesitas caracterizar el sistema completo — tiempos, clientes en cola, utilización."
-                        },
-                    ].map(({ key, title, formula, desc, when }) => (
-                        <div
-                            key={key}
-                            style={{ ...s.checkCard, ...(calcular[key] ? s.checkActive : {}) }}
-                            onClick={() => updateC({ [key]: !calcular[key] })}
-                        >
-                            <div style={s.checkHeader}>
-                                <div style={{ ...s.checkbox, background: calcular[key] ? "#2563eb" : "#fff", border: `2px solid ${calcular[key] ? "#2563eb" : "#d1d5db"}` }}>
-                                    {calcular[key] ? "✓" : ""}
-                                </div>
-                                <span style={s.checkTitle}>{title}</span>
-                            </div>
-                            <code style={s.checkFormula}>{formula}</code>
-                            <p style={s.checkDesc}>{desc}</p>
-                            <p style={s.checkWhen}><strong>Cuándo usarlo:</strong> {when}</p>
+                <p style={s.cardTitle}>Parámetros adicionales</p>
+
+                {/* Poisson */}
+                <div style={s.paramBlock}>
+                    <p style={s.paramTitle}>Para Poisson — P(x)</p>
+                    <div style={{ background: "#eff6ff", borderLeft: "4px solid #3b82f6", padding: "12px", borderRadius: "4px", marginBottom: "14px" }}>
+                        <p style={{ margin: "0 0 6px 0", fontSize: "13px", color: "#1e3a8a", fontWeight: "600" }}>¿Para qué sirve y cómo hallarlo?</p>
+                        <p style={{ margin: "0", fontSize: "12px", color: "#1e40af", lineHeight: "1.4" }}>
+                            Calcula la probabilidad de que lleguen "x" clientes al sistema. En el problema, busca frases como: <em>"probabilidad de que lleguen 3 clientes"</em> o <em>"probabilidad de que lleguen más de 2 personas"</em>. <strong>La clave: habla de llegadas.</strong>
+                        </p>
+                    </div>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+                        {MODOS_POISSON.map(m => (
+                            <button
+                                key={m.key}
+                                style={{ ...s.modeBtn, ...(modoPoisson === m.key ? s.modeBtnActive : {}) }}
+                                onClick={() => update({ modoPoisson: m.key })}
+                            >
+                                <span style={{ fontSize: 12, fontWeight: 700 }}>{m.label}</span>
+                                <span style={{ fontSize: 10, opacity: 0.75 }}>{m.desc}</span>
+                            </button>
+                        ))}
+                    </div>
+                    <div style={s.field}>
+                        <label style={s.label}>Valor de x (número de clientes)</label>
+                        <input type="number" value={x} onChange={e => update({ x: e.target.value })}
+                            style={{ ...s.inputSm, width: 120 }} placeholder="ej: 2" min="0" />
+                    </div>
+                </div>
+
+                {/* Exponencial */}
+                <div style={s.paramBlock}>
+                    <p style={s.paramTitle}>Para Exponencial — P(T ≤ t)</p>
+                    <div style={{ background: "#fef2f2", borderLeft: "4px solid #ef4444", padding: "12px", borderRadius: "4px", marginBottom: "14px" }}>
+                        <p style={{ margin: "0 0 6px 0", fontSize: "13px", color: "#7f1d1d", fontWeight: "600" }}>¿Para qué sirve y cómo hallarlo?</p>
+                        <p style={{ margin: "0", fontSize: "12px", color: "#991b1b", lineHeight: "1.4" }}>
+                            Calcula la probabilidad de que un cliente sea atendido en un tiempo "t" o menos. Busca frases como: <em>"probabilidad de que el servicio dure menos de 5 minutos"</em> o <em>"probabilidad de que sea atendido en a lo sumo 10 minutos"</em>. <strong>La clave: habla del tiempo de atención.</strong>
+                        </p>
+                    </div>
+                    <div style={s.field}>
+                        <label style={s.label}>Valor de t — tiempo límite ({uBase})</label>
+                        <input type="number" value={t} onChange={e => update({ t: e.target.value })}
+                            style={{ ...s.inputSm, width: 120 }} placeholder="ej: 1" min="0" step="0.1" />
+                    </div>
+                </div>
+
+                {/* M/M/1 Pn */}
+                <div style={s.paramBlock}>
+                    {/* Condición Pn */}
+                    <div style={{ marginTop: 14 }}>
+                        <p style={{ ...s.paramTitle, marginBottom: 8 }}>Para la Distribución Pn (Clientes en el sistema)</p>
+                        <div style={{ background: "#f0fdf4", borderLeft: "4px solid #22c55e", padding: "12px", borderRadius: "4px", marginBottom: "14px" }}>
+                            <p style={{ margin: "0 0 6px 0", fontSize: "13px", color: "#14532d", fontWeight: "600" }}>¿Para qué sirve y cómo hallarlo?</p>
+                            <p style={{ margin: "0", fontSize: "12px", color: "#166534", lineHeight: "1.4" }}>
+                                Calcula la probabilidad de que haya exactamente "n" clientes en todo el local (los que hacen fila + el que está siendo atendido). Busca frases como: <em>"probabilidad de que haya 4 clientes en el sistema"</em> o <em>"probabilidad de que haya más de 2 personas en el lugar"</em>. <strong>La clave: habla de cantidad total de personas en el local.</strong>
+                            </p>
                         </div>
-                    ))}
+                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10, marginTop: 8 }}>
+                            {MODOS_POISSON.map(m => (
+                                <button
+                                    key={m.key}
+                                    style={{ ...s.modeBtn, ...(pnModo === m.key ? s.modeBtnActive : {}) }}
+                                    onClick={() => updatePnC({ modo: m.key })}
+                                >
+                                    <span style={{ fontSize: 12, fontWeight: 700 }}>{m.label}</span>
+                                    <span style={{ fontSize: 10, opacity: 0.75 }}>{m.desc}</span>
+                                </button>
+                            ))}
+                        </div>
+                        <div style={s.field}>
+                            <label style={s.label}>Valor de n para la condición</label>
+                            <input type="number" value={pnCondicion.valor}
+                                onChange={e => updatePnC({ valor: e.target.value })}
+                                style={{ ...s.inputSm, width: 120 }} placeholder="ej: 3" min="0" />
+                        </div>
+                        {pnCondicion.valor && (
+                            <p style={{ ...s.guideText, marginTop: 8, fontFamily: "monospace", color: "#2563eb" }}>
+                                Se calculará: P(n {
+                                    pnCondicion.modo === "exact" ? "=" :
+                                        pnCondicion.modo === "greater" ? ">" :
+                                            pnCondicion.modo === "greater_eq" ? "≥" :
+                                                pnCondicion.modo === "less_eq" ? "≤" : "<"
+                                } {pnCondicion.valor})
+                            </p>
+                        )}
+                    </div>
                 </div>
             </div>
-
-            {/* ── PARÁMETROS ADICIONALES ── */}
-            {(calcular.poisson || calcular.exponencial || calcular.mm1) && (
-                <div style={s.card}>
-                    <p style={s.cardTitle}>Parámetros adicionales</p>
-
-                    {/* Poisson */}
-                    {calcular.poisson && (
-                        <div style={s.paramBlock}>
-                            <p style={s.paramTitle}>Para Poisson — P(x)</p>
-                            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
-                                {MODOS_POISSON.map(m => (
-                                    <button
-                                        key={m.key}
-                                        style={{ ...s.modeBtn, ...(modoPoisson === m.key ? s.modeBtnActive : {}) }}
-                                        onClick={() => update({ modoPoisson: m.key })}
-                                    >
-                                        <span style={{ fontSize: 12, fontWeight: 700 }}>{m.label}</span>
-                                        <span style={{ fontSize: 10, opacity: 0.75 }}>{m.desc}</span>
-                                    </button>
-                                ))}
-                            </div>
-                            <div style={s.field}>
-                                <label style={s.label}>Valor de x (número de clientes)</label>
-                                <input type="number" value={x} onChange={e => update({ x: e.target.value })}
-                                    style={{ ...s.inputSm, width: 120 }} placeholder="ej: 2" min="0" />
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Exponencial */}
-                    {calcular.exponencial && (
-                        <div style={s.paramBlock}>
-                            <p style={s.paramTitle}>Para Exponencial — P(T ≤ t)</p>
-                            <div style={s.field}>
-                                <label style={s.label}>Valor de t — tiempo límite ({uBase})</label>
-                                <input type="number" value={t} onChange={e => update({ t: e.target.value })}
-                                    style={{ ...s.inputSm, width: 120 }} placeholder="ej: 1" min="0" step="0.1" />
-                            </div>
-                        </div>
-                    )}
-
-                    {/* M/M/1 Pn */}
-                    {calcular.mm1 && (
-                        <div style={s.paramBlock}>
-                            {/* Condición Pn */}
-                            <div style={{ marginTop: 14 }}>
-                                <p style={{ ...s.paramTitle, marginBottom: 8 }}>Condición adicional sobre Pn</p>
-                                <p style={s.guideText}>
-                                    Calcula la probabilidad de que haya una cantidad específica de clientes
-                                    en el sistema. Igual que Poisson pero sobre n.
-                                </p>
-                                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10, marginTop: 8 }}>
-                                    {MODOS_POISSON.map(m => (
-                                        <button
-                                            key={m.key}
-                                            style={{ ...s.modeBtn, ...(pnModo === m.key ? s.modeBtnActive : {}) }}
-                                            onClick={() => updatePnC({ modo: m.key })}
-                                        >
-                                            <span style={{ fontSize: 12, fontWeight: 700 }}>{m.label}</span>
-                                            <span style={{ fontSize: 10, opacity: 0.75 }}>{m.desc}</span>
-                                        </button>
-                                    ))}
-                                </div>
-                                <div style={s.field}>
-                                    <label style={s.label}>Valor de n para la condición</label>
-                                    <input type="number" value={pnCondicion.valor}
-                                        onChange={e => updatePnC({ valor: e.target.value })}
-                                        style={{ ...s.inputSm, width: 120 }} placeholder="ej: 3" min="0" />
-                                </div>
-                                {pnCondicion.valor && (
-                                    <p style={{ ...s.guideText, marginTop: 8, fontFamily: "monospace", color: "#2563eb" }}>
-                                        Se calculará: P(n {
-                                            pnCondicion.modo === "exact" ? "=" :
-                                                pnCondicion.modo === "greater" ? ">" :
-                                                    pnCondicion.modo === "greater_eq" ? "≥" :
-                                                        pnCondicion.modo === "less_eq" ? "≤" : "<"
-                                        } {pnCondicion.valor})
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-                    )}
-                </div>
-            )}
 
             {/* ── RESUMEN ── */}
             <div style={s.summaryCard}>
@@ -393,8 +443,8 @@ const CanalesSimples = ({ data, setData, onNext }) => {
                             label: "ρ", val: rho?.toFixed(4) ?? "—",
                             color: rho < 1 ? "#16a34a" : "#dc2626", sub: "λ/μ"
                         },
-                        { label: "x", val: calcular.poisson ? (x || "—") : "N/A", color: "#374151", sub: "Poisson" },
-                        { label: "t", val: calcular.exponencial ? (t || "—") : "N/A", color: "#374151", sub: "Exponencial" },
+                        { label: "x", val: x || "—", color: "#374151", sub: "Poisson" },
+                        { label: "t", val: t || "—", color: "#374151", sub: "Exponencial" },
                     ].map(({ label, val, color, sub }) => (
                         <div key={label} style={s.summaryItem}>
                             <span style={s.summaryLabel}>{label}</span>
@@ -404,7 +454,7 @@ const CanalesSimples = ({ data, setData, onNext }) => {
                     ))}
                 </div>
 
-                {calcular.mm1 && rho >= 1 && (
+                {rho >= 1 && (
                     <div style={s.errorBox}>
                         ⚠ Para M/M/1 se requiere ρ &lt; 1. Actualmente ρ = {rho?.toFixed(4)}.
                     </div>
@@ -483,4 +533,7 @@ const s = {
     summaryVal: { fontSize: "20px", fontWeight: "700" },
     errorBox: { padding: "10px 14px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", fontSize: "13px", color: "#dc2626", marginBottom: 8 },
     continueBtn: { padding: "11px 24px", color: "#fff", border: "none", borderRadius: "10px", fontWeight: "600", fontSize: "14px", width: "100%" },
+    toggleSwitch: { display: "inline-flex", alignItems: "center", cursor: "pointer" },
+    toggleTrack: { width: "44px", height: "24px", borderRadius: "9999px", position: "relative", transition: "background-color 0.2s" },
+    toggleThumb: { width: "20px", height: "20px", background: "#fff", borderRadius: "50%", position: "absolute", top: "2px", left: "2px", transition: "transform 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" },
 };

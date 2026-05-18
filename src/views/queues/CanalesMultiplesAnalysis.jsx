@@ -104,15 +104,10 @@ const CanalesMultiplesAnalysis = ({ data, onBack }) => {
     const formatProbability = (value) => `${Number(value).toFixed(4)} (${(Number(value) * 100).toFixed(2)}%)`;
 
     const safeData = data || {};
-    const { llegadas = {}, servicio = {}, calcular = {}, x = "", modoPoisson = "exact", t = "", numServidores = 2, unidadBase, pnCondicion = {} } = safeData;
+    const { llegadas = {}, servicio = {}, x = "", modoPoisson = "exact", t = "", numServidores = 2, unidadBase, pnCondicion = {} } = safeData;
 
     // Tabs dinámicos
-    const tabs = [];
-    if (calcular.poisson) tabs.push("Poisson");
-    if (calcular.exponencial) tabs.push("Exponencial");
-    if (calcular.mmk) tabs.push("M/M/k");
-    tabs.push("Comparación");
-    tabs.push("Conclusiones");
+    const tabs = ["Poisson", "Exponencial", "M/M/k", "Comparación", "Conclusiones"];
 
     useEffect(() => {
         if (activeTab >= tabs.length) {
@@ -130,9 +125,9 @@ const CanalesMultiplesAnalysis = ({ data, onBack }) => {
     const tValue = toFiniteNumber(t, NaN);
     const pnValue = toFiniteNumber(pnCondicion.valor, NaN);
 
-    const invalidX = calcular.poisson && (!Number.isInteger(xValue) || xValue < 0);
-    const invalidT = calcular.exponencial && (!Number.isFinite(tValue) || tValue < 0);
-    const invalidPn = calcular.mmk && (!Number.isInteger(pnValue) || pnValue < 0);
+    const invalidX = (!Number.isInteger(xValue) || xValue < 0);
+    const invalidT = (!Number.isFinite(tValue) || tValue < 0);
+    const invalidPn = (!Number.isInteger(pnValue) || pnValue < 0);
 
     if (invalidX || invalidT || invalidPn) {
         return (
@@ -267,8 +262,13 @@ const CanalesMultiplesAnalysis = ({ data, onBack }) => {
                     En esta comparación, todos los valores aparecen como decimal y porcentaje en la misma celda.
                     Por ejemplo, 0.2500 significa 25.00%.
                 </p>
-                <p style={s.explainText}>
-                    Para Lq, L, Wq y W, un número más bajo es mejor. Para P₀, un número más alto es mejor porque significa que el sistema está libre más veces.
+                <ul style={{ ...s.explainText, paddingLeft: 20, margin: "8px 0" }}>
+                    <li><strong>La flecha (↑ o ↓):</strong> Te indica si el valor numérico <em>subió</em> o <em>bajó</em> al agregar servidores.</li>
+                    <li><strong>El color (Verde o Rojo):</strong> Te indica si ese cambio es <em>bueno</em> o <em>malo</em> operativamente hablando.</li>
+                </ul>
+                <p style={{ ...s.explainText, marginTop: 8 }}>
+                    <strong>Ejemplo 1 (Flecha abajo en verde):</strong> En <strong>Wq</strong> (Tiempo en cola), si el tiempo de espera disminuye, el valor <em>baja</em> (↓) y es una mejora <strong>(Verde)</strong>.<br/>
+                    <strong>Ejemplo 2 (Flecha arriba en verde):</strong> En <strong>P₀</strong> (Disponibilidad), si el porcentaje aumenta, el valor <em>sube</em> (↑) y también es una mejora <strong>(Verde)</strong>.
                 </p>
             </div>
             <div style={s.card}>
@@ -296,7 +296,8 @@ const CanalesMultiplesAnalysis = ({ data, onBack }) => {
                     </thead>
                     <tbody>
                             {items.map(({ name, mm1, mmk, isProb, higherIsBetter, color }, idx) => {
-                                const changePositive = higherIsBetter ? mmk > mm1 : mmk < mm1;
+                                const isImprovement = higherIsBetter ? mmk > mm1 : mmk < mm1;
+                                const valueIncreased = mmk > mm1;
                                 const displayMm1 = isProb ? formatProbability(mm1) : formatNumber(mm1);
                                 const displayMmk = isProb ? formatProbability(mmk) : formatNumber(mmk);
                                 const changeAbs = Math.abs(mmk - mm1).toFixed(4);
@@ -314,11 +315,11 @@ const CanalesMultiplesAnalysis = ({ data, onBack }) => {
                                         <td style={{ ...s.tableCell, fontWeight: 700 }}>{name}</td>
                                         <td style={{ ...s.tableCell, color: color }}>{displayMm1}</td>
                                         <td style={{ ...s.tableCell, color: color, fontWeight: 600 }}>{displayMmk}</td>
-                                        <td style={{ ...s.tableCell, color: changePositive ? "#10b981" : "#ef4444" }}>
-                                            {changePositive ? "↑" : "↓"} {changeAbs}
+                                        <td style={{ ...s.tableCell, color: isImprovement ? "#10b981" : "#ef4444" }}>
+                                            {valueIncreased ? "↑" : "↓"} {changeAbs}
                                         </td>
-                                        <td style={{ ...s.tableCell, color: changePositive ? "#10b981" : "#ef4444", fontWeight: 700 }}>
-                                            {changePositive ? "Mejora: " : "Empeora: "}{Math.abs(percentImprovement).toFixed(1)}%
+                                        <td style={{ ...s.tableCell, color: isImprovement ? "#10b981" : "#ef4444", fontWeight: 700 }}>
+                                            {isImprovement ? "Mejora: " : "Empeora: "}{Math.abs(percentImprovement).toFixed(1)}%
                                         </td>
                                     </tr>
                                 );
@@ -483,6 +484,15 @@ const CanalesMultiplesAnalysis = ({ data, onBack }) => {
                 </div>
                 <div style={{ ...s.formulaBox, background: "#f0fdf4", borderColor: "#bbf7d0" }}>
                     <code>P(T ≤ {tNum}) = 1 - e^(-{μ.toFixed(4)}·{tNum}) = {expResult.toFixed(6)}</code>
+                </div>
+            </div>
+
+            <div style={s.card}>
+                <p style={s.cardTitle}>Resultado</p>
+                <div style={s.resultBox}>
+                    <span style={{ fontSize: 14, color: "#6b7280" }}>P(T ≤ {tNum}) =</span>
+                    <span style={{ fontSize: 28, fontWeight: 800, color: "#2563eb", margin: "8px 0" }}>{expResult.toFixed(6)}</span>
+                    <span style={{ fontSize: 12, color: "#6b7280" }}>({(expResult * 100).toFixed(2)}%)</span>
                 </div>
             </div>
 
@@ -734,31 +744,73 @@ const CanalesMultiplesAnalysis = ({ data, onBack }) => {
                 </div>
 
                 <div style={s.card}>
-                    <p style={s.cardTitle}>Qué cambia exactamente</p>
-                    <table style={s.summaryTable}>
-                        <tbody>
-                            <tr style={{ borderBottom: "1px solid #e5e7eb" }}>
-                                <td style={{ padding: "10px", fontWeight: 600 }}>Sistema</td>
-                                <td style={{ padding: "10px", color: "#2563eb" }}>M/M/1</td>
-                                <td style={{ padding: "10px", color: "#16a34a" }}>M/M/{k}</td>
-                            </tr>
-                            <tr style={{ borderBottom: "1px solid #e5e7eb", background: "#f9fafb" }}>
-                                <td style={{ padding: "10px" }}>Clientes en cola (Lq)</td>
-                                <td style={{ padding: "10px" }}>{formatNumber(Lq_mm1)}</td>
-                                <td style={{ padding: "10px", fontWeight: 600 }}>{formatNumber(mmkResults.Lq)}</td>
-                            </tr>
-                            <tr style={{ borderBottom: "1px solid #e5e7eb" }}>
-                                <td style={{ padding: "10px" }}>Tiempo en cola (Wq)</td>
-                                <td style={{ padding: "10px" }}>{formatNumber(Wq_mm1)} u.t.</td>
-                                <td style={{ padding: "10px", fontWeight: 600 }}>{formatNumber(mmkResults.Wq)} u.t.</td>
-                            </tr>
-                            <tr style={{ background: "#f9fafb" }}>
-                                <td style={{ padding: "10px" }}>Probabilidad de espera (Pw)</td>
-                                <td style={{ padding: "10px" }}>{formatProbability(Pw_mm1)}</td>
-                                <td style={{ padding: "10px", fontWeight: 600 }}>{formatProbability(mmkResults.Pw)}</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <p style={s.cardTitle}>Qué cambia exactamente (en palabras sencillas)</p>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: 16 }}>
+                        
+                        {/* Personas esperando */}
+                        <div style={{ background: "#f8fafc", padding: "16px", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                                <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#7c3aed" }}></div>
+                                <span style={{ fontWeight: 700, color: "#1e293b" }}>Personas esperando</span>
+                            </div>
+                            <p style={{ fontSize: 13, color: "#64748b", margin: "0 0 12px 0", lineHeight: 1.4 }}>
+                                La cantidad promedio de personas que están atascadas en la fila.
+                            </p>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#fff", padding: "8px 12px", borderRadius: "6px", border: "1px solid #f1f5f9" }}>
+                                    <span style={{ fontSize: 13, color: "#64748b" }}>Con 1 servidor</span>
+                                    <span style={{ fontWeight: 600, color: "#475569" }}>{formatNumber(Lq_mm1)}</span>
+                                </div>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f0fdf4", padding: "8px 12px", borderRadius: "6px", border: "1px solid #bbf7d0" }}>
+                                    <span style={{ fontSize: 13, color: "#166534", fontWeight: 600 }}>Con {k} servidores</span>
+                                    <span style={{ fontWeight: 800, color: "#16a34a", fontSize: 16 }}>{formatNumber(mmkResults.Lq)}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Tiempo de espera */}
+                        <div style={{ background: "#f8fafc", padding: "16px", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                                <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#ea580c" }}></div>
+                                <span style={{ fontWeight: 700, color: "#1e293b" }}>Tiempo de espera</span>
+                            </div>
+                            <p style={{ fontSize: 13, color: "#64748b", margin: "0 0 12px 0", lineHeight: 1.4 }}>
+                                Lo que demora una persona desde que llega hasta que la atienden.
+                            </p>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#fff", padding: "8px 12px", borderRadius: "6px", border: "1px solid #f1f5f9" }}>
+                                    <span style={{ fontSize: 13, color: "#64748b" }}>Con 1 servidor</span>
+                                    <span style={{ fontWeight: 600, color: "#475569" }}>{formatNumber(Wq_mm1)}</span>
+                                </div>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f0fdf4", padding: "8px 12px", borderRadius: "6px", border: "1px solid #bbf7d0" }}>
+                                    <span style={{ fontSize: 13, color: "#166534", fontWeight: 600 }}>Con {k} servidores</span>
+                                    <span style={{ fontWeight: 800, color: "#16a34a", fontSize: 16 }}>{formatNumber(mmkResults.Wq)}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Probabilidad de hacer fila */}
+                        <div style={{ background: "#f8fafc", padding: "16px", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                                <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#2563eb" }}></div>
+                                <span style={{ fontWeight: 700, color: "#1e293b" }}>Probabilidad de fila</span>
+                            </div>
+                            <p style={{ fontSize: 13, color: "#64748b", margin: "0 0 12px 0", lineHeight: 1.4 }}>
+                                La posibilidad de que alguien llegue y le toque esperar su turno.
+                            </p>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#fff", padding: "8px 12px", borderRadius: "6px", border: "1px solid #f1f5f9" }}>
+                                    <span style={{ fontSize: 13, color: "#64748b" }}>Con 1 servidor</span>
+                                    <span style={{ fontWeight: 600, color: "#475569" }}>{(Pw_mm1 * 100).toFixed(1)}%</span>
+                                </div>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f0fdf4", padding: "8px 12px", borderRadius: "6px", border: "1px solid #bbf7d0" }}>
+                                    <span style={{ fontSize: 13, color: "#166534", fontWeight: 600 }}>Con {k} servidores</span>
+                                    <span style={{ fontWeight: 800, color: "#16a34a", fontSize: 16 }}>{(mmkResults.Pw * 100).toFixed(1)}%</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                    </div>
                 </div>
             </div>
         );
@@ -783,9 +835,9 @@ const CanalesMultiplesAnalysis = ({ data, onBack }) => {
 
             {/* Tab Content */}
             <div style={{ marginTop: 20 }}>
-                {activeTabName === "Poisson" && calcular.poisson && <TabPoisson />}
-                {activeTabName === "Exponencial" && calcular.exponencial && <TabExponencial />}
-                {activeTabName === "M/M/k" && calcular.mmk && (mmkResults ? <TabMMk /> : (
+                {activeTabName === "Poisson" && <TabPoisson />}
+                {activeTabName === "Exponencial" && <TabExponencial />}
+                {activeTabName === "M/M/k" && (mmkResults ? <TabMMk /> : (
                     <div style={s.card}>
                         <p style={s.cardTitle}>No se pudo calcular el sistema</p>
                         <p style={s.guideText}>
