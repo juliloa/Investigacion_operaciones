@@ -259,6 +259,12 @@ const nashSteps = [
   { number: "02", label: "Análisis", step: 104 },
 ];
 
+const projectFormulationSteps = [
+  { number: "01", label: "Conceptos Básicos", step: 300 },
+  { number: "02", label: "Configurar Actividades", step: 301 },
+  { number: "03", label: "Red y Rutas Críticas", step: 302 },
+];
+
 // ── ICONOS ───────────────────────────────────────────────────────
 const Chevron = ({ size = 15 }) => (
   <svg className="sb-chevron" style={{ width: size, height: size }} viewBox="0 0 16 16" fill="none">
@@ -461,6 +467,16 @@ const Sidebar = ({ currentStep, setStep }) => {
                 setStep={setStep}
               />
             </NavGroup>
+
+            {/* FORMULACIÓN DE PROYECTOS */}
+            <NavGroup
+              label="Formulación de Proyectos"
+              steps={projectFormulationSteps}
+              baseIndex={300}
+              currentStep={currentStep}
+              setStep={setStep}
+              badgeCount="3"
+            />
 
           </nav>
 

@@ -23,6 +23,9 @@ import CanalesSimples from "./views/queues/CanalesSimples";
 import CanalesSimpleAnalysis from "./views/queues/CanalesSimpleAnalysis";
 import CanalesMultiples from "./views/queues/CanalesMultiples";
 import CanalesMultiplesAnalysis from "./views/queues/CanalesMultiplesAnalysis";
+import ProjectIntro from "./views/projects/ProjectIntro";
+import ProjectInput from "./views/projects/ProjectInput";
+import ProjectAnalysis from "./views/projects/ProjectAnalysis";
 import { safeJsonParse, toInteger } from "./utils/validation";
 
 const defaultCanalesData = {
@@ -34,6 +37,7 @@ const defaultCanalesData = {
   modoPoisson: "exact",
   t: "",
   pnCondicion: { modo: "greater_eq", valor: "3" },
+  mejoraInterna: { activa: false, tipo: "tasa", cantidad: "", tiempo: "", unidad: "min", porcentaje: "" },
 };
 
 const defaultCanalesMultiplesData = {
@@ -48,6 +52,19 @@ const defaultCanalesMultiplesData = {
   pnCondicion: { modo: "greater_eq", valor: "3" },
 };
 
+const defaultProjectData = {
+  activities: [
+    { id: "A", name: "Análisis de requisitos", duration: 3, precedences: [] },
+    { id: "B", name: "Diseño de base de datos", duration: 4, precedences: ["A"] },
+    { id: "C", name: "Diseño de interfaz", duration: 5, precedences: ["A"] },
+    { id: "D", name: "Desarrollo del backend", duration: 6, precedences: ["B"] },
+    { id: "E", name: "Desarrollo del frontend", duration: 5, precedences: ["C"] },
+    { id: "F", name: "Integración de sistemas", duration: 3, precedences: ["D", "E"] },
+    { id: "G", name: "Pruebas unitarias", duration: 2, precedences: ["D", "E"] },
+    { id: "H", name: "Despliegue final", duration: 2, precedences: ["F", "G"] }
+  ]
+};
+
 const readStorage = (key, fallback) => {
   try {
     const parsed = safeJsonParse(localStorage.getItem(key), fallback);
@@ -57,7 +74,7 @@ const readStorage = (key, fallback) => {
   }
 };
 
-const allowedSteps = new Set([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 100, 101, 102, 103, 104, 200, 201, 204, 205]);
+const allowedSteps = new Set([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 100, 101, 102, 103, 104, 200, 201, 204, 205, 300, 301, 302]);
 
 function App() {
   const [step, setStep] = useState(() => {
@@ -74,6 +91,10 @@ function App() {
     return readStorage("io_canales_mmk", defaultCanalesMultiplesData);
   });
 
+  const [projectData, setProjectData] = useState(() => {
+    return readStorage("io_project_data", defaultProjectData);
+  });
+
   useEffect(() => {
     localStorage.setItem("io_canales", JSON.stringify(canalesData));
   }, [canalesData]);
@@ -81,6 +102,10 @@ function App() {
   useEffect(() => {
     localStorage.setItem("io_canales_mmk", JSON.stringify(canalesMultiplesData));
   }, [canalesMultiplesData]);
+
+  useEffect(() => {
+    localStorage.setItem("io_project_data", JSON.stringify(projectData));
+  }, [projectData]);
 
   const [nashData, setNashData] = useState(() => {
     return readStorage("io_nash_data", {
@@ -229,6 +254,34 @@ function App() {
           <CanalesMultiplesAnalysis
             data={canalesMultiplesData}
             onBack={() => setStep(204)}
+          />
+        );
+
+      // =========================
+      // FORMULACIÓN DE PROYECTOS (300+)
+      // =========================
+      case 300:
+        return (
+          <ProjectIntro
+            onNext={() => setStep(301)}
+          />
+        );
+
+      case 301:
+        return (
+          <ProjectInput
+            data={projectData}
+            setData={setProjectData}
+            onNext={() => setStep(302)}
+            onBack={() => setStep(300)}
+          />
+        );
+
+      case 302:
+        return (
+          <ProjectAnalysis
+            data={projectData}
+            onBack={() => setStep(301)}
           />
         );
 

@@ -1,6 +1,22 @@
 import React, { useState } from "react";
 import { toFiniteNumber } from "../../utils/validation";
 
+// ── UNIT CONVERSION ────────────────────────────────────────────────
+const UNIT_FACTORS = {
+    seg: 1,
+    min: 60,
+    hora: 3600,
+    día: 86400,
+};
+
+const convertRate = (cantidad, tiempo, fromUnit, toUnit) => {
+    const qty = toFiniteNumber(cantidad, null);
+    const duration = toFiniteNumber(tiempo, null);
+    if (!Number.isFinite(qty) || !Number.isFinite(duration) || qty < 0 || duration <= 0) return null;
+    const ratePerSec = qty / (duration * UNIT_FACTORS[fromUnit]);
+    return ratePerSec * UNIT_FACTORS[toUnit];
+};
+
 // ── HELPERS ───────────────────────────────────────────────────────
 const factorial = (n) => {
     // Validación: rechazar valores inválidos
@@ -103,16 +119,22 @@ const CanalesSimpleAnalysis = ({ data, onBack }) => {
         </div>
     );
 
-    const { llegadas, servicio, calcular, x, modoPoisson, t } = data;
+    const { llegadas = {}, servicio = {}, calcular = {}, x, modoPoisson, t, unidadBase, mejoraInterna = {} } = data;
     const pnCondicion = data.pnCondicion || {};
 
     // ── Calcular λ y μ ────────────────────────────────────────────
-    const llegadasCantidad = toFiniteNumber(llegadas.cantidad, NaN);
-    const llegadasTiempo = toFiniteNumber(llegadas.tiempo, NaN);
-    const servicioCantidad = toFiniteNumber(servicio.cantidad, NaN);
-    const servicioTiempo = toFiniteNumber(servicio.tiempo, NaN);
-    const λ = llegadasCantidad / llegadasTiempo;
-    const μ = servicioCantidad / servicioTiempo;
+    const uBase = unidadBase || servicio.unidad || "min";
+    const λ = convertRate(llegadas.cantidad, llegadas.tiempo, llegadas.unidad, uBase);
+    const μ = convertRate(servicio.cantidad, servicio.tiempo, servicio.unidad, uBase);
+    
+    let muMejorado = null;
+    if (mejoraInterna.activa) {
+        if (mejoraInterna.tipo === "porcentaje" && mejoraInterna.porcentaje) {
+            muMejorado = μ * (1 + (toFiniteNumber(mejoraInterna.porcentaje, 0) / 100));
+        } else if (mejoraInterna.tipo === "tasa" && mejoraInterna.cantidad && mejoraInterna.tiempo) {
+            muMejorado = convertRate(mejoraInterna.cantidad, mejoraInterna.tiempo, mejoraInterna.unidad, uBase);
+        }
+    }
     
     // Validar que λ y μ sean números válidos
     if (!isFinite(λ) || !isFinite(μ) || λ <= 0 || μ <= 0) {
@@ -129,6 +151,15 @@ const CanalesSimpleAnalysis = ({ data, onBack }) => {
             <div style={s.container}>
                 <p style={{ color: "#991b1b" }}>⚠ Error: el sistema M/M/1 es inestable cuando λ ≥ μ.</p>
                 <p style={{ color: "#6b7280" }}>Ajusta los datos para que la tasa de servicio sea mayor que la tasa de llegadas.</p>
+                <button style={s.backBtn} onClick={onBack}>← Volver</button>
+            </div>
+        );
+    }
+    
+    if (mejoraInterna.activa && muMejorado && λ >= muMejorado) {
+        return (
+            <div style={s.container}>
+                <p style={{ color: "#991b1b" }}>⚠ Error: La mejora propuesta genera un sistema inestable (λ ≥ μ mejorado).</p>
                 <button style={s.backBtn} onClick={onBack}>← Volver</button>
             </div>
         );
@@ -218,6 +249,7 @@ const CanalesSimpleAnalysis = ({ data, onBack }) => {
     if (calcular.poisson) tabs.push("Poisson");
     if (calcular.exponencial) tabs.push("Exponencial");
     if (calcular.mm1) tabs.push("M/M/1");
+    if (mejoraInterna.activa && muMejorado) tabs.push("Comparación");
     tabs.push("Conclusiones");
 
     const poisson = calcular.poisson ? buildPoisson() : null;
@@ -563,6 +595,183 @@ const CanalesSimpleAnalysis = ({ data, onBack }) => {
         </div>
     );
 
+    // ── TAB COMPARACION ───────────────────────────────────────────
+    const TabComparacion = () => {
+        if (!muMejorado) return null;
+
+        const calcImprovement = (mm1Val, mmkVal) => {
+            if (mm1Val === 0) return 0;
+            return ((mm1Val - mmkVal) / mm1Val) * 100;
+        };
+
+        const formatNumber = (value, digits = 4) => Number(value).toFixed(digits);
+        const formatProbability = (value) => `${Number(value).toFixed(4)} (${(Number(value) * 100).toFixed(2)}%)`;
+
+        const metricsMejorado = MM1_STEPS.map(step => ({ ...step, value: step.calc(λ, muMejorado) }));
+
+        return (
+            <div>
+                <p style={s.sectionLabel}>Análisis Comparativo: Original vs Mejorado</p>
+                <div style={s.explainBox}>
+                    <p style={s.explainTitle}>Cómo leer esta tabla</p>
+                    <p style={s.explainText}>
+                        Aquí comparamos el sistema M/M/1 actual (con μ = {μ.toFixed(4)}) frente al sistema mejorado (con μ = {muMejorado.toFixed(4)}).
+                    </p>
+                    <ul style={{ ...s.explainText, paddingLeft: 20, margin: "8px 0" }}>
+                        <li><strong>La flecha (↑ o ↓):</strong> Te indica si el valor numérico <em>subió</em> o <em>bajó</em> con respecto al original.</li>
+                        <li><strong>El color (Verde o Rojo):</strong> Te indica si ese cambio es <em>bueno</em> o <em>malo</em> para el sistema.</li>
+                    </ul>
+                    <p style={{ ...s.explainText, marginTop: 8 }}>
+                        <strong>Ejemplo 1 (Flecha abajo en verde):</strong> En <strong>Wq</strong> (Tiempo en cola), si pasas de esperar 10 minutos a 5 minutos, el valor <em>bajó</em> (↓), pero es una mejora operativa, por lo tanto se muestra en <strong>Verde</strong>.<br/>
+                        <strong>Ejemplo 2 (Flecha arriba en verde):</strong> En <strong>P₀</strong> (Disponibilidad), si pasa del 20% al 40%, el valor <em>subió</em> (↑) y es algo positivo, por lo que también es <strong>Verde</strong>.
+                    </p>
+                </div>
+                <div style={s.card}>
+                    <table style={s.table}>
+                        <thead>
+                            <tr style={s.tableHeaderRow}>
+                                <th style={s.th}>Métrica</th>
+                                <th style={s.th}>M/M/1 Original</th>
+                                <th style={s.th}>M/M/1 Mejorado</th>
+                                <th style={s.th}>Cambio</th>
+                                <th style={s.th}>% Mejora Relativa</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {metrics.map((mOriginal, idx) => {
+                                const mMejorado = metricsMejorado[idx];
+                                const name = mOriginal.label;
+                                const isProb = ["P0", "Pw"].includes(mOriginal.key);
+                                const higherIsBetter = mOriginal.key === "P0";
+                                
+                                const valOrig = mOriginal.value;
+                                const valMej = mMejorado.value;
+
+                                const isImprovement = higherIsBetter ? valMej > valOrig : valMej < valOrig;
+                                const valueIncreased = valMej > valOrig;
+                                
+                                const displayOrig = isProb ? formatProbability(valOrig) : formatNumber(valOrig);
+                                const displayMej = isProb ? formatProbability(valMej) : formatNumber(valMej);
+                                const changeAbs = Math.abs(valMej - valOrig).toFixed(4);
+                                const percentImprovement = calcImprovement(valOrig, valMej);
+
+                                return (
+                                    <tr
+                                        key={name}
+                                        style={{
+                                            ...s.td,
+                                            background: hoveredRow === idx ? mOriginal.color + "12" : "transparent",
+                                            borderBottom: "1px solid #f1f5f9"
+                                        }}
+                                        onMouseEnter={() => setHoveredRow(idx)}
+                                        onMouseLeave={() => setHoveredRow(null)}
+                                    >
+                                        <td style={{ ...s.td, fontWeight: 700 }}>{name}</td>
+                                        <td style={{ ...s.td, color: mOriginal.color }}>{displayOrig}</td>
+                                        <td style={{ ...s.td, color: mOriginal.color, fontWeight: 600 }}>{displayMej}</td>
+                                        <td style={{ ...s.td, color: isImprovement ? "#10b981" : "#ef4444" }}>
+                                            {valueIncreased ? "↑" : "↓"} {changeAbs}
+                                        </td>
+                                        <td style={{ ...s.td, color: isImprovement ? "#10b981" : "#ef4444", fontWeight: 700 }}>
+                                            {isImprovement ? "Mejora: " : "Empeora: "}{Math.abs(percentImprovement).toFixed(1)}%
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+
+                    {hoveredRow !== null && metrics[hoveredRow] && (() => {
+                        const it = metrics[hoveredRow];
+                        const mej = metricsMejorado[hoveredRow];
+                        const higherIsBetter = it.key === "P0";
+                        const isImprovement = higherIsBetter ? mej.value > it.value : mej.value < it.value;
+                        const conclusion = isImprovement ? "Mejora: la métrica mejora con el servidor más rápido." : "No es una mejora: revisar parámetros.";
+                        const recommendation = isImprovement ? "La mejora interna da buenos resultados." : "La mejora propuesta no es suficiente.";
+                        return (
+                            <div style={{ ...s.tooltip, borderColor: it.color, marginTop: 16 }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                                    <span style={{ ...s.tooltipBadge, background: it.color + "18", color: it.color, border: `1px solid ${it.color}33` }}>
+                                        {it.label}
+                                    </span>
+                                    <span style={s.tooltipTitle}>{it.name}</span>
+                                </div>
+                                <p style={s.tooltipText}><strong>¿Qué es?</strong> {it.desc}</p>
+                                <p style={s.tooltipText}><strong>¿Cuándo usarlo?</strong> {it.when}</p>
+                                <p style={{ ...s.tooltipText, marginTop: 6 }}><strong>Conclusión:</strong> {conclusion}</p>
+                                <p style={{ ...s.tooltipText, color: "#1d4ed8", marginTop: 6 }}><strong>Recomendación:</strong> {recommendation}</p>
+                                <div style={s.tooltipFormula}>
+                                    <code style={{ fontSize: 12 }}>{it.label} — Original: {it.value.toFixed(4)} → Mejorado: {mej.value.toFixed(4)}</code>
+                                </div>
+                            </div>
+                        );
+                    })()}
+                </div>
+                
+                {/* Resumen tarjetas */}
+                <div style={s.card}>
+                    <p style={s.cardTitle}>Resumen de Mejoras</p>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14 }}>
+                        {[
+                            { key: "Lq", label: "Clientes en cola", color: "#7c3aed" },
+                            { key: "Wq", label: "Tiempo en cola", color: "#ea580c" },
+                            { key: "Pw", label: "Probabilidad de espera", color: "#16a34a", isProb: true },
+                        ].map(({ key, label, color, isProb }) => {
+                            const orig = metrics.find(m => m.key === key).value;
+                            const mej = metricsMejorado.find(m => m.key === key).value;
+                            const reduction = ((orig - mej) / orig) * 100;
+                            const isImprovement = reduction > 0;
+                            
+                            const conclusionText = isImprovement
+                                ? `La métrica disminuye, indicando una clara mejora operativa.`
+                                : `La métrica no mejora con la tasa propuesta.`;
+                            const recommendationText = isImprovement
+                                ? `La mejora propuesta es efectiva y justifica el cambio.`
+                                : `Considera una mejora de tasa aún mayor o abrir nuevos canales.`;
+
+                            return (
+                                <div key={key} style={{ background: "#f8fafc", padding: "16px", borderRadius: "10px", borderTop: `3px solid ${color}` }}>
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                                        <div>
+                                            <div style={{ fontSize: 13, fontWeight: 700, color }}>{label}</div>
+                                            <div style={{ fontSize: 12, color: "#6b7280", marginTop: 6 }}>Orig → Mejorado</div>
+                                        </div>
+                                        <div style={{ textAlign: "right" }}>
+                                            <div style={{ fontSize: 12, color: "#6b7280" }}>Cambio</div>
+                                            <div style={{ fontWeight: 800, fontSize: 18, color: isImprovement ? "#16a34a" : "#dc2626", marginTop: 6 }}>
+                                                {isImprovement ? "Mejora: " : "Empeora: "}{Math.abs(reduction).toFixed(1)}%
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12 }}>
+                                        <div>
+                                            <div style={{ fontSize: 12, color: "#6b7280" }}>Original</div>
+                                            <div style={{ fontSize: 18, fontWeight: 800, color, marginTop: 6 }}>
+                                                {isProb ? formatProbability(orig) : formatNumber(orig)}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div style={{ fontSize: 12, color: "#6b7280" }}>Mejorado</div>
+                                            <div style={{ fontSize: 18, fontWeight: 800, color, marginTop: 6 }}>
+                                                {isProb ? formatProbability(mej) : formatNumber(mej)}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div style={{ marginTop: 10, fontSize: 12, color: "#374151" }}>
+                                        <strong>Conclusión:</strong> {conclusionText}
+                                    </div>
+                                    <div style={{ marginTop: 6, fontSize: 12, color: "#1d4ed8" }}>
+                                        <strong>Recomendación:</strong> {recommendationText}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     // ── TAB CONCLUSIONES ──────────────────────────────────────────
     const TabConclusiones = () => {
         const Lq = metrics.find(m => m.key === "Lq")?.value;
@@ -688,6 +897,7 @@ const CanalesSimpleAnalysis = ({ data, onBack }) => {
         "Poisson": <TabPoisson />,
         "Exponencial": <TabExponencial />,
         "M/M/1": <TabMM1 />,
+        "Comparación": <TabComparacion />,
         "Conclusiones": <TabConclusiones />,
     };
 
@@ -768,4 +978,8 @@ const s = {
     backBtn: { padding: "10px 16px", background: "#6b7280", color: "#fff", border: "none", borderRadius: "10px", cursor: "pointer", fontWeight: "600" },
     pnCondCard: { background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 10, padding: "14px 16px", marginTop: 4 },
     pnResultado: { display: "flex", alignItems: "center", marginTop: 12, padding: "14px 18px", background: "#eff6ff", border: "2px solid #2563eb", borderRadius: 10, flexWrap: "wrap" },
+    explainBox: { background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "12px", padding: "16px 18px", marginBottom: "16px" },
+    explainTitle: { fontSize: "14px", fontWeight: "700", color: "#166534", margin: "0 0 8px 0" },
+    explainText: { fontSize: "13px", color: "#14532d", margin: "0 0 4px 0", lineHeight: 1.5 },
+    tableHeaderRow: { borderBottom: "2px solid #e2e8f0" },
 };

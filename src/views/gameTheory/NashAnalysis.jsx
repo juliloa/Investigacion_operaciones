@@ -260,7 +260,7 @@ const NashAnalysis = ({ nashData, onBack }) => {
     <div>
       <div style={{ marginBottom: "16px" }}>
         <span style={hasENEP ? s.badgeENEP : s.badgeENEM}>
-          {hasENEP ? "ENEP - Hay una respuesta clara" : "ENEM - Hay que mezclar estrategias"}
+          {hasENEP ? "¡Punto de Equilibrio Encontrado! (Nadie quiere cambiar)" : "No hay acuerdo directo (Se requiere jugar al azar)"}
         </span>
       </div>
 
@@ -367,26 +367,23 @@ const NashAnalysis = ({ nashData, onBack }) => {
       )}
 
       <div style={s.card}>
-        <p style={s.cardTitle}>Explicacion del resultado</p>
+        <p style={s.cardTitle}>¿Qué significa esto en palabras sencillas?</p>
         <p style={{ fontSize: 13, color: "#374151", lineHeight: 1.6, marginTop: 6 }}>
-          1) Para J1: en cada columna se marca el numero mas alto porque es la mejor opcion de J1 en esa columna.
+          <strong>Paso 1:</strong> J1 (Filas) marca en cada columna la celda donde gana más. Es como decir: "Si tú haces esto, yo haré esto otro".
         </p>
         <p style={{ fontSize: 13, color: "#374151", lineHeight: 1.6, marginTop: 6 }}>
-          2) Para J2: en cada fila se marca el numero mas alto porque es la mejor opcion de J2 en esa fila.
+          <strong>Paso 2:</strong> J2 (Columnas) hace exactamente lo mismo. Marca en cada fila la celda donde gana más.
         </p>
         <p style={{ fontSize: 13, color: "#374151", lineHeight: 1.6, marginTop: 6 }}>
-          3) Cuando ambos numeros marcados caen en la misma celda, esa celda se pinta de verde.
+          <strong>Paso 3:</strong> Cuando ambas marcas caen en la misma celda (la que está pintada de verde), significa que <strong>ambos llegaron al mismo acuerdo sin hablarse</strong>.
         </p>
-        <p style={{ fontSize: 13, color: "#374151", lineHeight: 1.6, marginTop: 6 }}>
-          {hasENEP
-            ? "Como existe al menos una celda verde, decimos que hay ENEP."
-            : "Como no hay celdas verdes, decimos que hay ENEM y se necesita mezclar opciones."}
-        </p>
-        <p style={{ fontSize: 13, color: "#374151", lineHeight: 1.6, marginTop: 6 }}>
-          {hasENEP
-            ? "ENEP significa que hay una respuesta clara donde ninguno gana mas si cambia solo. Es decir: si uno cambia y el otro no, no mejora el resultado."
-            : "ENEM significa que no hay un punto fijo y por eso se deben mezclar opciones."}
-        </p>
+        <div style={{ background: hasENEP ? "#f0fdf4" : "#fef2f2", borderLeft: `4px solid ${hasENEP ? "#22c55e" : "#ef4444"}`, padding: "12px", borderRadius: "6px", marginTop: "12px" }}>
+          <p style={{ margin: 0, fontSize: 13, color: hasENEP ? "#14532d" : "#7f1d1d", lineHeight: 1.6 }}>
+            {hasENEP
+              ? "¡Bingo! Encontramos un Equilibrio. Significa que si se quedan en esa celda verde, ninguno se va a arrepentir de su decisión."
+              : "Como no hay celdas verdes, no hay un acuerdo claro. Si juegan esto repetidas veces, tendrán que engañar al otro tirando una moneda para no ser predecibles."}
+          </p>
+        </div>
         {hasTieAny && (
           <p style={{ fontSize: 12, color: "#6b7280", marginTop: 6 }}>
             Si hay empate en una fila o columna, no se marca ninguna porque no hay una mejor opcion unica.
@@ -423,14 +420,14 @@ const NashAnalysis = ({ nashData, onBack }) => {
         </div>
       </div>
       <div style={{ ...s.card, background: "#fff", border: "1px solid #e5e7eb" }}>
-        <p style={s.cardTitle}>Ejemplo rapido</p>
+        <p style={s.cardTitle}>Conclusión del ejemplo</p>
         {hasENEP && nashCells.length > 0 ? (
           <p style={{ fontSize: 13, color: "#374151", margin: 0, lineHeight: 1.6 }}>
-            En la celda ({rowNames[nashCells[0].i]}, {colNames[nashCells[0].j]}) coinciden ambos. Por eso se marca en verde y hay ENEP.
+            En la jugada ({rowNames[nashCells[0].i]}, {colNames[nashCells[0].j]}) los círculos de ambos se cruzaron. Por eso se marca en verde y decimos que hay Equilibrio (Nadie quiere cambiar).
           </p>
         ) : (
           <p style={{ fontSize: 13, color: "#374151", margin: 0, lineHeight: 1.6 }}>
-            No hay ninguna celda donde ambos coincidan. Por eso no hay ENEP y se usa mezcla de opciones.
+            Ningún círculo coincidió. Nadie quiere quedarse quieto porque el otro se aprovecharía. Por eso se usan <strong>Probabilidades</strong> para engañar al rival.
           </p>
         )}
       </div>

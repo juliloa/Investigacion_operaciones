@@ -30,13 +30,11 @@ const CanalesMultiples = ({ data, setData, onNext }) => {
     const update = (patch) => setData(prev => ({ ...prev, ...patch }));
     const updateL = (patch) => setData(prev => ({ ...prev, llegadas: { ...prev.llegadas, ...patch } }));
     const updateS = (patch) => setData(prev => ({ ...prev, servicio: { ...prev.servicio, ...patch } }));
-    const updateC = (patch) => setData(prev => ({ ...prev, calcular: { ...prev.calcular, ...patch } }));
     const updatePnC = (patch) => setData(prev => ({ ...prev, pnCondicion: { ...prev.pnCondicion, ...patch } }));
 
     const {
         llegadas = {},
         servicio = {},
-        calcular = {},
         x = "",
         modoPoisson = "exact",
         t = "",
@@ -70,9 +68,9 @@ const CanalesMultiples = ({ data, setData, onNext }) => {
     const muOrig = servicio.cantidad && servicio.tiempo
         ? parseFloat(servicio.cantidad) / parseFloat(servicio.tiempo) : null;
 
-    const invalidX = calcular.poisson && (!Number.isInteger(xValue) || xValue < 0);
-    const invalidT = calcular.exponencial && (!Number.isFinite(tValue) || tValue < 0);
-    const invalidPn = calcular.mmk && (!Number.isInteger(pnValue) || pnValue < 0);
+    const invalidX = (!Number.isInteger(xValue) || xValue < 0);
+    const invalidT = (!Number.isFinite(tValue) || tValue < 0);
+    const invalidPn = (!Number.isInteger(pnValue) || pnValue < 0);
     const validationMessage = invalidX
         ? "x debe ser un número entero no negativo para Poisson."
         : invalidT
@@ -85,11 +83,10 @@ const CanalesMultiples = ({ data, setData, onNext }) => {
         mu !== null && mu > 0 &&
         numServidores > 0 &&
         (!unidadesDiferentes || unidadBase !== null) &&
-        (calcular.poisson || calcular.exponencial || calcular.mmk) &&
-        (!calcular.mmk || (rho !== null && serverUtilization !== null && serverUtilization < 1)) &&
-        (!calcular.poisson || !invalidX) &&
-        (!calcular.exponencial || !invalidT) &&
-        (!calcular.mmk || !invalidPn) &&
+        (rho !== null && serverUtilization !== null && serverUtilization < 1) &&
+        (!invalidX) &&
+        (!invalidT) &&
+        (!invalidPn) &&
         validationMessage === "";
 
     // Cargar datos M/M/1 anterior
@@ -112,7 +109,6 @@ const CanalesMultiples = ({ data, setData, onNext }) => {
         update({
             llegadas: { cantidad: "", tiempo: "", unidad: "min" },
             servicio: { cantidad: "", tiempo: "", unidad: "min" },
-            calcular: { poisson: false, exponencial: false, mmk: true },
             x: "",
             modoPoisson: "exact",
             t: "",
@@ -333,52 +329,21 @@ const CanalesMultiples = ({ data, setData, onNext }) => {
                         </div>
                     )}
 
-                    {/* ── QUÉ CALCULAR ── */}
-                    <div style={s.card}>
-                        <p style={s.cardTitle}>¿Qué quieres calcular?</p>
-                        <div style={s.checkGrid}>
-                            {[
-                                {
-                                    key: "poisson", title: "Distribución de Poisson", formula: "Px = (λˣ · e^(−λ)) / x!",
-                                    desc: "Probabilidad de x llegadas.", when: "Opcional — igual que M/M/1."
-                                },
-                                {
-                                    key: "exponencial", title: "Distribución Exponencial", formula: "P(T ≤ t) = 1 − e^(−μt)",
-                                    desc: "Probabilidad de servicio en t unidades.", when: "Opcional — igual que M/M/1."
-                                },
-                                {
-                                    key: "mmk", title: "Sistema M/M/k", formula: "P₀, Lq, L, Wq, W, Pw, Pn (Erlang C)",
-                                    desc: "Métricas completas del sistema con k servidores.", when: "Principal — siempre recomendado."
-                                },
-                            ].map(({ key, title, formula, desc, when }) => (
-                                <div
-                                    key={key}
-                                    style={{ ...s.checkCard, ...(calcular[key] ? s.checkActive : {}) }}
-                                    onClick={() => updateC({ [key]: !calcular[key] })}
-                                >
-                                    <div style={s.checkHeader}>
-                                        <div style={{ ...s.checkbox, background: calcular[key] ? "#2563eb" : "#fff", border: `2px solid ${calcular[key] ? "#2563eb" : "#d1d5db"}` }}>
-                                            {calcular[key] && "✓"}
-                                        </div>
-                                        <span style={s.checkTitle}>{title}</span>
-                                    </div>
-                                    <code style={s.checkFormula}>{formula}</code>
-                                    <p style={s.checkDesc}>{desc}</p>
-                                    <p style={s.checkWhen}><strong>Cuándo usarlo:</strong> {when}</p>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+
 
                     {/* ── PARÁMETROS ADICIONALES ── */}
-                    {(calcular.poisson || calcular.exponencial || calcular.mmk) && (
                         <div style={s.card}>
                             <p style={s.cardTitle}>Parámetros adicionales</p>
 
                             {/* Poisson */}
-                            {calcular.poisson && (
                                 <div style={s.paramBlock}>
                                     <p style={s.paramTitle}>Para Poisson — P(x)</p>
+                                    <div style={{ background: "#eff6ff", borderLeft: "4px solid #3b82f6", padding: "12px", borderRadius: "4px", marginBottom: "14px" }}>
+                                        <p style={{ margin: "0 0 6px 0", fontSize: "13px", color: "#1e3a8a", fontWeight: "600" }}>¿Para qué sirve y cómo hallarlo?</p>
+                                        <p style={{ margin: "0", fontSize: "12px", color: "#1e40af", lineHeight: "1.4" }}>
+                                            Calcula la probabilidad de que lleguen "x" clientes al sistema. En el problema, busca frases como: <em>"probabilidad de que lleguen 3 clientes"</em> o <em>"probabilidad de que lleguen más de 2 personas"</em>. <strong>La clave: habla de llegadas.</strong>
+                                        </p>
+                                    </div>
                                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
                                         {MODOS_POISSON.map(m => (
                                             <button
@@ -392,31 +357,36 @@ const CanalesMultiples = ({ data, setData, onNext }) => {
                                         ))}
                                     </div>
                                     <div style={s.field}>
-                                        <label style={s.label}>Valor de x</label>
+                                        <label style={s.label}>Valor de x (clientes que llegan)</label>
                                         <input type="number" value={x} onChange={e => update({ x: e.target.value })} style={{ ...s.inputSm, width: 120 }} placeholder="ej: 2" min="0" />
                                     </div>
                                 </div>
-                            )}
 
                             {/* Exponencial */}
-                            {calcular.exponencial && (
                                 <div style={s.paramBlock}>
                                     <p style={s.paramTitle}>Para Exponencial — P(T ≤ t)</p>
+                                    <div style={{ background: "#fef2f2", borderLeft: "4px solid #ef4444", padding: "12px", borderRadius: "4px", marginBottom: "14px" }}>
+                                        <p style={{ margin: "0 0 6px 0", fontSize: "13px", color: "#7f1d1d", fontWeight: "600" }}>¿Para qué sirve y cómo hallarlo?</p>
+                                        <p style={{ margin: "0", fontSize: "12px", color: "#991b1b", lineHeight: "1.4" }}>
+                                            Calcula la probabilidad de que un cliente sea atendido en un tiempo "t" o menos. Busca frases como: <em>"probabilidad de que el servicio dure menos de 5 minutos"</em> o <em>"probabilidad de que sea atendido en a lo sumo 10 minutos"</em>. <strong>La clave: habla del tiempo de atención.</strong>
+                                        </p>
+                                    </div>
                                     <div style={s.field}>
-                                        <label style={s.label}>Valor de t ({uBase})</label>
+                                        <label style={s.label}>Valor de t ({uBase} de atención)</label>
                                         <input type="number" value={t} onChange={e => update({ t: e.target.value })} style={{ ...s.inputSm, width: 120 }} placeholder="ej: 1" min="0" step="0.1" />
                                     </div>
                                 </div>
-                            )}
 
                             {/* M/M/k Pn */}
-                            {calcular.mmk && (
                                 <div style={s.paramBlock}>
                                     <div style={{ marginTop: 14 }}>
-                                        <p style={{ ...s.paramTitle, marginBottom: 8 }}>Condición adicional sobre Pn</p>
-                                        <p style={s.guideText}>
-                                            Calcula probabilidad de n clientes en sistema.
-                                        </p>
+                                        <p style={{ ...s.paramTitle, marginBottom: 8 }}>Para la Distribución Pn (Clientes en el sistema)</p>
+                                        <div style={{ background: "#f0fdf4", borderLeft: "4px solid #22c55e", padding: "12px", borderRadius: "4px", marginBottom: "14px" }}>
+                                            <p style={{ margin: "0 0 6px 0", fontSize: "13px", color: "#14532d", fontWeight: "600" }}>¿Para qué sirve y cómo hallarlo?</p>
+                                            <p style={{ margin: "0", fontSize: "12px", color: "#166534", lineHeight: "1.4" }}>
+                                                Calcula la probabilidad de que haya exactamente "n" clientes en todo el local (los que hacen fila + los que están siendo atendidos). Busca frases como: <em>"probabilidad de que haya 4 clientes en el sistema"</em> o <em>"probabilidad de que haya más de 2 personas en el lugar"</em>. <strong>La clave: habla de cantidad total de personas en el local.</strong>
+                                            </p>
+                                        </div>
                                         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10, marginTop: 8 }}>
                                             {MODOS_POISSON.map(m => (
                                                 <button
@@ -430,14 +400,12 @@ const CanalesMultiples = ({ data, setData, onNext }) => {
                                             ))}
                                         </div>
                                         <div style={s.field}>
-                                            <label style={s.label}>Valor de n</label>
+                                            <label style={s.label}>Valor de n (clientes en el lugar)</label>
                                             <input type="number" value={pnCondicion.valor} onChange={e => updatePnC({ valor: e.target.value })} style={{ ...s.inputSm, width: 120 }} placeholder="ej: 3" min="0" />
                                         </div>
                                     </div>
                                 </div>
-                            )}
                         </div>
-                    )}
 
                     {/* ── RESUMEN ── */}
                     <div style={s.summaryCard}>
@@ -457,7 +425,7 @@ const CanalesMultiples = ({ data, setData, onNext }) => {
                             ))}
                         </div>
 
-                        {calcular.mmk && serverUtilization >= 1 && (
+                        {serverUtilization >= 1 && (
                             <div style={s.errorBox}>
                                 Para M/M/k se requiere ρ/k &lt; 1. Actualmente ρ/k = {serverUtilization?.toFixed(4)}.
                             </div>
