@@ -1,5 +1,6 @@
 import React from "react";
 import jsPDF from "jspdf";
+import { isProbability, toFiniteNumber } from "../utils/validation";
 
 const safeDiv = (a, b) => (b === 0 ? 0 : a / b);
 const asPercent = (value) => `${(value * 100).toFixed(4)}%`;
@@ -11,8 +12,20 @@ const Step10 = ({ data, prev }) => {
   const probabilities = data.probabilities || [];
   const states = data.states || ["Favorable", "Desfavorable"];
 
-  const probabilityFavorableState = probabilities[0] ?? 0;
-  const probabilityUnfavorableState = probabilities[1] ?? 0;
+  const invalidProbability = probabilities.slice(0, 2).some((value) => !isProbability(value));
+  const invalidPayoff = payoff.some((row) => !Array.isArray(row) || row.length < 2 || row.some((value) => !Number.isFinite(toFiniteNumber(value, NaN))));
+  const invalidStudy = !isProbability(data.studyConfig?.favorableDetectionRate ?? 0.9) || !isProbability(data.studyConfig?.unfavorableFalsePositiveRate ?? 0.25);
+
+  if (!alternatives.length || !payoff.length || !probabilities.length) {
+    return <p>Datos incompletos</p>;
+  }
+
+  if (invalidProbability || invalidPayoff || invalidStudy) {
+    return <p>⚠ Revisa probabilidades, estudio de mercado y pagos. No se permiten valores inválidos.</p>;
+  }
+
+  const probabilityFavorableState = toFiniteNumber(probabilities[0], 0);
+  const probabilityUnfavorableState = toFiniteNumber(probabilities[1], 0);
 
   const studyConfig = data.studyConfig || {
     favorableDetectionRate: 0.9,

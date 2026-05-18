@@ -1,10 +1,15 @@
 import React from "react";
+import { isFiniteNumber, toFiniteNumber } from "../../utils/validation";
 
 const isNashCell = (matrix, r, c, n) => {
-  const getVal = (cell, k) => parseFloat(cell[k]) || 0;
+  const getVal = (cell, k) => toFiniteNumber(cell?.[k], NaN);
   const cell = matrix[r][c];
+  if (!cell || cell.some((value) => !isFiniteNumber(toFiniteNumber(value, NaN)))) {
+    return false;
+  }
   for (let k = 0; k < n; k++) {
     const myPayoff = getVal(cell, k);
+    if (!Number.isFinite(myPayoff)) return false;
     if (k === 0) {
       for (let i = 0; i < matrix.length; i++)
         if (getVal(matrix[i][c], k) > myPayoff) return false;
@@ -27,6 +32,7 @@ const NashEquilibrium = ({ nashData, setNashData, onBack, onGoAnalysis }) => {
   const { numPlayers, matrix, rowNames, colNames, rowGroup, colGroup } = nashData;
   const numRows = matrix.length;
   const numCols = colNames.length;
+  const [showBestResponses, setShowBestResponses] = React.useState(true);
 
   // Helper para actualizar nashData parcialmente
   const update = (patch) => setNashData(prev => ({ ...prev, ...patch }));
@@ -74,26 +80,62 @@ const NashEquilibrium = ({ nashData, setNashData, onBack, onGoAnalysis }) => {
   };
 
   // ── Análisis ──────────────────────────────────────────────────
-  const getVal = (cell, k) => parseFloat(cell[k]) || 0;
+  const getVal = (cell, k) => toFiniteNumber(cell?.[k], NaN);
 
-  const allFilled = matrix.every(row => row.every(cell => cell.every(v => v !== "")));
+  const allFilled = matrix.every(row => row.every(cell => cell.every(v => v !== "" && Number.isFinite(toFiniteNumber(v, NaN)))));
+  const analysisBlocked = !allFilled;
 
   const nashCells = [];
   if (allFilled) {
     for (let i = 0; i < numRows; i++)
       for (let j = 0; j < numCols; j++)
         if (isNashCell(matrix, i, j, numPlayers))
-          nashCells.push({ i, j, values: matrix[i][j].map(v => parseFloat(v)) });
+          nashCells.push({ i, j, values: matrix[i][j].map(v => toFiniteNumber(v, NaN)) });
   }
+
+  const getNashIndex = (i, j) => {
+    const idx = nashCells.findIndex(c => c.i === i && c.j === j);
+    return idx >= 0 ? idx + 1 : null;
+  };
 
   const isNash = (i, j) => nashCells.some(c => c.i === i && c.j === j);
 
   const colMaxJ1 = colNames.map((_, j) =>
-    Math.max(...matrix.map(row => getVal(row[j], 0)))
+    allFilled ? Math.max(...matrix.map(row => getVal(row[j], 0))) : null
   );
   const rowMaxJ2 = matrix.map(row =>
-    Math.max(...row.map(cell => getVal(cell, 1)))
+    allFilled ? Math.max(...row.map(cell => getVal(cell, 1))) : null
   );
+
+  const bestRowForColJ1 = colNames.map((_, j) => {
+    if (!allFilled) return null;
+    const values = matrix.map((row) => getVal(row[j], 0));
+    if (values.some((v) => !Number.isFinite(v))) return null;
+    const maxVal = Math.max(...values);
+    const count = values.filter((v) => v === maxVal).length;
+    if (count !== 1) return null;
+    return values.findIndex((v) => v === maxVal);
+  });
+
+  const bestColForRowJ2 = matrix.map((row) => {
+    if (!allFilled) return null;
+    const values = row.map((cell) => getVal(cell, 1));
+    if (values.some((v) => !Number.isFinite(v))) return null;
+    const maxVal = Math.max(...values);
+    const count = values.filter((v) => v === maxVal).length;
+    if (count !== 1) return null;
+    return values.findIndex((v) => v === maxVal);
+  });
+
+  const isBestResponseJ1 = (i, j) => {
+    if (!allFilled) return false;
+    return bestRowForColJ1[j] === i;
+  };
+
+  const isBestResponseJ2 = (i, j) => {
+    if (!allFilled) return false;
+    return bestColForRowJ2[i] === j;
+  };
 
   return (
     <div style={s.container}>
@@ -103,8 +145,13 @@ const NashEquilibrium = ({ nashData, setNashData, onBack, onGoAnalysis }) => {
       <div style={s.guideCard}>
         <h3 style={s.guideTitle}>Guia de uso — Equilibrio de Nash</h3>
         <p style={s.guideText}>Cada celda contiene un valor por jugador. Ingresa los pagos directamente en cada casilla.</p>
-        <p style={s.guideText}><strong>J1</strong> controla filas · <strong>J2</strong> controla columnas · <strong>J3+</strong> best-response global.</p>
+        <p style={s.guideText}><strong>J1</strong> controla filas · <strong>J2</strong> controla columnas · <strong>J3+</strong> mejor respuesta general.</p>
         <p style={s.guideText}><strong>ENEP</strong> = Estrategias Puras · <strong>ENEM</strong> = requiere mixtas.</p>
+        {analysisBlocked && (
+          <p style={{ ...s.guideText, color: "#b91c1c", fontWeight: 700 }}>
+            ⚠ Completa todas las celdas con números finitos antes de analizar. No se permiten vacíos ni texto.
+          </p>
+        )}
         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "10px" }}>
           {Array.from({ length: numPlayers }, (_, k) => (
             <span key={k} style={{ ...s.legendChip, background: playerColors[k] + "18", border: `1px solid ${playerColors[k]}44`, color: playerColors[k] }}>
@@ -128,6 +175,25 @@ const NashEquilibrium = ({ nashData, setNashData, onBack, onGoAnalysis }) => {
           </div>
         ))}
       </div>
+
+      {/* LEYENDA Y TOGGLE */}
+      {allFilled && (
+        <div style={s.analysisControls}>
+          <button 
+            style={{ ...s.toggleBtn, background: showBestResponses ? "#2563eb" : "#9ca3af" }}
+            onClick={() => setShowBestResponses(!showBestResponses)}
+          >
+            {showBestResponses ? "Mostrar" : "Ocultar"} mejores opciones
+          </button>
+          {showBestResponses && (
+            <div style={s.legendRow}>
+              <span style={{ ...s.legendItem, borderLeft: "4px solid #3b82f6" }}>J1 mejor opcion (circulo azul)</span>
+              <span style={{ ...s.legendItem, borderLeft: "4px solid #ef4444" }}>J2 mejor opcion (circulo rojo)</span>
+              <span style={{ ...s.legendItem, borderLeft: "4px solid #059669" }}>Equilibrio Nash (verde)</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* TABLA */}
       <div style={s.tableContainer}>
@@ -157,22 +223,67 @@ const NashEquilibrium = ({ nashData, setNashData, onBack, onGoAnalysis }) => {
                 <th style={s.rowHeader}>
                   <input value={rowNames[i]} onChange={e => { const n = [...rowNames]; n[i] = e.target.value; update({ rowNames: n }); }} style={s.headerInput} />
                 </th>
-                {row.map((cell, j) => (
-                  <td key={j} style={{ ...s.cell, background: isNash(i, j) ? "#d1fae5" : "#fff" }}>
-                    <div style={s.cellInner}>
-                      {cell.map((val, k) => (
-                        <input
-                          key={k}
-                          type="number"
-                          value={val}
-                          onChange={e => handleCell(i, j, k, e.target.value)}
-                          style={{ ...s.cellInput, borderColor: isNash(i, j) ? "#22c55e" : playerColors[k] + "66", color: playerColors[k] }}
-                          placeholder="0"
-                        />
-                      ))}
-                    </div>
-                  </td>
-                ))}
+                {row.map((cell, j) => {
+                  const nashIdx = getNashIndex(i, j);
+                  const isBR_J1 = showBestResponses && isBestResponseJ1(i, j);
+                  const isBR_J2 = showBestResponses && isBestResponseJ2(i, j);
+                  const isNashCell = isNash(i, j);
+                  
+                  let bgColor = "#fff";
+                  let borderColor = "1px solid #f1f5f9";
+                  let shadowStyle = "none";
+                  
+                  if (isNashCell) {
+                    bgColor = "linear-gradient(135deg, #d1fae5 0%, #c7f0d8 100%)";
+                    borderColor = "4px solid #059669";
+                    shadowStyle = "0 0 0 3px rgba(5, 150, 105, 0.15), inset 0 0 8px rgba(5, 150, 105, 0.1)";
+                  } else if (isBR_J1 && isBR_J2) {
+                    bgColor = "linear-gradient(135deg, #dbeafe 0%, #e0f2fe 50%, #fee2e2 50%, #fecaca 100%)";
+                  } else if (isBR_J1) {
+                    bgColor = "#e0e7ff";
+                  } else if (isBR_J2) {
+                    bgColor = "#fee2e2";
+                  }
+                  
+                  return (
+                    <td key={j} style={{ 
+                      ...s.cell, 
+                      border: borderColor,
+                      boxShadow: shadowStyle,
+                      position: "relative",
+                      background: bgColor
+                    }}>
+                      {nashIdx && <span style={s.equilibriumBadge}>E{nashIdx}</span>}
+                      <div style={s.cellInner}>
+                        {cell.map((val, k) => {
+                          const showRing = (k === 0 && isBR_J1) || (k === 1 && isBR_J2);
+                          const ringColor = k === 0 ? "#3b82f6" : "#ef4444";
+                          return (
+                            <div key={k} style={s.inputWrap}>
+                              {showRing && (
+                                <span
+                                  style={{
+                                    ...s.bestResponseRing,
+                                    borderColor: ringColor,
+                                    background: "transparent",
+                                    boxShadow: "none"
+                                  }}
+                                />
+                              )}
+                              <input
+                                type="number"
+                                value={val}
+                                onChange={e => handleCell(i, j, k, e.target.value)}
+                                style={{ ...s.cellInput, borderColor: isNashCell ? "#059669" : playerColors[k] + "66", color: playerColors[k] }}
+                                placeholder="0"
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </td>
+                  );
+                })}
                 <td style={s.totalCell}>{allFilled ? rowMaxJ2[i] : "—"}</td>
               </tr>
             ))}
@@ -191,28 +302,89 @@ const NashEquilibrium = ({ nashData, setNashData, onBack, onGoAnalysis }) => {
       <div style={s.resultBox}>
         {!allFilled ? (
           <p style={{ color: "#6b7280", fontSize: "14px" }}>Completa todos los valores para ver el análisis.</p>
-        ) : nashCells.length > 0 ? (
-          <>
-            <p style={s.tagENEP}>✓ ENEP — Equilibrio en Estrategias Puras</p>
-            <p style={{ fontSize: "14px", color: "#374151", marginBottom: "10px" }}>
-              Se encontraron <strong>{nashCells.length}</strong> equilibrio{nashCells.length > 1 ? "s" : ""}:
-            </p>
-            {nashCells.map((c, idx) => (
-              <div key={idx} style={s.nashItem}>
-                <strong>E{idx + 1}:</strong>
-                <span style={{ fontSize: "14px" }}>({rowNames[c.i]}, {colNames[c.j]})</span>
-                {c.values.map((v, k) => (
-                  <span key={k} style={{ ...s.payoffChip, background: playerColors[k] + "18", color: playerColors[k], border: `1px solid ${playerColors[k]}33` }}>
-                    J{k + 1}: {v}
-                  </span>
-                ))}
-              </div>
-            ))}
-          </>
         ) : (
           <>
-            <p style={s.tagENEM}>✗ ENEM — No existe equilibrio en estrategias puras</p>
-            <p style={{ fontSize: "13px", color: "#6b7280" }}>Este juego requiere análisis de estrategias mixtas.</p>
+            {/* EXPLICACIÓN PASO A PASO */}
+            <div style={s.stepExplanation}>
+              <h4 style={s.stepTitle}>Analisis paso a paso</h4>
+              
+              <div style={{ ...s.stepItem, borderLeft: "4px solid #2563eb", paddingLeft: 12, background: "#eff6ff", borderRadius: 8 }}>
+                <span style={{ ...s.stepNumber, background: "#2563eb" }}>1</span>
+                <div style={s.stepContent}>
+                  <strong style={{ color: "#2563eb" }}>Mejor opcion de {rowGroup} (J1):</strong>
+                  <p style={{ ...s.stepText, color: "#1e3a8a" }}>Para cada columna, {rowGroup} elige la fila con el numero mas alto. Esos numeros quedan con circulo azul.</p>
+                  <div style={s.stepExample}>
+                    {colNames.map((col, j) => (
+                      <span key={j} style={{ ...s.exampleChip, background: "#dbeafe", color: "#1e3a8a" }}>
+                        {bestRowForColJ1[j] === null
+                          ? `${col}: sin maximo claro (hay empate)`
+                          : `${col}: max ${colMaxJ1[j]} en (${rowNames[bestRowForColJ1[j]]}, ${col})`}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ ...s.stepItem, borderLeft: "4px solid #dc2626", paddingLeft: 12, background: "#fef2f2", borderRadius: 8 }}>
+                <span style={{ ...s.stepNumber, background: "#dc2626" }}>2</span>
+                <div style={s.stepContent}>
+                  <strong style={{ color: "#dc2626" }}>Mejor opcion de {colGroup} (J2):</strong>
+                  <p style={{ ...s.stepText, color: "#7f1d1d" }}>Para cada fila, {colGroup} elige la columna con el numero mas alto. Esos numeros quedan con circulo rojo.</p>
+                  <div style={s.stepExample}>
+                    {rowNames.map((row, i) => (
+                      <span key={i} style={{ ...s.exampleChip, background: "#fee2e2", color: "#7f1d1d" }}>
+                        {bestColForRowJ2[i] === null
+                          ? `${row}: sin maximo claro (hay empate)`
+                          : `${row}: max ${rowMaxJ2[i]} en (${row}, ${colNames[bestColForRowJ2[i]]})`}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ ...s.stepItem, borderLeft: "4px solid #16a34a", paddingLeft: 12, background: "#f0fdf4", borderRadius: 8 }}>
+                <span style={{ ...s.stepNumber, background: "#16a34a" }}>3</span>
+                <div style={s.stepContent}>
+                  <strong style={{ color: "#16a34a" }}>Equilibrios = Cruces:</strong>
+                  <p style={{ ...s.stepText, color: "#14532d" }}>Un equilibrio ocurre donde coinciden ambos circulos. Esa celda se marca en verde.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* RESULTADOS */}
+            {nashCells.length > 0 ? (
+              <>
+                <div style={s.resultTypeBox_ENEP}>
+                  <p style={s.tagENEP}>✓ ENEP — Equilibrio en Estrategias Puras</p>
+                  <p style={{ fontSize: "14px", color: "#374151", marginBottom: "10px" }}>
+                    Se encontraron <strong>{nashCells.length}</strong> equilibrio{nashCells.length > 1 ? "s" : ""} donde ambos jugadores juegan su mejor estrategia:
+                  </p>
+                  {nashCells.map((c, idx) => (
+                    <div key={idx} style={s.nashItem}>
+                      <strong>E{idx + 1}:</strong>
+                      <span style={{ fontSize: "14px" }}>({rowNames[c.i]}, {colNames[c.j]})</span>
+                      {c.values.map((v, k) => (
+                        <span key={k} style={{ ...s.payoffChip, background: playerColors[k] + "18", color: playerColors[k], border: `1px solid ${playerColors[k]}33` }}>
+                          J{k + 1}: {v}
+                        </span>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={s.resultTypeBox_ENEM}>
+                  <p style={s.tagENEM}>✗ ENEM — No existe equilibrio en estrategias puras</p>
+                  <p style={{ fontSize: "13px", color: "#6b7280", marginBottom: "10px" }}>
+                    No hay celdas donde ambos jugadores elijan su mejor opcion al mismo tiempo. Este juego requiere usar <strong>estrategias mixtas</strong> (probabilidades).
+                  </p>
+                  <p style={{ fontSize: "12px", color: "#6b7280", fontStyle: "italic" }}>
+                    En una estrategia mixta, cada jugador reparte probabilidades entre sus opciones para que al otro le de igual que opcion elegir.
+                  </p>
+                </div>
+              </>
+            )}
           </>
         )}
 
@@ -252,7 +424,14 @@ const s = {
   rowHeader:    { background: "#f8fafc", padding: "10px", fontWeight: "700", minWidth: "140px" },
   cell:         { textAlign: "center", padding: "8px 6px", borderBottom: "1px solid #f1f5f9" },
   cellInner:    { display: "flex", gap: "4px", justifyContent: "center", alignItems: "center" },
-  cellInput:    { width: "44px", padding: "5px 4px", textAlign: "center", borderRadius: "6px", border: "1.5px solid #ccc", fontSize: "13px", fontWeight: "600", outline: "none", background: "#fafafa" },
+  inputWrap:    { position: "relative", display: "grid", placeItems: "center", width: "44px", height: "28px" },
+  bestResponseRing: { position: "absolute", inset: 0, margin: "auto", width: "32px", height: "32px", borderRadius: "50%", border: "2px solid transparent", background: "transparent", pointerEvents: "none", zIndex: 3 },
+  cellInput:    { width: "44px", height: "28px", padding: 0, textAlign: "center", borderRadius: "6px", border: "1.5px solid #ccc", fontSize: "13px", fontWeight: "600", outline: "none", background: "#fafafa", position: "relative", zIndex: 1 },
+  equilibriumBadge: { position: "absolute", top: "-8px", right: "-8px", background: "#059669", color: "#fff", borderRadius: "50%", width: "28px", height: "28px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontWeight: "800", boxShadow: "0 4px 12px rgba(5, 150, 105, 0.3)" },
+  analysisControls: { marginBottom: "16px", padding: "12px", background: "#f0f9ff", borderRadius: "10px", border: "1px solid #bfdbfe", display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" },
+  toggleBtn:    { padding: "8px 16px", borderRadius: "8px", border: "none", color: "#fff", fontWeight: "600", cursor: "pointer", fontSize: "14px", transition: "background 200ms" },
+  legendRow:    { display: "flex", gap: "16px", flexWrap: "wrap" },
+  legendItem:   { fontSize: "13px", fontWeight: "600", color: "#374151", paddingLeft: "12px" },
   totalHeader:  { background: "#0f172a", color: "#fff", padding: "10px", textAlign: "center", fontWeight: "700", whiteSpace: "nowrap" },
   totalCell:    { background: "#e2e8f0", textAlign: "center", fontWeight: "700", padding: "8px" },
   resultBox:    { marginTop: "16px", background: "#fff", padding: "18px", borderRadius: "12px", boxShadow: "0 6px 15px rgba(0,0,0,0.06)" },
@@ -260,6 +439,16 @@ const s = {
   tagENEM:      { color: "#dc2626", fontWeight: "700", fontSize: "15px", marginBottom: "8px" },
   nashItem:     { fontSize: "14px", margin: "6px 0", display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" },
   payoffChip:   { padding: "2px 9px", borderRadius: "12px", fontSize: "12px", fontWeight: "600" },
+  stepExplanation: { background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: "10px", padding: "16px", marginBottom: "16px" },
+  stepTitle:    { margin: "0 0 12px 0", color: "#111827", fontSize: "16px", fontWeight: "700" },
+  stepItem:     { display: "flex", gap: "12px", marginBottom: "14px", alignItems: "flex-start" },
+  stepNumber:   { background: "#2563eb", color: "#fff", borderRadius: "50%", width: "28px", height: "28px", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "700", fontSize: "14px", flexShrink: 0 },
+  stepContent:  { flex: 1 },
+  stepText:     { fontSize: "13px", color: "#6b7280", margin: "4px 0 8px 0", lineHeight: "1.4" },
+  stepExample:  { display: "flex", gap: "8px", flexWrap: "wrap" },
+  exampleChip:  { background: "#e0e7ff", color: "#1e40af", padding: "4px 10px", borderRadius: "8px", fontSize: "12px", fontWeight: "600" },
+  resultTypeBox_ENEP: { background: "#f0fdf4", border: "2px solid #16a34a", borderRadius: "10px", padding: "14px", marginBottom: "12px" },
+  resultTypeBox_ENEM: { background: "#fef2f2", border: "2px solid #dc2626", borderRadius: "10px", padding: "14px", marginBottom: "12px" },
   backBtn:      { padding: "10px 16px", background: "#6b7280", color: "#fff", border: "none", borderRadius: "10px", cursor: "pointer", fontWeight: "600" },
   analysisBtn:  { padding: "10px 20px", background: "#2563eb", color: "#fff", border: "none", borderRadius: "10px", cursor: "pointer", fontWeight: "600" },
 };

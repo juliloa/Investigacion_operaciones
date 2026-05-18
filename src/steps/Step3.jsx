@@ -177,7 +177,6 @@ const Step3 = ({ data, next, prev }) => {
           </div>
         </div>
 
-        {/* ANÁLISIS */}
         <div className="card">
           <div className="card-title">Por alternativa</div>
 
@@ -207,7 +206,7 @@ const Step3 = ({ data, next, prev }) => {
                   Pendiente (m): {analysis.slope}
                 </div>
                 <div className="text" style={{ fontSize: "12px" }}>
-                  Indica cuánto cambia el valor esperado cuando cambia p
+                  Indica cuánto cambia el valor esperado cuando cambia p.
                 </div>
               </div>
 
@@ -225,7 +224,6 @@ const Step3 = ({ data, next, prev }) => {
           ))}
         </div>
 
-        {/* INTERPRETACIÓN */}
         <div className="card">
           <div className="card-title">Interpretación</div>
 
@@ -254,7 +252,6 @@ const Step3 = ({ data, next, prev }) => {
           </div>
         </div>
 
-        {/* BOTONES */}
         <div className="buttons">
           <button className="btn btn-secondary" onClick={prev}>
             ← Volver

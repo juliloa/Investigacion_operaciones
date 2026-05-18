@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { toFiniteNumber } from "../../utils/validation";
 
 // ── HELPERS ───────────────────────────────────────────────────────
 const factorial = (n) => {
@@ -103,10 +104,15 @@ const CanalesSimpleAnalysis = ({ data, onBack }) => {
     );
 
     const { llegadas, servicio, calcular, x, modoPoisson, t } = data;
+    const pnCondicion = data.pnCondicion || {};
 
     // ── Calcular λ y μ ────────────────────────────────────────────
-    const λ = parseFloat(llegadas.cantidad) / parseFloat(llegadas.tiempo);
-    const μ = parseFloat(servicio.cantidad) / parseFloat(servicio.tiempo);
+    const llegadasCantidad = toFiniteNumber(llegadas.cantidad, NaN);
+    const llegadasTiempo = toFiniteNumber(llegadas.tiempo, NaN);
+    const servicioCantidad = toFiniteNumber(servicio.cantidad, NaN);
+    const servicioTiempo = toFiniteNumber(servicio.tiempo, NaN);
+    const λ = llegadasCantidad / llegadasTiempo;
+    const μ = servicioCantidad / servicioTiempo;
     
     // Validar que λ y μ sean números válidos
     if (!isFinite(λ) || !isFinite(μ) || λ <= 0 || μ <= 0) {
@@ -117,10 +123,36 @@ const CanalesSimpleAnalysis = ({ data, onBack }) => {
             </div>
         );
     }
+
+    if (λ >= μ) {
+        return (
+            <div style={s.container}>
+                <p style={{ color: "#991b1b" }}>⚠ Error: el sistema M/M/1 es inestable cuando λ ≥ μ.</p>
+                <p style={{ color: "#6b7280" }}>Ajusta los datos para que la tasa de servicio sea mayor que la tasa de llegadas.</p>
+                <button style={s.backBtn} onClick={onBack}>← Volver</button>
+            </div>
+        );
+    }
     
     const ρ = λ / μ;
-    const xNum = parseInt(x) || 0;
-    const tNum = parseFloat(t) || 0;
+    const xValue = toFiniteNumber(x, NaN);
+    const tValue = toFiniteNumber(t, NaN);
+    const pnValue = toFiniteNumber(pnCondicion.valor, NaN);
+    const invalidX = calcular.poisson && (!Number.isInteger(xValue) || xValue < 0);
+    const invalidT = calcular.exponencial && (!Number.isFinite(tValue) || tValue < 0);
+    const invalidPn = calcular.mm1 && (!Number.isInteger(pnValue) || pnValue < 0);
+
+    if (invalidX || invalidT || invalidPn) {
+        return (
+            <div style={s.container}>
+                <p style={{ color: "#991b1b" }}>⚠ Revisa x, t y Pn: no se permiten negativos ni decimales donde se requiere un entero.</p>
+                <button style={s.backBtn} onClick={onBack}>← Volver</button>
+            </div>
+        );
+    }
+
+    const xNum = Number.isInteger(xValue) ? xValue : 0;
+    const tNum = Number.isFinite(tValue) ? tValue : 0;
 
     // ── Poisson ───────────────────────────────────────────────────
     const buildPoisson = () => {
@@ -153,9 +185,8 @@ const CanalesSimpleAnalysis = ({ data, onBack }) => {
     const P0 = 1 - ρ;
 
     // Agrega esto antes del return de TabMM1, después de pnValues:
-    const { pnCondicion = {} } = data;
     const pnModo = pnCondicion.modo || "greater_eq";
-    const pnValor = parseInt(pnCondicion.valor) || 0;
+    const pnValor = Number.isInteger(pnValue) ? pnValue : 0;
 
     const buildPnCondicion = () => {
         const terms =
@@ -536,6 +567,18 @@ const CanalesSimpleAnalysis = ({ data, onBack }) => {
     const TabConclusiones = () => {
         const Lq = metrics.find(m => m.key === "Lq")?.value;
         const Wq = metrics.find(m => m.key === "Wq")?.value;
+        const loadPercent = (ρ * 100).toFixed(1);
+        const systemState = ρ < 0.5 ? "subutilizado" : ρ < 0.8 ? "en operación normal" : "bajo alta carga";
+        const conclusionText = ρ < 0.5
+            ? `El sistema está ${systemState} y tiene capacidad disponible.`
+            : ρ < 0.8
+                ? `El sistema está ${systemState} y funciona de forma aceptable.`
+                : `El sistema está ${systemState} y ya muestra riesgo de espera.`;
+        const recommendationText = ρ < 0.5
+            ? "Se puede mantener la configuración actual o reasignar capacidad a otras tareas."
+            : ρ < 0.8
+                ? "Conviene monitorear los picos de demanda para evitar saturación futura."
+                : "Conviene revisar el modelo M/M/k o aumentar la capacidad de servicio.";
 
         return (
             <div>
@@ -596,6 +639,25 @@ const CanalesSimpleAnalysis = ({ data, onBack }) => {
                             </span>
                         </div>
                     ))}
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 12 }}>
+                    <div style={s.card}>
+                        <p style={s.cardTitle}>Conclusión</p>
+                        <p style={{ ...s.guideText, marginTop: 0 }}>
+                            Con una utilización de {loadPercent}%, el sistema está {systemState}.
+                        </p>
+                        <p style={{ ...s.guideText, marginBottom: 0 }}>
+                            {conclusionText}
+                        </p>
+                    </div>
+
+                    <div style={s.card}>
+                        <p style={s.cardTitle}>Recomendación</p>
+                        <p style={{ ...s.guideText, marginTop: 0, marginBottom: 0 }}>
+                            {recommendationText}
+                        </p>
+                    </div>
                 </div>
 
                 {/* Recomendación */}
