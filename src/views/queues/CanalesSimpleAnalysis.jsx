@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { toFiniteNumber } from "../../utils/validation";
+import { toFiniteNumber, formatNumber } from "../../utils/validation";
 
 // ── UNIT CONVERSION ────────────────────────────────────────────────
 const UNIT_FACTORS = {
@@ -41,70 +41,72 @@ const pxSingle = (λ, x) => {
 
 const MM1_STEPS = [
     {
-        key: "P0", label: "P₀", name: "Probabilidad de sistema vacío",
-        formula: (λ, μ) => `P₀ = 1 - λ/μ = 1 - ${λ.toFixed(4)}/${μ.toFixed(4)}`,
+        key: "P0", label: "P₀", name: "¿El local está vacío?",
+        formula: (λ, μ) => `P₀ = 1 - λ/μ = 1 - ${formatNumber(λ)}/${formatNumber(μ)}`,
         calc: (λ, μ) => 1 - λ / μ,
         unit: "", color: "#2563eb",
-        desc: "Probabilidad de que no haya ningún cliente en el sistema en un momento dado.",
-        when: "Útil para saber qué tan disponible está el servidor.",
+        desc: "Probabilidad de que llegues y no haya nadie (ni en la fila ni atendido). Imagina llegar a un restaurante y encontrarlo completamente vacío.",
+        when: "Útil para saber cuánto tiempo descansa el servidor (cajero). Un número alto = servidor con poco trabajo.",
         conclusion: (v) => v > 0.5
-            ? `El sistema está vacío el ${(v * 100).toFixed(1)}% del tiempo — buen nivel de disponibilidad.`
-            : `El sistema está vacío solo el ${(v * 100).toFixed(1)}% del tiempo — servidor muy ocupado.`,
+            ? `¡Buena noticia! El ${formatNumber(v * 100)}% del tiempo no hay nadie. El servidor tiene bastante descanso.`
+            : `Solo el ${formatNumber(v * 100)}% del tiempo está vacío. El servidor casi siempre está ocupado.`,
     },
     {
-        key: "Lq", label: "Lq", name: "Clientes promedio en cola",
-        formula: (λ, μ) => `Lq = λ² / μ(μ-λ) = ${λ.toFixed(4)}² / ${μ.toFixed(4)}(${μ.toFixed(4)}-${λ.toFixed(4)})`,
+        key: "Lq", label: "Lq", name: "Gente en la fila (esperando)",
+        formula: (λ, μ) => `Lq = λ² / μ(μ-λ) = ${formatNumber(λ)}² / ${formatNumber(μ)}(${formatNumber(μ)}-${formatNumber(λ)})`,
         calc: (λ, μ) => (λ * λ) / (μ * (μ - λ)),
         unit: "clientes", color: "#7c3aed",
-        desc: "Número promedio de clientes esperando en la cola (sin contar al que está siendo atendido).",
-        when: "Indica qué tan larga está la fila de espera.",
-        conclusion: (v) => `En promedio hay ${v.toFixed(4)} clientes esperando en la cola.`,
+        desc: "Promedio de personas paradas haciendo fila (SIN contar a quien ya está en la caja). Es el \"largo de la fila\".",
+        when: "Si este número es alto, la gente se aburre esperando. Hay que abrir más cajas o hacer el servicio más rápido.",
+        conclusion: (v) => v < 1
+            ? `Solo ${formatNumber(v)} personas esperando en promedio. ¡La fila es corta!`
+            : `${formatNumber(v)} personas hacen fila en promedio. La fila puede sentirse larga.`,
     },
     {
-        key: "L", label: "L", name: "Clientes promedio en sistema",
+        key: "L", label: "L", name: "Gente total en el local",
         formula: (λ, μ) => {
             const Lq = (λ * λ) / (μ * (μ - λ));
-            return `L = Lq + λ/μ = ${Lq.toFixed(4)} + ${(λ / μ).toFixed(4)}`;
+            return `L = Lq + λ/μ = ${formatNumber(Lq)} + ${formatNumber(λ / μ)}`;
         },
         calc: (λ, μ) => (λ * λ) / (μ * (μ - λ)) + λ / μ,
         unit: "clientes", color: "#0891b2",
-        desc: "Número promedio de clientes en todo el sistema (en cola + siendo atendidos).",
-        when: "Indica el tamaño total del sistema en operación normal.",
-        conclusion: (v) => `El sistema tiene en promedio ${v.toFixed(4)} clientes en total.`,
+        desc: "Promedio total de personas en todo el sistema: los que hacen fila + el que está siendo atendido. Imagina contar TODAS las cabezas dentro del banco.",
+        when: "Indica qué tan lleno se siente el local. Si es muy alto, puede que necesites más espacio.",
+        conclusion: (v) => `En promedio hay ${formatNumber(v)} personas dentro del sistema (fila + servicio).`,
     },
     {
-        key: "Wq", label: "Wq", name: "Tiempo promedio en cola",
+        key: "Wq", label: "Wq", name: "Tiempo haciendo fila",
         formula: (λ, μ) => {
             const Lq = (λ * λ) / (μ * (μ - λ));
-            return `Wq = Lq/λ = ${Lq.toFixed(4)}/${λ.toFixed(4)}`;
+            return `Wq = Lq/λ = ${formatNumber(Lq)}/${formatNumber(λ)}`;
         },
         calc: (λ, μ) => (λ * λ) / (μ * (μ - λ)) / λ,
         unit: "unidad de tiempo", color: "#ea580c",
-        desc: "Tiempo promedio que un cliente espera en la cola antes de ser atendido.",
-        when: "Clave para evaluar la experiencia del cliente — tiempo de espera puro.",
-        conclusion: (v) => `Cada cliente espera en promedio ${v.toFixed(4)} unidades de tiempo en cola.`,
+        desc: "¿Cuánto tiempo estás SOLO esperando en la fila antes de que te atiendan? (No incluye el tiempo de atención).",
+        when: "El número que más le importa al cliente. Si es muy alto, la gente se va.",
+        conclusion: (v) => `Cada persona espera ${formatNumber(v)} unidades de tiempo parada en la fila.`,
     },
     {
-        key: "W", label: "W", name: "Tiempo promedio en sistema",
+        key: "W", label: "W", name: "Tiempo total (fila + atención)",
         formula: (λ, μ) => {
             const Lq = (λ * λ) / (μ * (μ - λ));
             const Wq = Lq / λ;
-            return `W = Wq + 1/μ = ${Wq.toFixed(4)} + ${(1 / μ).toFixed(4)}`;
+            return `W = Wq + 1/μ = ${formatNumber(Wq)} + ${formatNumber(1 / μ)}`;
         },
         calc: (λ, μ) => (λ * λ) / (μ * (μ - λ)) / λ + 1 / μ,
         unit: "unidad de tiempo", color: "#be185d",
-        desc: "Tiempo total promedio que un cliente pasa en el sistema (espera + servicio).",
-        when: "Tiempo de espera + tiempo de atención. Lo que siente el cliente de principio a fin.",
-        conclusion: (v) => `El tiempo total por cliente en el sistema es ${v.toFixed(4)} unidades de tiempo.`,
+        desc: "Tiempo TOTAL desde que llegas hasta que sales: esperar en la fila + que te atiendan. Es la experiencia completa del cliente.",
+        when: "Si quieres saber cuánto de su vida pierde una persona en tu negocio, este es el número.",
+        conclusion: (v) => `El cliente pasa un total de ${formatNumber(v)} unidades de tiempo en el sistema (desde que llega hasta que sale).`,
     },
     {
-        key: "Pw", label: "Pw", name: "Probabilidad de esperar",
-        formula: (λ, μ) => `Pw = λ/μ = ${λ.toFixed(4)}/${μ.toFixed(4)}`,
+        key: "Pw", label: "Pw", name: "¿Tendré que esperar?",
+        formula: (λ, μ) => `Pw = λ/μ = ${formatNumber(λ)}/${formatNumber(μ)}`,
         calc: (λ, μ) => λ / μ,
         unit: "", color: "#16a34a",
-        desc: "Probabilidad de que un cliente que llega encuentre el servidor ocupado y tenga que esperar.",
-        when: "Igual a ρ. Si es alto, la mayoría de clientes esperan.",
-        conclusion: (v) => `El ${(v * 100).toFixed(1)}% de los clientes tendrán que esperar al llegar.`,
+        desc: "Probabilidad de que al llegar, encuentres al cajero ocupado y tengas que hacer fila. Es igual a ρ (la ocupación del servidor).",
+        when: "Si es 0.80 significa que 8 de cada 10 clientes tendrán que esperar.",
+        conclusion: (v) => `El ${formatNumber(v * 100)}% de las personas que llegan tendrán que hacer fila.`,
     },
 ];
 
@@ -277,12 +279,12 @@ const CanalesSimpleAnalysis = ({ data, onBack }) => {
                     <div style={{ fontSize: 22, color: "#2563eb", fontWeight: 700 }}>→</div>
                     <div style={{ ...s.r3Block, background: "#eff6ff", border: "2px solid #2563eb" }}>
                         <div style={{ ...s.r3BlockTitle, color: "#2563eb" }}>λ</div>
-                        <div style={{ ...s.r3BigNum, color: "#1d4ed8" }}>{λ.toFixed(4)}</div>
+                        <div style={{ ...s.r3BigNum, color: "#1d4ed8" }}>{formatNumber(λ)}</div>
                         <div style={s.r3Sub}>clientes/{llegadas.unidad}</div>
                     </div>
                 </div>
                 <div style={s.formulaBox}>
-                    <code style={s.formulaCode}>λ = {llegadas.cantidad} ÷ {llegadas.tiempo} = {λ.toFixed(4)} clientes/{llegadas.unidad}</code>
+                    <code style={s.formulaCode}>λ = {llegadas.cantidad} ÷ {llegadas.tiempo} = {formatNumber(λ)} clientes/{llegadas.unidad}</code>
                 </div>
             </div>
 
@@ -310,14 +312,14 @@ const CanalesSimpleAnalysis = ({ data, onBack }) => {
                     <div key={i} style={s.termRow}>
                         <div style={s.termHeader}>
                             <span style={s.termTitle}>P(x = {i})</span>
-                            <span style={s.termBadge}>{v.toFixed(6)}</span>
+                            <span style={s.termBadge}>{formatNumber(v)}</span>
                         </div>
                         <div style={s.termSteps}>
                             {[
-                                `λˣ = ${λ.toFixed(4)}^${i} = ${Math.pow(λ, i).toFixed(6)}`,
-                                `e^(−λ) = e^(−${λ.toFixed(4)}) = ${Math.pow(Math.E, -λ).toFixed(6)}`,
+                                `λˣ = ${formatNumber(λ)}^${i} = ${formatNumber(Math.pow(λ, i))}`,
+                                `e^(−λ) = e^(−${formatNumber(λ)}) = ${formatNumber(Math.pow(Math.E, -λ))}`,
                                 `x! = ${i}! = ${factorial(i)}`,
-                                `P${i} = ${Math.pow(λ, i).toFixed(6)} × ${Math.pow(Math.E, -λ).toFixed(6)} / ${factorial(i)} = ${v.toFixed(6)}`,
+                                `P${i} = ${formatNumber(Math.pow(λ, i))} × ${formatNumber(Math.pow(Math.E, -λ))} / ${factorial(i)} = ${formatNumber(v)}`,
                             ].map((step, idx) => (
                                 <div key={idx} style={s.step}>
                                     <span style={s.stepNum}>{idx + 1}</span>
@@ -332,11 +334,11 @@ const CanalesSimpleAnalysis = ({ data, onBack }) => {
                 {modoPoisson !== "exact" && (
                     <div style={s.sumBox}>
                         <span style={{ fontSize: 13, color: "#374151", fontFamily: "monospace" }}>
-                            Suma = {poisson.termVals.map(({ i, v }) => `P${i}(${v.toFixed(4)})`).join(" + ")} = {poisson.sumTerms.toFixed(6)}
+                            Suma = {poisson.termVals.map(({ i, v }) => `P${i}(${formatNumber(v)})`).join(" + ")} = {formatNumber(poisson.sumTerms)}
                         </span>
                         {poisson.complement && (
                             <span style={{ fontSize: 13, color: "#374151", fontFamily: "monospace", display: "block", marginTop: 4 }}>
-                                1 − {poisson.sumTerms.toFixed(6)} = {poisson.result.toFixed(6)}
+                                1 − {formatNumber(poisson.sumTerms)} = {formatNumber(poisson.result)}
                             </span>
                         )}
                     </div>
@@ -350,10 +352,10 @@ const CanalesSimpleAnalysis = ({ data, onBack }) => {
                     {modeLabel()} =
                 </div>
                 <div style={{ fontSize: 42, fontWeight: 900, color: "#1d4ed8" }}>
-                    {poisson.result.toFixed(4)}
+                    {formatNumber(poisson.result)}
                 </div>
                 <div style={{ fontSize: 12, color: "#6b7280", marginTop: 6 }}>
-                    ({(poisson.result * 100).toFixed(2)}%)
+                    ({formatNumber(poisson.result * 100)}%)
                 </div>
             </div>
         </div>
@@ -399,12 +401,12 @@ const CanalesSimpleAnalysis = ({ data, onBack }) => {
                     <div style={{ fontSize: 22, color: "#dc2626", fontWeight: 700 }}>→</div>
                     <div style={{ ...s.r3Block, background: "#fef2f2", border: "2px solid #dc2626" }}>
                         <div style={{ ...s.r3BlockTitle, color: "#dc2626" }}>μ</div>
-                        <div style={{ ...s.r3BigNum, color: "#dc2626" }}>{μ.toFixed(4)}</div>
+                        <div style={{ ...s.r3BigNum, color: "#dc2626" }}>{formatNumber(μ)}</div>
                         <div style={s.r3Sub}>clientes/{servicio.unidad}</div>
                     </div>
                 </div>
                 <div style={s.formulaBox}>
-                    <code style={s.formulaCode}>μ = {servicio.cantidad} ÷ {servicio.tiempo} = {μ.toFixed(4)} clientes/{servicio.unidad}</code>
+                    <code style={s.formulaCode}>μ = {servicio.cantidad} ÷ {servicio.tiempo} = {formatNumber(μ)} clientes/{servicio.unidad}</code>
                 </div>
             </div>
 
@@ -412,10 +414,10 @@ const CanalesSimpleAnalysis = ({ data, onBack }) => {
             <div style={s.card}>
                 <p style={s.cardTitle}>Cálculo paso a paso — P(T ≤ {tNum})</p>
                 {[
-                    { n: 1, text: `Identificar μ = ${μ.toFixed(4)} y t = ${tNum}` },
-                    { n: 2, text: `Calcular μ × t = ${μ.toFixed(4)} × ${tNum} = ${(μ * tNum).toFixed(6)}` },
-                    { n: 3, text: `Calcular e^(−μt) = e^(−${(μ * tNum).toFixed(6)}) = ${Math.pow(Math.E, -μ * tNum).toFixed(6)}` },
-                    { n: 4, text: `P(T ≤ ${tNum}) = 1 − ${Math.pow(Math.E, -μ * tNum).toFixed(6)} = ${expResult.toFixed(6)}` },
+                    { n: 1, text: `Identificar μ = ${formatNumber(μ)} y t = ${tNum}` },
+                    { n: 2, text: `Calcular μ × t = ${formatNumber(μ)} × ${tNum} = ${formatNumber(μ * tNum)}` },
+                    { n: 3, text: `Calcular e^(−μt) = e^(−${formatNumber(μ * tNum)}) = ${formatNumber(Math.pow(Math.E, -μ * tNum))}` },
+                    { n: 4, text: `P(T ≤ ${tNum}) = 1 − ${formatNumber(Math.pow(Math.E, -μ * tNum))} = ${formatNumber(expResult)}` },
                 ].map(({ n: num, text }) => (
                     <div key={num} style={s.step}>
                         <span style={s.stepNum}>{num}</span>
@@ -431,10 +433,10 @@ const CanalesSimpleAnalysis = ({ data, onBack }) => {
                     P(T ≤ {tNum}) =
                 </div>
                 <div style={{ fontSize: 42, fontWeight: 900, color: "#dc2626" }}>
-                    {expResult.toFixed(4)}
+                    {formatNumber(expResult)}
                 </div>
                 <div style={{ fontSize: 12, color: "#6b7280", marginTop: 6 }}>
-                    ({(expResult * 100).toFixed(2)}%)
+                    ({formatNumber(expResult * 100)}%)
                 </div>
             </div>
         </div>
@@ -450,9 +452,9 @@ const CanalesSimpleAnalysis = ({ data, onBack }) => {
 
             <div style={s.paramsRow}>
                 {[
-                    { label: "λ", val: λ.toFixed(4), color: "#2563eb" },
-                    { label: "μ", val: μ.toFixed(4), color: "#dc2626" },
-                    { label: "ρ = λ/μ", val: ρ.toFixed(4), color: ρ < 1 ? "#16a34a" : "#dc2626" },
+                    { label: "λ", val: formatNumber(λ), color: "#2563eb" },
+                    { label: "μ", val: formatNumber(μ), color: "#dc2626" },
+                    { label: "ρ = λ/μ", val: formatNumber(ρ), color: ρ < 1 ? "#16a34a" : "#dc2626" },
                 ].map(({ label, val, color }) => (
                     <div key={label} style={s.paramChip}>
                         <span style={s.paramLabel}>{label}</span>
@@ -490,7 +492,7 @@ const CanalesSimpleAnalysis = ({ data, onBack }) => {
                                     {m.formula(λ, μ)}
                                 </td>
                                 <td style={{ ...s.td, fontWeight: 800, color: m.color, fontSize: 16 }}>
-                                    {m.value.toFixed(4)}
+                                    {formatNumber(m.value)}
                                 </td>
                                 <td style={{ ...s.td, color: "#9ca3af", fontSize: 11 }}>{m.unit || "—"}</td>
                             </tr>
@@ -511,7 +513,7 @@ const CanalesSimpleAnalysis = ({ data, onBack }) => {
                     <p style={s.tooltipText}><strong>¿Qué es?</strong> {metrics[hoveredRow].desc}</p>
                     <p style={s.tooltipText}><strong>¿Cuándo usarlo?</strong> {metrics[hoveredRow].when}</p>
                     <div style={s.tooltipFormula}>
-                        <code style={{ fontSize: 12 }}>{metrics[hoveredRow].formula(λ, μ)} = {metrics[hoveredRow].value.toFixed(4)}</code>
+                        <code style={{ fontSize: 12 }}>{metrics[hoveredRow].formula(λ, μ)} = {formatNumber(metrics[hoveredRow].value)}</code>
                     </div>
                     <p style={{ ...s.tooltipText, color: "#16a34a", marginTop: 8 }}>
                         <strong>Conclusión:</strong> {metrics[hoveredRow].conclusion(metrics[hoveredRow].value)}
@@ -524,8 +526,8 @@ const CanalesSimpleAnalysis = ({ data, onBack }) => {
                 <p style={s.cardTitle}>Distribución Pn — P(n clientes en sistema)</p>
                 <p style={{ ...s.guideText, marginBottom: 12 }}>
                     <strong>Fórmula:</strong> Pn = ρⁿ · P₀
-                    &nbsp;|&nbsp; <strong>P₀ =</strong> {P0.toFixed(4)}
-                    &nbsp;|&nbsp; <strong>ρ =</strong> {ρ.toFixed(4)}
+                    &nbsp;|&nbsp; <strong>P₀ =</strong> {formatNumber(P0)}
+                    &nbsp;|&nbsp; <strong>ρ =</strong> {formatNumber(ρ)}
                 </p>
 
                 {/* Tarjetas individuales según condición seleccionada */}
@@ -533,8 +535,8 @@ const CanalesSimpleAnalysis = ({ data, onBack }) => {
                     {pnCond.termVals.map(({ i, v }) => (
                         <div key={i} style={s.pnCard}>
                             <div style={s.pnLabel}>P{i}</div>
-                            <div style={s.pnVal}>{v.toFixed(4)}</div>
-                            <div style={s.pnPct}>{(v * 100).toFixed(2)}%</div>
+                            <div style={s.pnVal}>{formatNumber(v)}</div>
+                            <div style={s.pnPct}>{formatNumber(v * 100)}%</div>
                         </div>
                     ))}
                 </div>
@@ -562,7 +564,7 @@ const CanalesSimpleAnalysis = ({ data, onBack }) => {
                             <div key={i} style={s.step}>
                                 <span style={s.stepNum}>P{i}</span>
                                 <code style={s.stepCode}>
-                                    ρ^{i} · P₀ = {ρ.toFixed(4)}^{i} × {P0.toFixed(4)} = {v.toFixed(6)}
+                                    ρ^{i} · P₀ = {formatNumber(ρ)}^{i} × {formatNumber(P0)} = {formatNumber(v)}
                                 </code>
                             </div>
                         ))}
@@ -570,11 +572,11 @@ const CanalesSimpleAnalysis = ({ data, onBack }) => {
                         {/* Suma */}
                         <div style={{ ...s.formulaBox, marginTop: 10 }}>
                             <code style={s.formulaCode}>
-                                Suma = {pnCond.termVals.map(t => t.v.toFixed(4)).join(" + ")} = {pnCond.sumTerms.toFixed(6)}
+                                Suma = {pnCond.termVals.map(t => formatNumber(t.v)).join(" + ")} = {formatNumber(pnCond.sumTerms)}
                             </code>
                             {pnCond.complement && (
                                 <code style={{ ...s.formulaCode, marginTop: 4 }}>
-                                    1 − {pnCond.sumTerms.toFixed(6)} = {pnCond.result.toFixed(6)}
+                                    1 − {formatNumber(pnCond.sumTerms)} = {formatNumber(pnCond.result)}
                                 </code>
                             )}
                         </div>
@@ -583,10 +585,10 @@ const CanalesSimpleAnalysis = ({ data, onBack }) => {
                         <div style={s.pnResultado}>
                             <span style={{ fontSize: 14, color: "#1d4ed8" }}>{pnCond.label} =</span>
                             <span style={{ fontSize: 36, fontWeight: 900, color: "#1d4ed8", marginLeft: 12 }}>
-                                {pnCond.result.toFixed(4)}
+                                {formatNumber(pnCond.result)}
                             </span>
                             <span style={{ fontSize: 13, color: "#6b7280", marginLeft: 12 }}>
-                                ({(pnCond.result * 100).toFixed(2)}%)
+                                ({formatNumber(pnCond.result * 100)}%)
                             </span>
                         </div>
                     </div>
@@ -604,8 +606,7 @@ const CanalesSimpleAnalysis = ({ data, onBack }) => {
             return ((mm1Val - mmkVal) / mm1Val) * 100;
         };
 
-        const formatNumber = (value, digits = 4) => Number(value).toFixed(digits);
-        const formatProbability = (value) => `${Number(value).toFixed(4)} (${(Number(value) * 100).toFixed(2)}%)`;
+        const formatProbability = (value) => `${formatNumber(value)} (${formatNumber(Number(value) * 100)}%)`;
 
         const metricsMejorado = MM1_STEPS.map(step => ({ ...step, value: step.calc(λ, muMejorado) }));
 
@@ -615,7 +616,7 @@ const CanalesSimpleAnalysis = ({ data, onBack }) => {
                 <div style={s.explainBox}>
                     <p style={s.explainTitle}>Cómo leer esta tabla</p>
                     <p style={s.explainText}>
-                        Aquí comparamos el sistema M/M/1 actual (con μ = {μ.toFixed(4)}) frente al sistema mejorado (con μ = {muMejorado.toFixed(4)}).
+                        Aquí comparamos el sistema M/M/1 actual (con μ = {formatNumber(μ)}) frente al sistema mejorado (con μ = {formatNumber(muMejorado)}).
                     </p>
                     <ul style={{ ...s.explainText, paddingLeft: 20, margin: "8px 0" }}>
                         <li><strong>La flecha (↑ o ↓):</strong> Te indica si el valor numérico <em>subió</em> o <em>bajó</em> con respecto al original.</li>
@@ -627,6 +628,28 @@ const CanalesSimpleAnalysis = ({ data, onBack }) => {
                     </p>
                 </div>
                 <div style={s.card}>
+                    <div style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 12,
+                        padding: "10px 12px",
+                        marginBottom: 12,
+                        borderRadius: 10,
+                        border: "1px solid #bfdbfe",
+                        background: "#eff6ff"
+                    }}>
+                        <div style={{ fontSize: 12, color: "#1e3a8a", fontWeight: 700 }}>μ (tasa de servicio)</div>
+                        <div style={{ display: "flex", gap: 12, alignItems: "center", fontFamily: "monospace", color: "#1d4ed8" }}>
+                            <span>
+                                Original: {formatNumber(μ)}{uBase ? ` clientes/${uBase}` : ""}
+                            </span>
+                            <span style={{ color: "#94a3b8" }}>→</span>
+                            <span style={{ fontWeight: 700 }}>
+                                Mejorado: {formatNumber(muMejorado)}{uBase ? ` clientes/${uBase}` : ""}
+                            </span>
+                        </div>
+                    </div>
                     <table style={s.table}>
                         <thead>
                             <tr style={s.tableHeaderRow}>
@@ -652,7 +675,7 @@ const CanalesSimpleAnalysis = ({ data, onBack }) => {
                                 
                                 const displayOrig = isProb ? formatProbability(valOrig) : formatNumber(valOrig);
                                 const displayMej = isProb ? formatProbability(valMej) : formatNumber(valMej);
-                                const changeAbs = Math.abs(valMej - valOrig).toFixed(4);
+                                const changeAbs = formatNumber(Math.abs(valMej - valOrig));
                                 const percentImprovement = calcImprovement(valOrig, valMej);
 
                                 return (
@@ -673,7 +696,7 @@ const CanalesSimpleAnalysis = ({ data, onBack }) => {
                                             {valueIncreased ? "↑" : "↓"} {changeAbs}
                                         </td>
                                         <td style={{ ...s.td, color: isImprovement ? "#10b981" : "#ef4444", fontWeight: 700 }}>
-                                            {isImprovement ? "Mejora: " : "Empeora: "}{Math.abs(percentImprovement).toFixed(1)}%
+                                            {isImprovement ? "Mejora: " : "Empeora: "}{formatNumber(Math.abs(percentImprovement))}%
                                         </td>
                                     </tr>
                                 );
@@ -701,7 +724,7 @@ const CanalesSimpleAnalysis = ({ data, onBack }) => {
                                 <p style={{ ...s.tooltipText, marginTop: 6 }}><strong>Conclusión:</strong> {conclusion}</p>
                                 <p style={{ ...s.tooltipText, color: "#1d4ed8", marginTop: 6 }}><strong>Recomendación:</strong> {recommendation}</p>
                                 <div style={s.tooltipFormula}>
-                                    <code style={{ fontSize: 12 }}>{it.label} — Original: {it.value.toFixed(4)} → Mejorado: {mej.value.toFixed(4)}</code>
+                                    <code style={{ fontSize: 12 }}>{it.label} — Original: {formatNumber(it.value)} → Mejorado: {formatNumber(mej.value)}</code>
                                 </div>
                             </div>
                         );
@@ -739,7 +762,7 @@ const CanalesSimpleAnalysis = ({ data, onBack }) => {
                                         <div style={{ textAlign: "right" }}>
                                             <div style={{ fontSize: 12, color: "#6b7280" }}>Cambio</div>
                                             <div style={{ fontWeight: 800, fontSize: 18, color: isImprovement ? "#16a34a" : "#dc2626", marginTop: 6 }}>
-                                                {isImprovement ? "Mejora: " : "Empeora: "}{Math.abs(reduction).toFixed(1)}%
+                                                {isImprovement ? "Mejora: " : "Empeora: "}{formatNumber(Math.abs(reduction))}%
                                             </div>
                                         </div>
                                     </div>
@@ -776,7 +799,7 @@ const CanalesSimpleAnalysis = ({ data, onBack }) => {
     const TabConclusiones = () => {
         const Lq = metrics.find(m => m.key === "Lq")?.value;
         const Wq = metrics.find(m => m.key === "Wq")?.value;
-        const loadPercent = (ρ * 100).toFixed(1);
+        const loadPercent = formatNumber(ρ * 100);
         const systemState = ρ < 0.5 ? "subutilizado" : ρ < 0.8 ? "en operación normal" : "bajo alta carga";
         const conclusionText = ρ < 0.5
             ? `El sistema está ${systemState} y tiene capacidad disponible.`
@@ -804,14 +827,14 @@ const CanalesSimpleAnalysis = ({ data, onBack }) => {
                                 display: "flex", alignItems: "center", justifyContent: "center",
                                 fontSize: 13, fontWeight: 800, color: "#fff"
                             }}>
-                                {(ρ * 100).toFixed(0)}%
+                                {formatNumber(ρ * 100)}%
                             </div>
                             <div>
                                 <p style={{ fontWeight: 700, fontSize: 15, margin: 0 }}>
                                     {ρ < 0.5 ? "Sistema subutilizado" : ρ < 0.8 ? "Sistema en operación normal" : "Sistema bajo alta carga"}
                                 </p>
                                 <p style={{ fontSize: 13, color: "#6b7280", margin: "4px 0 0 0" }}>
-                                    ρ = {ρ.toFixed(4)} — el servidor está ocupado el {(ρ * 100).toFixed(1)}% del tiempo
+                                    ρ = {formatNumber(ρ)} — el servidor está ocupado el {formatNumber(ρ * 100)}% del tiempo
                                 </p>
                             </div>
                         </div>
@@ -825,8 +848,8 @@ const CanalesSimpleAnalysis = ({ data, onBack }) => {
                         <div style={s.conclusionRow}>
                             <span style={{ ...s.conclusionLabel, color: "#2563eb" }}>Poisson</span>
                             <span style={s.conclusionText}>
-                                {modeLabel()} = <strong>{poisson.result.toFixed(4)}</strong>
-                                {" "}({(poisson.result * 100).toFixed(2)}%)
+                                {modeLabel()} = <strong>{formatNumber(poisson.result)}</strong>
+                                {" "}({formatNumber(poisson.result * 100)}%)
                             </span>
                         </div>
                     )}
@@ -834,8 +857,8 @@ const CanalesSimpleAnalysis = ({ data, onBack }) => {
                         <div style={s.conclusionRow}>
                             <span style={{ ...s.conclusionLabel, color: "#dc2626" }}>Exponencial</span>
                             <span style={s.conclusionText}>
-                                P(T ≤ {tNum}) = <strong>{expResult.toFixed(4)}</strong>
-                                {" "}({(expResult * 100).toFixed(2)}%)
+                                P(T ≤ {tNum}) = <strong>{formatNumber(expResult)}</strong>
+                                {" "}({formatNumber(expResult * 100)}%)
                             </span>
                         </div>
                     )}
@@ -844,7 +867,7 @@ const CanalesSimpleAnalysis = ({ data, onBack }) => {
                             <span style={{ ...s.conclusionLabel, color: m.color }}>{m.label}</span>
                             <span style={s.conclusionText}>{m.conclusion(m.value)}</span>
                             <span style={{ fontWeight: 800, color: m.color, marginLeft: "auto", flexShrink: 0 }}>
-                                {m.value.toFixed(4)}
+                                {formatNumber(m.value)}
                             </span>
                         </div>
                     ))}
@@ -874,15 +897,15 @@ const CanalesSimpleAnalysis = ({ data, onBack }) => {
                     <p style={{ ...s.cardTitle, color: "#1d4ed8" }}>Recomendación general</p>
                     <p style={{ fontSize: 13, color: "#1e40af", lineHeight: 1.7 }}>
                         {calcular.mm1 && ρ >= 0.8
-                            ? `Con una utilización del ${(ρ * 100).toFixed(1)}%, el sistema está bajo alta carga. 
+                            ? `Con una utilización del ${formatNumber(ρ * 100)}%, el sistema está bajo alta carga. 
                  Se recomienda evaluar el modelo de Canales Múltiples (M/M/k) para reducir 
-                 el tiempo de espera promedio de ${Wq?.toFixed(4)} unidades de tiempo.`
+                 el tiempo de espera promedio de ${formatNumber(Wq)} unidades de tiempo.`
                             : calcular.mm1 && ρ >= 0.5
-                                ? `El sistema opera con normalidad (ρ = ${ρ.toFixed(4)}). 
-                 Monitorear en horas pico para evitar que Lq = ${Lq?.toFixed(4)} clientes 
+                                ? `El sistema opera con normalidad (ρ = ${formatNumber(ρ)}). 
+                 Monitorear en horas pico para evitar que Lq = ${formatNumber(Lq)} clientes 
                  genere insatisfacción.`
                                 : calcular.mm1
-                                    ? `Con solo ${(ρ * 100).toFixed(1)}% de utilización, el servidor tiene capacidad ociosa. 
+                                    ? `Con solo ${formatNumber(ρ * 100)}% de utilización, el servidor tiene capacidad ociosa. 
                  Podría evaluarse reducir la tasa de servicio o reasignar recursos.`
                                     : `Revisa los resultados de Poisson y Exponencial para tomar decisiones 
                  sobre el dimensionamiento del sistema.`

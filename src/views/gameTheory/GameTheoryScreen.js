@@ -106,17 +106,20 @@ const GameTheoryScreen = ({ setStep, gameData, setGameData }) => {
     <div style={styles.container}>
       <h2 style={styles.title}>Teoría de Juegos</h2>
 
-      <div style={styles.guideCard}>
-        <h3 style={styles.guideTitle}>Guia de uso - Modulo Teoria del Juego</h3>
+      <div style={{ ...styles.guideCard, borderLeft: "4px solid #3b82f6" }}>
+        <h3 style={styles.guideTitle}>Juegos de Suma Cero (Lo que uno gana, el otro lo pierde)</h3>
         <p style={styles.guideText}>
-          Este modulo analiza juegos de suma cero con estrategias puras y apoyo grafico algebraico.
+          En este juego, los números representan la ganancia del jugador de las <strong>filas</strong>. El jugador de las columnas es su rival (si la fila gana 5, la columna pierde 5).
         </p>
-        <p style={styles.guideText}><strong>Datos:</strong> Define nombres de estrategias y completa la matriz de pagos.</p>
-        <p style={styles.guideText}><strong>Analisis:</strong> Primero verifica punto silla; si no existe, aplica eliminacion sucesiva.</p>
+        <ul style={{ margin: "5px 0", paddingLeft: "20px", fontSize: "13px", color: "#1e293b", lineHeight: "1.5" }}>
+            <li><strong>Jugador de Filas:</strong> Busca el número MÁS ALTO (maximizar su ganancia).</li>
+            <li><strong>Jugador de Columnas:</strong> Busca el número MÁS BAJO (minimizar su pérdida).</li>
+            <li><strong>Punto Silla:</strong> Es un equilibrio perfecto. Si se encuentra, el juego termina ahí porque ninguno se arriesgará a cambiar su jugada.</li>
+        </ul>
         {analysisBlocked && (
-          <p style={{ ...styles.guideText, color: "#b91c1c", fontWeight: 700 }}>
-            ⚠ Completa la matriz con valores numéricos finitos antes de analizar. No se permiten celdas vacías ni texto.
-          </p>
+          <div style={{ marginTop: "10px", padding: "8px", background: "#fef2f2", color: "#b91c1c", borderRadius: "6px", fontWeight: 600, fontSize: "13px" }}>
+            ⚠ Faltan datos. Llena todas las celdas con números para poder analizar.
+          </div>
         )}
       </div>
 
@@ -230,13 +233,28 @@ const GameTheoryScreen = ({ setStep, gameData, setGameData }) => {
 
       {/* RESULTADOS */}
       <div style={styles.resultBox}>
-        <p><b>Maximin:</b> {maximin}</p>
-        <p><b>Minimax:</b> {minimax}</p>
+        <h3 style={{ margin: "0 0 12px 0", fontSize: "16px", color: "#0f172a" }}>Análisis Rápido</h3>
+        <div style={{ display: "flex", gap: "20px", marginBottom: "16px", flexWrap: "wrap" }}>
+          <div style={{ background: "#f8fafc", padding: "10px 15px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+            <p style={{ margin: 0, fontSize: "12px", color: "#64748b" }}>Maximin (Lo mejor de lo peor para las Filas)</p>
+            <p style={{ margin: "4px 0 0 0", fontSize: "18px", fontWeight: 700, color: "#0f172a" }}>{maximin !== null ? maximin : "-"}</p>
+          </div>
+          <div style={{ background: "#f8fafc", padding: "10px 15px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+            <p style={{ margin: 0, fontSize: "12px", color: "#64748b" }}>Minimax (El mal menor para las Columnas)</p>
+            <p style={{ margin: "4px 0 0 0", fontSize: "18px", fontWeight: 700, color: "#0f172a" }}>{minimax !== null ? minimax : "-"}</p>
+          </div>
+        </div>
 
         {hasSaddlePoint ? (
-          <p style={styles.success}>Punto silla encontrado</p>
+          <div style={{ background: "#f0fdf4", borderLeft: "4px solid #22c55e", padding: "12px", borderRadius: "6px", marginBottom: "16px" }}>
+            <p style={{ margin: 0, color: "#14532d", fontWeight: "700", fontSize: "14px" }}>¡Punto Silla Encontrado!</p>
+            <p style={{ margin: "4px 0 0 0", color: "#166534", fontSize: "13px" }}>Ambos jugadores llegaron a un acuerdo estable. El juego se resuelve sin tener que eliminar opciones ni usar probabilidades.</p>
+          </div>
         ) : (
-          <p style={styles.error}>No hay punto silla</p>
+          <div style={{ background: "#fef2f2", borderLeft: "4px solid #ef4444", padding: "12px", borderRadius: "6px", marginBottom: "16px" }}>
+            <p style={{ margin: 0, color: "#7f1d1d", fontWeight: "700", fontSize: "14px" }}>No hay Punto Silla</p>
+            <p style={{ margin: "4px 0 0 0", color: "#991b1b", fontSize: "13px" }}>No hay un acuerdo directo. Necesitas entrar al <strong>Análisis Completo</strong> para eliminar las peores jugadas y buscar una solución.</p>
+          </div>
         )}
 
         <button

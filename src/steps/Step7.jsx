@@ -1,4 +1,5 @@
 import React from "react";
+import { formatNumber } from "../utils/validation";
 
 const clamp01 = (value) => {
   if (Number.isNaN(value)) return 0;
@@ -38,7 +39,7 @@ const Step7 = ({ data, setData, next, prev }) => {
     });
   };
 
-  // MATRIZ DE CONFUSIÓN
+  // MATRIZ DE PAGO (probabilidades del estudio)
   const truePositive = probabilityFavorableState * favorableDetectionRate;
   const falseNegative = probabilityFavorableState * (1 - favorableDetectionRate);
   const falsePositive =
@@ -57,7 +58,7 @@ const Step7 = ({ data, setData, next, prev }) => {
 
   return (
     <div style={container}>
-      <h1 style={title}>Matriz de confusión y calidad del estudio</h1>
+      <h1 style={title}>Matriz de pago y calidad del estudio</h1>
 
       <div style={card}>
         <h2 style={cardTitle}>Parámetros del estudio</h2>
@@ -83,7 +84,7 @@ const Step7 = ({ data, setData, next, prev }) => {
                 style={inputStyle}
               />
               <span style={chip}>
-                {(favorableDetectionRate * 100).toFixed(2)}%
+                {formatNumber(favorableDetectionRate * 100)}%
               </span>
             </div>
           </div>
@@ -108,7 +109,7 @@ const Step7 = ({ data, setData, next, prev }) => {
                 style={inputStyle}
               />
               <span style={chip}>
-                {(unfavorableFalsePositiveRate * 100).toFixed(2)}%
+                {formatNumber(unfavorableFalsePositiveRate * 100)}%
               </span>
             </div>
           </div>
@@ -116,53 +117,60 @@ const Step7 = ({ data, setData, next, prev }) => {
       </div>
 
       <div style={card}>
-        <h2 style={cardTitle}>Matriz de confusión</h2>
+        <h2 style={cardTitle}>Matriz de pago del estudio</h2>
         <table style={table}>
           <thead>
             <tr>
               <th style={th}></th>
-              <th style={th}>Predice favorable</th>
-              <th style={th}>Predice desfavorable</th>
-              <th style={th}>Total real</th>
+              <th style={th}>Resultado favorable</th>
+              <th style={th}>Resultado desfavorable</th>
+              <th style={th}>Total del estado</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td style={tdRowHeader}>Real favorable</td>
+              <td style={tdRowHeader}>Estado favorable real</td>
               <td style={{ ...td, ...tdGood }}>
-                TP: {truePositive.toFixed(4)}
+                Acierto favorable: {formatNumber(truePositive)}
               </td>
               <td style={{ ...td, ...tdBad }}>
-                FN: {falseNegative.toFixed(4)}
+                Error favorable: {formatNumber(falseNegative)}
               </td>
               <td style={td}>
-                {probabilityFavorableState.toFixed(4)}
+                {formatNumber(probabilityFavorableState)}
               </td>
             </tr>
             <tr>
-              <td style={tdRowHeader}>Real desfavorable</td>
+              <td style={tdRowHeader}>Estado desfavorable real</td>
               <td style={{ ...td, ...tdBad }}>
-                FP: {falsePositive.toFixed(4)}
+                Falso favorable: {formatNumber(falsePositive)}
               </td>
               <td style={{ ...td, ...tdGood }}>
-                TN: {trueNegative.toFixed(4)}
+                Acierto desfavorable: {formatNumber(trueNegative)}
               </td>
               <td style={td}>
-                {probabilityUnfavorableState.toFixed(4)}
+                {formatNumber(probabilityUnfavorableState)}
               </td>
             </tr>
             <tr>
-              <td style={tdRowHeader}>Total predicho</td>
+              <td style={tdRowHeader}>Total del resultado</td>
               <td style={td}>
-                {(truePositive + falsePositive).toFixed(4)}
+                {formatNumber(truePositive + falsePositive)}
               </td>
               <td style={td}>
-                {(falseNegative + trueNegative).toFixed(4)}
+                {formatNumber(falseNegative + trueNegative)}
               </td>
-              <td style={td}>1.0000</td>
+              <td style={td}>{formatNumber(1)}</td>
             </tr>
           </tbody>
         </table>
+        <div style={matrixNote}>
+          <p style={matrixNoteText}>
+            Cada valor es una probabilidad. Por ejemplo, "Acierto favorable" es la parte de los casos favorables
+            que el estudio marca como favorables. "Falso favorable" es cuando el estudio dice favorable, pero en
+            realidad es desfavorable. Los totales muestran cuánto pesa cada estado y cada resultado.
+          </p>
+        </div>
       </div>
 
       <div style={card}>
@@ -170,22 +178,22 @@ const Step7 = ({ data, setData, next, prev }) => {
         <div style={metricsGrid}>
           <MetricCard
             label="Precisión"
-            value={`${(precision * 100).toFixed(2)}%`}
+            value={`${formatNumber(precision * 100)}%`}
             detail="TP / (TP + FP)"
           />
           <MetricCard
             label="Recall"
-            value={`${(recall * 100).toFixed(2)}%`}
+            value={`${formatNumber(recall * 100)}%`}
             detail="TP / (TP + FN)"
           />
           <MetricCard
             label="Exactitud"
-            value={`${(accuracy * 100).toFixed(2)}%`}
+            value={`${formatNumber(accuracy * 100)}%`}
             detail="(TP + TN) / Total"
           />
           <MetricCard
             label="Especificidad"
-            value={`${(specificity * 100).toFixed(2)}%`}
+            value={`${formatNumber(specificity * 100)}%`}
             detail="TN / (TN + FP)"
           />
         </div>
@@ -252,6 +260,21 @@ const mutedText = {
   marginTop: 0,
   color: "#547085",
   fontSize: "14px"
+};
+
+const matrixNote = {
+  marginTop: "12px",
+  background: "#f8fafc",
+  border: "1px dashed #cbd5f5",
+  borderRadius: "10px",
+  padding: "10px 12px"
+};
+
+const matrixNoteText = {
+  margin: 0,
+  fontSize: "13px",
+  color: "#334155",
+  lineHeight: 1.6
 };
 
 const parameterGrid = {

@@ -1,9 +1,7 @@
 import React from "react";
 import { analyzeGame } from "./gameTheoryUtils";
 import EquilibriumMatrix from "../../components/EquilibriumMatrix";
-
-
-const formatNumber = (value) => Number(value).toFixed(4);
+import { formatNumber } from "../../utils/validation";
 
 const asSet = (items) => new Set(items || []);
 
@@ -156,7 +154,7 @@ const ReductionFlow = ({ labelRemoved, removed, kept, axisLabel }) => {
         </div>
       </div>
       <p style={flowHint}>
-        Se retiran {axisLabel} en rojo y permanecen en verde para la siguiente iteracion.
+        Las opciones en rojo se descartan definitivamente porque son peores. Las verdes sobreviven a la siguiente ronda.
       </p>
     </div>
   );
@@ -186,8 +184,8 @@ const StepCard = ({ step, index }) => {
       <div style={stepHeader}>
         <span style={stepTag}>Paso {index + 1}</span>
         <strong style={stepTitle}>
-          {isRows && "Eliminacion por dominancia (filas)"}
-          {isCols && "Eliminacion por dominancia (columnas)"}
+          {isRows && "J1 (Filas) descarta una mala jugada"}
+          {isCols && "J2 (Columnas) descarta una mala jugada"}
           {isTerminal && "Proceso finalizado"}
         </strong>
       </div>
@@ -201,18 +199,17 @@ const StepCard = ({ step, index }) => {
         </p>
       )}
 
-      {(isRows || isCols) && step.comparedWith && step.comparison && (
         <p style={stepText}>
-          Comparacion elemento a elemento: <strong>{step.removed[0]}</strong>
-          {` [${step.comparison.removedVector.map((value) => formatNumber(value)).join(", ")}] `}
-          frente a <strong>{step.comparedWith}</strong>
-          {` [${step.comparison.comparedVector.map((value) => formatNumber(value)).join(", ")}] `}
-          .
+          Al comparar la jugada <strong>{step.removed[0]}</strong> con la jugada <strong>{step.comparedWith}</strong>, vemos que:
+          <br/>
+          {step.removed[0]} ➔ <code>[{step.comparison.removedVector.map(v => formatNumber(v)).join(", ")}]</code>
+          <br/>
+          {step.comparedWith} ➔ <code>[{step.comparison.comparedVector.map(v => formatNumber(v)).join(", ")}]</code>
+          <br/><br/>
           {step.comparison.axis === "row"
-            ? " Se elimina la primera porque la segunda es mayor o igual en todas las posiciones y estrictamente mayor en al menos una."
-            : " Se elimina la primera porque la segunda es menor o igual en todas las posiciones y estrictamente menor en al menos una."}
+            ? `Decisión J1: Se elimina "${step.removed[0]}" porque "${step.comparedWith}" SIEMPRE le da ganancias mayores o iguales en cualquier escenario. ¡No tiene sentido elegir la mala!`
+            : `Decisión J2: Se elimina "${step.removed[0]}" porque "${step.comparedWith}" SIEMPRE le hace perder menos (números menores o iguales). ¡Hay que minimizar las pérdidas!`}
         </p>
-      )}
 
       {(isRows || isCols) && (
         <p style={stepText}>
@@ -221,7 +218,7 @@ const StepCard = ({ step, index }) => {
       )}
 
       <ReductionFlow
-        labelRemoved={isRows ? "Flujo de eliminacion de filas" : "Flujo de eliminacion de columnas"}
+        labelRemoved={isRows ? "Opciones que le quedan a J1 (Filas)" : "Opciones que le quedan a J2 (Columnas)"}
         removed={isRows ? removedRows : removedCols}
         kept={isRows ? keptRows : keptCols}
         axisLabel={isRows ? "filas" : "columnas"}
@@ -389,14 +386,14 @@ const GameAnalysis = ({ matrix, onBack, onOpenAlgebraic }) => {
   return (
     <div style={container}>
       <style>{animationStyles}</style>
-      <h2 style={title}>Analisis por eliminacion sucesiva</h2>
+      <h2 style={title}>Eliminación de las peores jugadas</h2>
 
       <div style={infoBox}>
         <p style={infoText}>
-          Si no hay punto silla, se elimina solo por dominancia estricta elemento a elemento.
+          Como no hubo un acuerdo directo (Punto Silla), vamos a descartar las jugadas que nunca elegirías porque siempre te hacen perder frente a otras mejores.
         </p>
         <p style={infoText}>
-          En cada iteracion se intenta alternar fila/columna y, si no se puede por una, se prueba por la otra.
+          Se comparan las opciones una a una hasta reducir la tabla a su expresión más simple.
         </p>
       </div>
 
@@ -441,8 +438,7 @@ const GameAnalysis = ({ matrix, onBack, onOpenAlgebraic }) => {
 
             {eliminationSteps.some((step) => step.action === "no-more-eliminations") && (
               <p style={muted}>
-                Se llegó a la matriz final y ya no se pueden hacer más iteraciones de reducción.
-                Por eso el proceso se detiene aquí (p.ej., 2x2). Esta observación se informa una sola vez.
+                Ya no se pueden descartar más opciones de forma directa. La tabla no se puede reducir más.
               </p>
             )}
           </>
@@ -477,7 +473,7 @@ const GameAnalysis = ({ matrix, onBack, onOpenAlgebraic }) => {
 
       <div style={actions}>
         <button onClick={onBack} style={buttonSecondary}>Volver a Datos</button>
-        <button onClick={onOpenAlgebraic} style={buttonPrimary}>Ir a Metodo algebraico</button>
+        <button onClick={onOpenAlgebraic} style={buttonPrimary}>Ir a Gráfica de Probabilidades</button>
       </div>
     </div>
   );

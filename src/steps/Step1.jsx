@@ -1,5 +1,6 @@
 import React from "react";
 import EditableMatrix from "../components/EditableMatrix";
+import { formatNumber } from "../utils/validation";
 import { isProbability, toFiniteNumber } from "../utils/validation";
 
 const Step1 = ({ data, setData, next }) => {
@@ -148,7 +149,7 @@ const Step1 = ({ data, setData, next }) => {
         ))}
 
         <p style={{ color: isValid ? "#2e7d32" : "#c62828", fontSize: "14px" }}>
-          Suma probabilidades: {totalProb.toFixed(4)}
+          Suma probabilidades: {formatNumber(totalProb)}
         </p>
         {!isValid && (
           <p style={{ color: "#c62828", fontSize: "13px", marginTop: "8px" }}>
@@ -173,7 +174,7 @@ const Step1 = ({ data, setData, next }) => {
 
       {/* BOTÓN */}
       <div style={resultBox}>
-        <p><b>Suma probabilidades:</b> {totalProb.toFixed(4)}</p>
+        <p><b>Suma probabilidades:</b> {formatNumber(totalProb)}</p>
         <p><b>Estados:</b> {states.length}</p>
         {!isValid && (
           <p style={{ color: "#c62828", fontSize: "13px", margin: "0 0 8px 0" }}>

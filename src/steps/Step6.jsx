@@ -8,7 +8,7 @@ import {
   Legend
 } from "chart.js";
 import { Line } from "react-chartjs-2";
-import { toFiniteNumber } from "../utils/validation";
+import { toFiniteNumber, formatNumber } from "../utils/validation";
 
 ChartJS.register(LineElement, LinearScale, PointElement, Tooltip, Legend);
 
@@ -38,7 +38,7 @@ const Step6 = ({ data, next, prev }) => {
   // Eje X (probabilidad del estado favorable)
   const probabilityLabels = [];
   for (let p = 0; p <= 1; p += 0.02) {
-    probabilityLabels.push(parseFloat(p.toFixed(4)));
+    probabilityLabels.push(Number(formatNumber(p)));
   }
 
   // Líneas de valor esperado
@@ -73,8 +73,8 @@ const Step6 = ({ data, next, prev }) => {
         const y = f1.intercept + f1.slope * p;
 
         intersectionPoints.push({
-          x: parseFloat(p.toFixed(4)),
-          y: parseFloat(y.toFixed(4))
+          x: Number(formatNumber(p)),
+          y: Number(formatNumber(y))
         });
       }
     }
@@ -96,7 +96,7 @@ const Step6 = ({ data, next, prev }) => {
       tooltip: {
         callbacks: {
           label: function (context) {
-            return `VE: ${context.parsed.y.toFixed(4)}`;
+            return `VE: ${formatNumber(context.parsed.y)}`;
           },
           afterBody: function (context) {
             const p = context[0].parsed.x;
