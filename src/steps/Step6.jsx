@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Chart as ChartJS,
   LineElement,
@@ -13,6 +13,7 @@ import { toFiniteNumber, formatNumber } from "../utils/validation";
 ChartJS.register(LineElement, LinearScale, PointElement, Tooltip, Legend);
 
 const Step6 = ({ data, next, prev }) => {
+  const [tooltipData, setTooltipData] = useState(null);
   const { alternatives, payoff } = data;
 
   const invalidPayoff = !Array.isArray(alternatives) || !Array.isArray(payoff) || alternatives.length === 0 || payoff.some((row) => !Array.isArray(row) || row.length < 2 || row.some((value) => !Number.isFinite(toFiniteNumber(value, NaN))));
@@ -94,24 +95,39 @@ const Step6 = ({ data, next, prev }) => {
     responsive: true,
     plugins: {
       tooltip: {
-        callbacks: {
-          label: function (context) {
-            return `VE: ${formatNumber(context.parsed.y)}`;
-          },
-          afterBody: function (context) {
-            const p = context[0].parsed.x;
+        enabled: false,
+        external: (context) => {
+          const { chart, tooltip } = context;
 
-            const veValues = linearFunctions.map(
-              f => f.intercept + f.slope * p
-            );
-
-            const maxVE = Math.max(...veValues);
-            const bestIndex = veValues.findIndex(
-              v => Math.abs(v - maxVE) < 1e-6
-            );
-
-            return `Mejor: ${linearFunctions[bestIndex].name}`;
+          if (!tooltip || tooltip.opacity === 0) {
+            setTooltipData(null);
+            return;
           }
+
+          const dataPoint = tooltip.dataPoints?.[0];
+          if (!dataPoint) return;
+
+          const p = dataPoint.parsed.x;
+          const ve = dataPoint.parsed.y;
+          const isCutPoint = dataPoint.dataset?.label === "Puntos de corte";
+
+          const veValues = linearFunctions.map(
+            f => f.intercept + f.slope * p
+          );
+
+          const maxVE = Math.max(...veValues);
+          const bestIndex = veValues.findIndex(
+            v => Math.abs(v - maxVE) < 1e-6
+          );
+
+          setTooltipData({
+            left: tooltip.caretX,
+            top: tooltip.caretY,
+            p,
+            ve,
+            bestName: linearFunctions[bestIndex]?.name || "-",
+            isCutPoint
+          });
         }
       }
     },
@@ -139,10 +155,29 @@ const Step6 = ({ data, next, prev }) => {
 
       <div style={card}>
         <h2>Gráfico interactivo</h2>
-        <Line
-          data={{ datasets: [...datasets, cutPointsDataset] }}
-          options={chartOptions}
-        />
+        <div style={{ position: "relative" }}>
+          <Line
+            data={{ datasets: [...datasets, cutPointsDataset] }}
+            options={chartOptions}
+          />
+          {tooltipData && (
+            <div
+              style={{
+                ...tooltipBox,
+                left: Math.min(Math.max(tooltipData.left + 12, 8), 740),
+                top: Math.min(Math.max(tooltipData.top - 12, 8), 360)
+              }}
+            >
+              <div style={tooltipHeader}>{tooltipData.isCutPoint ? "Punto de corte" : "Punto de decisión"}</div>
+              <div style={tooltipLine}><strong>p:</strong> {formatNumber(tooltipData.p)}</div>
+              <div style={tooltipLine}><strong>VE:</strong> {formatNumber(tooltipData.ve)}</div>
+              <div style={tooltipLine}><strong>Mejor opción:</strong> {tooltipData.bestName}</div>
+              {tooltipData.isCutPoint && (
+                <div style={tooltipHint}>En este punto se igualan dos alternativas.</div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       <div style={card}>
@@ -222,6 +257,38 @@ const buttons = {
   display: "flex",
   justifyContent: "space-between",
   gap: "10px"
+};
+
+const tooltipBox = {
+  position: "absolute",
+  minWidth: 200,
+  maxWidth: 260,
+  padding: "10px 12px",
+  background: "#0f172a",
+  color: "#e2e8f0",
+  borderRadius: 10,
+  boxShadow: "0 10px 24px rgba(15, 23, 42, 0.32)",
+  fontSize: 12,
+  zIndex: 10
+};
+
+const tooltipHeader = {
+  fontWeight: 800,
+  letterSpacing: "0.04em",
+  fontSize: 11,
+  color: "#f8fafc",
+  marginBottom: 6
+};
+
+const tooltipLine = {
+  marginBottom: 4,
+  color: "#e2e8f0"
+};
+
+const tooltipHint = {
+  marginTop: 6,
+  color: "#94a3b8",
+  fontSize: 11
 };
 
 const btnPrimary = {
