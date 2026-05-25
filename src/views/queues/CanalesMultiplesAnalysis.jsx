@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { toFiniteNumber } from "../../utils/validation";
+import { toFiniteNumber, formatNumber } from "../../utils/validation";
 
 // ── UNIT CONVERSION ────────────────────────────────────────────────
 const UNIT_FACTORS = {
@@ -100,8 +100,7 @@ const CanalesMultiplesAnalysis = ({ data, onBack }) => {
     const [activeTab, setActiveTab] = useState(0);
     const [hoveredRow, setHoveredRow] = useState(null);
 
-    const formatNumber = (value, digits = 4) => Number(value).toFixed(digits);
-    const formatProbability = (value) => `${Number(value).toFixed(4)} (${(Number(value) * 100).toFixed(2)}%)`;
+    const formatProbability = (value) => `${formatNumber(value)} (${formatNumber(Number(value) * 100)}%)`;
 
     const safeData = data || {};
     const { llegadas = {}, servicio = {}, x = "", modoPoisson = "exact", t = "", numServidores = 2, unidadBase, pnCondicion = {} } = safeData;
@@ -255,31 +254,26 @@ const CanalesMultiplesAnalysis = ({ data, onBack }) => {
     // ── COMPARACIÓN TABLE ────────────────────────────────────────
     const ComparisonTable = () => (
         <div>
-            <p style={s.sectionLabel}>Análisis Comparativo: M/M/1 vs M/M/k</p>
+            <p style={s.sectionLabel}>¿Qué pasa si abro más cajas? (M/M/1 vs M/M/k)</p>
             <div style={s.explainBox}>
                 <p style={s.explainTitle}>Cómo leer esta tabla</p>
                 <p style={s.explainText}>
-                    En esta comparación, todos los valores aparecen como decimal y porcentaje en la misma celda.
-                    Por ejemplo, 0.2500 significa 25.00%.
+                    Compara tu negocio con <strong>1 sola caja</strong> (M/M/1) vs <strong>{k} cajas</strong> (M/M/{k}). Los números te dicen si la gente espera más o menos.
                 </p>
                 <ul style={{ ...s.explainText, paddingLeft: 20, margin: "8px 0" }}>
-                    <li><strong>La flecha (↑ o ↓):</strong> Te indica si el valor numérico <em>subió</em> o <em>bajó</em> al agregar servidores.</li>
-                    <li><strong>El color (Verde o Rojo):</strong> Te indica si ese cambio es <em>bueno</em> o <em>malo</em> operativamente hablando.</li>
+                    <li><strong>Flecha verde (↓ o ↑):</strong> ¡Buena noticia! Ese indicador mejoró al abrir más cajas.</li>
+                    <li><strong>Flecha roja:</strong> Ese indicador empeoró o no cambió lo suficiente.</li>
                 </ul>
-                <p style={{ ...s.explainText, marginTop: 8 }}>
-                    <strong>Ejemplo 1 (Flecha abajo en verde):</strong> En <strong>Wq</strong> (Tiempo en cola), si el tiempo de espera disminuye, el valor <em>baja</em> (↓) y es una mejora <strong>(Verde)</strong>.<br/>
-                    <strong>Ejemplo 2 (Flecha arriba en verde):</strong> En <strong>P₀</strong> (Disponibilidad), si el porcentaje aumenta, el valor <em>sube</em> (↑) y también es una mejora <strong>(Verde)</strong>.
-                </p>
             </div>
             <div style={s.card}>
                 {(() => {
                     const items = [
-                        { name: "P₀", mm1: P0_mm1, mmk: mmkResults.P0, unit: "", isProb: true, higherIsBetter: true, desc: "Probabilidad de sistema vacío", when: "Útil para evaluar disponibilidad del sistema.", color: "#2563eb" },
-                        { name: "Pw", mm1: Pw_mm1, mmk: mmkResults.Pw, unit: "", isProb: true, higherIsBetter: false, desc: "Probabilidad de que un cliente espere", when: "Clave cuando se quiere minimizar esperas al llegar.", color: "#16a34a" },
-                        { name: "Lq", mm1: Lq_mm1, mmk: mmkResults.Lq, unit: "clientes", isProb: false, higherIsBetter: false, desc: "Clientes promedio en cola", when: "Sirve para dimensionar el tamaño de la fila.", color: "#7c3aed" },
-                        { name: "L", mm1: L_mm1, mmk: mmkResults.L, unit: "clientes", isProb: false, higherIsBetter: false, desc: "Clientes promedio en sistema", when: "Mide carga total en cola y servicio.", color: "#0891b2" },
-                        { name: "Wq", mm1: Wq_mm1, mmk: mmkResults.Wq, unit: "u.t.", isProb: false, higherIsBetter: false, desc: "Tiempo promedio en cola", when: "Se usa para evaluar experiencia de espera.", color: "#ea580c" },
-                        { name: "W", mm1: W_mm1, mmk: mmkResults.W, unit: "u.t.", isProb: false, higherIsBetter: false, desc: "Tiempo promedio en sistema", when: "Mide el tiempo total que vive el cliente.", color: "#be185d" },
+                        { name: "P₀", mm1: P0_mm1, mmk: mmkResults.P0, unit: "", isProb: true, higherIsBetter: true, desc: "¿El local está vacío?", when: "Mientras más alto, más descansa el cajero. Si es muy bajo, el cajero está estresado.", color: "#2563eb" },
+                        { name: "Pw", mm1: Pw_mm1, mmk: mmkResults.Pw, unit: "", isProb: true, higherIsBetter: false, desc: "¿Tendré que esperar?", when: "Probabilidad de que al llegar te toque hacer fila. Menos es mejor.", color: "#16a34a" },
+                        { name: "Lq", mm1: Lq_mm1, mmk: mmkResults.Lq, unit: "clientes", isProb: false, higherIsBetter: false, desc: "Gente en la fila", when: "Promedio de personas paradas esperando. Menos es mejor.", color: "#7c3aed" },
+                        { name: "L", mm1: L_mm1, mmk: mmkResults.L, unit: "clientes", isProb: false, higherIsBetter: false, desc: "Gente total en el local", when: "Todas las cabezas dentro del sistema (fila + siendo atendidos).", color: "#0891b2" },
+                        { name: "Wq", mm1: Wq_mm1, mmk: mmkResults.Wq, unit: "u.t.", isProb: false, higherIsBetter: false, desc: "Tiempo haciendo fila", when: "Minutos/horas esperando antes de ser atendido. Menos es mejor.", color: "#ea580c" },
+                        { name: "W", mm1: W_mm1, mmk: mmkResults.W, unit: "u.t.", isProb: false, higherIsBetter: false, desc: "Tiempo total (fila + atención)", when: "Experiencia completa del cliente, desde que llega hasta que sale.", color: "#be185d" },
                     ];
 
                     return (
@@ -300,7 +294,7 @@ const CanalesMultiplesAnalysis = ({ data, onBack }) => {
                                 const valueIncreased = mmk > mm1;
                                 const displayMm1 = isProb ? formatProbability(mm1) : formatNumber(mm1);
                                 const displayMmk = isProb ? formatProbability(mmk) : formatNumber(mmk);
-                                const changeAbs = Math.abs(mmk - mm1).toFixed(4);
+                                const changeAbs = formatNumber(Math.abs(mmk - mm1));
                                 const percentImprovement = calcImprovement(mm1, mmk);
 
                                 return (
@@ -319,7 +313,7 @@ const CanalesMultiplesAnalysis = ({ data, onBack }) => {
                                             {valueIncreased ? "↑" : "↓"} {changeAbs}
                                         </td>
                                         <td style={{ ...s.tableCell, color: isImprovement ? "#10b981" : "#ef4444", fontWeight: 700 }}>
-                                            {isImprovement ? "Mejora: " : "Empeora: "}{Math.abs(percentImprovement).toFixed(1)}%
+                                            {isImprovement ? "Mejora: " : "Empeora: "}{formatNumber(Math.abs(percentImprovement))}%
                                         </td>
                                     </tr>
                                 );
@@ -346,7 +340,7 @@ const CanalesMultiplesAnalysis = ({ data, onBack }) => {
                                         <p style={{ ...s.tooltipText, marginTop: 6 }}><strong>Conclusión:</strong> {conclusion}</p>
                                         <p style={{ ...s.tooltipText, color: "#1d4ed8", marginTop: 6 }}><strong>Recomendación:</strong> {recommendation}</p>
                                         <div style={s.tooltipFormula}>
-                                            <code style={{ fontSize: 12 }}>{it.name} — M/M/1: {it.mm1.toFixed(4)} → M/M/{k}: {it.mmk.toFixed(4)}</code>
+                                            <code style={{ fontSize: 12 }}>{it.name} — M/M/1: {formatNumber(it.mm1)} → M/M/{k}: {formatNumber(it.mmk)}</code>
                                         </div>
                                     </div>
                                 );
@@ -360,39 +354,39 @@ const CanalesMultiplesAnalysis = ({ data, onBack }) => {
 
             {/* Resumen de mejoras */}
             <div style={s.card}>
-                <p style={s.cardTitle}>Resumen de Mejoras</p>
+                <p style={s.cardTitle}>¿Valió la pena abrir más cajas?</p>
                 <div style={s.summaryGrid}>
                     {[
                         {
                             label: "Clientes en cola",
                             mm1: formatNumber(Lq_mm1),
                             mmk: formatNumber(mmkResults.Lq),
-                            reduction: ((Lq_mm1 - mmkResults.Lq) / Lq_mm1 * 100).toFixed(1),
+                            reduction: formatNumber((Lq_mm1 - mmkResults.Lq) / Lq_mm1 * 100),
                             color: "#7c3aed"
                         },
                         {
                             label: "Tiempo en cola",
                             mm1: formatNumber(Wq_mm1),
                             mmk: formatNumber(mmkResults.Wq),
-                            reduction: ((Wq_mm1 - mmkResults.Wq) / Wq_mm1 * 100).toFixed(1),
+                            reduction: formatNumber((Wq_mm1 - mmkResults.Wq) / Wq_mm1 * 100),
                             color: "#ea580c"
                         },
                         {
                             label: "Probabilidad de espera",
                             mm1: formatProbability(Pw_mm1),
                             mmk: formatProbability(mmkResults.Pw),
-                            reduction: ((Pw_mm1 - mmkResults.Pw) / Pw_mm1 * 100).toFixed(1),
+                            reduction: formatNumber((Pw_mm1 - mmkResults.Pw) / Pw_mm1 * 100),
                             color: "#16a34a"
                         },
                     ].map((metric, idx) => {
                         const reductionVal = parseFloat(metric.reduction);
                         const isImprovement = reductionVal > 0;
                         const conclusionText = isImprovement
-                            ? `La métrica baja y eso indica una mejora operativa.`
-                            : `La métrica no mejora, así que el sistema necesita revisión.`;
+                            ? `¡Sí! Al abrir ${k} cajas, este indicador mejoró notablemente.`
+                            : `No mejoró. Puede que ${k} servidores no sean suficientes o que el problema esté en otro lado.`;
                         const recommendationText = isImprovement
-                            ? `Mantener el número de servidores y usarlo como referencia para horas pico.`
-                            : `Revisar la carga o aumentar servidores para reducir la espera.`;
+                            ? `Mantener ${k} servidores y monitorear en horarios de mayor demanda.`
+                            : `Considerar más cajeros o hacer el servicio más rápido por persona.`;
                         return (
                             <div key={idx} style={{ ...s.summaryMetricCard, borderTop: `3px solid ${metric.color}` }}>
                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
@@ -403,7 +397,7 @@ const CanalesMultiplesAnalysis = ({ data, onBack }) => {
                                     <div style={{ textAlign: "right" }}>
                                         <div style={{ fontSize: 12, color: "#6b7280" }}>Cambio</div>
                                         <div style={{ fontWeight: 800, fontSize: 18, color: isImprovement ? "#16a34a" : "#dc2626", marginTop: 6 }}>
-                                            {isImprovement ? "Mejora: " : "Empeora: "}{Math.abs(reductionVal).toFixed(1)}%
+                                            {isImprovement ? "Mejora: " : "Empeora: "}{formatNumber(Math.abs(reductionVal))}%
                                         </div>
                                     </div>
                                 </div>
@@ -445,7 +439,7 @@ const CanalesMultiplesAnalysis = ({ data, onBack }) => {
                         <code>P(x) = (λˣ · e^(-λ)) / x!</code>
                     </div>
                     <div style={{ ...s.formulaBox, background: "#f0fdf4", borderColor: "#bbf7d0" }}>
-                        <code>P(x) = ({λ.toFixed(4)}ˣ · e^(-{λ.toFixed(4)})) / x!</code>
+                        <code>P(x) = ({formatNumber(λ)}ˣ · e^(-{formatNumber(λ)})) / x!</code>
                     </div>
                 </div>
 
@@ -455,7 +449,7 @@ const CanalesMultiplesAnalysis = ({ data, onBack }) => {
                         {poisson.termVals.map(({ i, v }) => (
                             <div key={i} style={s.termCard}>
                                 <div style={s.termLabel}>P(x = {i})</div>
-                                <div style={s.termValue}>{v.toFixed(6)}</div>
+                                <div style={s.termValue}>{formatNumber(v)}</div>
                             </div>
                         ))}
                     </div>
@@ -465,8 +459,8 @@ const CanalesMultiplesAnalysis = ({ data, onBack }) => {
                     <p style={s.cardTitle}>Resultado</p>
                     <div style={s.resultBox}>
                         <span style={{ fontSize: 14, color: "#6b7280" }}>P(x {modoPoisson === "exact" ? "=" : modoPoisson === "greater" ? ">" : modoPoisson === "greater_eq" ? "≥" : modoPoisson === "less_eq" ? "≤" : "<"} {xNum}) =</span>
-                        <span style={{ fontSize: 28, fontWeight: 800, color: "#2563eb", margin: "8px 0" }}>{poisson.result.toFixed(6)}</span>
-                        <span style={{ fontSize: 12, color: "#6b7280" }}>({(poisson.result * 100).toFixed(3)}%)</span>
+                        <span style={{ fontSize: 28, fontWeight: 800, color: "#2563eb", margin: "8px 0" }}>{formatNumber(poisson.result)}</span>
+                        <span style={{ fontSize: 12, color: "#6b7280" }}>({formatNumber(poisson.result * 100)}%)</span>
                     </div>
                 </div>
             </div>
@@ -483,7 +477,7 @@ const CanalesMultiplesAnalysis = ({ data, onBack }) => {
                     <code>P(T ≤ t) = 1 - e^(-μ·t)</code>
                 </div>
                 <div style={{ ...s.formulaBox, background: "#f0fdf4", borderColor: "#bbf7d0" }}>
-                    <code>P(T ≤ {tNum}) = 1 - e^(-{μ.toFixed(4)}·{tNum}) = {expResult.toFixed(6)}</code>
+                    <code>P(T ≤ {tNum}) = 1 - e^(-{formatNumber(μ)}·{tNum}) = {formatNumber(expResult)}</code>
                 </div>
             </div>
 
@@ -491,15 +485,15 @@ const CanalesMultiplesAnalysis = ({ data, onBack }) => {
                 <p style={s.cardTitle}>Resultado</p>
                 <div style={s.resultBox}>
                     <span style={{ fontSize: 14, color: "#6b7280" }}>P(T ≤ {tNum}) =</span>
-                    <span style={{ fontSize: 28, fontWeight: 800, color: "#2563eb", margin: "8px 0" }}>{expResult.toFixed(6)}</span>
-                    <span style={{ fontSize: 12, color: "#6b7280" }}>({(expResult * 100).toFixed(2)}%)</span>
+                    <span style={{ fontSize: 28, fontWeight: 800, color: "#2563eb", margin: "8px 0" }}>{formatNumber(expResult)}</span>
+                    <span style={{ fontSize: 12, color: "#6b7280" }}>({formatNumber(expResult * 100)}%)</span>
                 </div>
             </div>
 
             <div style={s.card}>
                 <p style={s.cardTitle}>Interpretación</p>
                 <p style={s.guideText}>
-                    La probabilidad de que un cliente sea atendido en a lo sumo {tNum} unidades de tiempo es <strong>{(expResult * 100).toFixed(2)}%</strong>.
+                    La probabilidad de que un cliente sea atendido en a lo sumo {tNum} unidades de tiempo es <strong>{formatNumber(expResult * 100)}%</strong>.
                 </p>
             </div>
         </div>
@@ -521,10 +515,10 @@ const CanalesMultiplesAnalysis = ({ data, onBack }) => {
                 </div>
                 <div style={s.resultBox}>
                     <span style={{ fontSize: 14, color: "#6b7280" }}>P₀ =</span>
-                    <span style={{ fontSize: 28, fontWeight: 800, color: "#2563eb", margin: "8px 0" }}>{mmkResults.P0.toFixed(6)}</span>
+                    <span style={{ fontSize: 28, fontWeight: 800, color: "#2563eb", margin: "8px 0" }}>{formatNumber(mmkResults.P0)}</span>
                 </div>
                 <div style={{ marginTop: 10 }}>
-                    <div style={{ fontSize: 13, color: "#374151" }}><strong>Conclusión:</strong> P₀ = {mmkResults.P0.toFixed(4)} indica la probabilidad de que no haya nadie en el sistema.</div>
+                    <div style={{ fontSize: 13, color: "#374151" }}><strong>Conclusión:</strong> P₀ = {formatNumber(mmkResults.P0)} indica la probabilidad de que no haya nadie en el sistema.</div>
                     <div style={{ fontSize: 13, color: "#1d4ed8", marginTop: 6 }}><strong>Recomendación:</strong> Si P₀ es bajo, el sistema está casi siempre ocupado; considera aumentar servidores o capacidad.</div>
                 </div>
             </div>
@@ -539,11 +533,11 @@ const CanalesMultiplesAnalysis = ({ data, onBack }) => {
                     <code>Pw = [(ρᵏ/k!)/(1-ρ/k)] × P₀</code>
                 </div>
                 <div style={s.resultBox}>
-                    <span style={{ fontSize: 14, color: "#6b7280" }}>Pw = {(mmkResults.Pw * 100).toFixed(2)}%</span>
-                    <span style={{ fontSize: 28, fontWeight: 800, color: "#2563eb", margin: "8px 0" }}>{mmkResults.Pw.toFixed(6)}</span>
+                    <span style={{ fontSize: 14, color: "#6b7280" }}>Pw = {formatNumber(mmkResults.Pw * 100)}%</span>
+                    <span style={{ fontSize: 28, fontWeight: 800, color: "#2563eb", margin: "8px 0" }}>{formatNumber(mmkResults.Pw)}</span>
                 </div>
                 <div style={{ marginTop: 10 }}>
-                    <div style={{ fontSize: 13, color: "#374151" }}><strong>Conclusión:</strong> Pw = {(mmkResults.Pw * 100).toFixed(2)}% de clientes esperarán al llegar.</div>
+                    <div style={{ fontSize: 13, color: "#374151" }}><strong>Conclusión:</strong> Pw = {formatNumber(mmkResults.Pw * 100)}% de clientes esperarán al llegar.</div>
                     <div style={{ fontSize: 13, color: "#1d4ed8", marginTop: 6 }}><strong>Recomendación:</strong> Si Pw supera el umbral aceptable (ej. 10–20%), valora añadir servidores o mejorar el servicio.</div>
                 </div>
             </div>
@@ -556,11 +550,11 @@ const CanalesMultiplesAnalysis = ({ data, onBack }) => {
                 </div>
                 <div style={s.resultBox}>
                     <span style={{ fontSize: 14, color: "#6b7280" }}>Lq =</span>
-                    <span style={{ fontSize: 28, fontWeight: 800, color: "#7c3aed", margin: "8px 0" }}>{mmkResults.Lq.toFixed(4)}</span>
+                    <span style={{ fontSize: 28, fontWeight: 800, color: "#7c3aed", margin: "8px 0" }}>{formatNumber(mmkResults.Lq)}</span>
                     <span style={{ fontSize: 12, color: "#6b7280" }}>clientes</span>
                 </div>
                 <div style={{ marginTop: 10 }}>
-                    <div style={{ fontSize: 13, color: "#374151" }}><strong>Conclusión:</strong> En promedio hay {mmkResults.Lq.toFixed(4)} clientes esperando en la cola.</div>
+                    <div style={{ fontSize: 13, color: "#374151" }}><strong>Conclusión:</strong> En promedio hay {formatNumber(mmkResults.Lq)} clientes esperando en la cola.</div>
                     <div style={{ fontSize: 13, color: "#1d4ed8", marginTop: 6 }}><strong>Recomendación:</strong> Si Lq es mayor que el umbral de tolerancia del negocio, reducir la carga o aumentar servidores.</div>
                 </div>
             </div>
@@ -571,12 +565,12 @@ const CanalesMultiplesAnalysis = ({ data, onBack }) => {
                     <code>L = Lq + ρ</code>
                 </div>
                 <div style={s.resultBox}>
-                    <span style={{ fontSize: 14, color: "#6b7280" }}>L = {mmkResults.Lq.toFixed(4)} + {ρ.toFixed(4)} =</span>
-                    <span style={{ fontSize: 28, fontWeight: 800, color: "#0891b2", margin: "8px 0" }}>{mmkResults.L.toFixed(4)}</span>
+                    <span style={{ fontSize: 14, color: "#6b7280" }}>L = {formatNumber(mmkResults.Lq)} + {formatNumber(ρ)} =</span>
+                    <span style={{ fontSize: 28, fontWeight: 800, color: "#0891b2", margin: "8px 0" }}>{formatNumber(mmkResults.L)}</span>
                     <span style={{ fontSize: 12, color: "#6b7280" }}>clientes</span>
                 </div>
                 <div style={{ marginTop: 10 }}>
-                    <div style={{ fontSize: 13, color: "#374151" }}><strong>Conclusión:</strong> El sistema mantiene en promedio {mmkResults.L.toFixed(4)} clientes en total.</div>
+                    <div style={{ fontSize: 13, color: "#374151" }}><strong>Conclusión:</strong> El sistema mantiene en promedio {formatNumber(mmkResults.L)} clientes en total.</div>
                     <div style={{ fontSize: 13, color: "#1d4ed8", marginTop: 6 }}><strong>Recomendación:</strong> Revisar el dimensionamiento si L crece en picos y afecta el servicio.</div>
                 </div>
             </div>
@@ -588,11 +582,11 @@ const CanalesMultiplesAnalysis = ({ data, onBack }) => {
                     <code>Wq = Lq / λ</code>
                 </div>
                 <div style={s.resultBox}>
-                    <span style={{ fontSize: 14, color: "#6b7280" }}>Wq = {mmkResults.Lq.toFixed(4)} / {λ.toFixed(4)} =</span>
-                    <span style={{ fontSize: 28, fontWeight: 800, color: "#ea580c", margin: "8px 0" }}>{mmkResults.Wq.toFixed(4)}</span>
+                    <span style={{ fontSize: 14, color: "#6b7280" }}>Wq = {formatNumber(mmkResults.Lq)} / {formatNumber(λ)} =</span>
+                    <span style={{ fontSize: 28, fontWeight: 800, color: "#ea580c", margin: "8px 0" }}>{formatNumber(mmkResults.Wq)}</span>
                 </div>
                 <div style={{ marginTop: 10 }}>
-                    <div style={{ fontSize: 13, color: "#374151" }}><strong>Conclusión:</strong> El tiempo promedio en cola es {mmkResults.Wq.toFixed(4)} unidades de tiempo.</div>
+                    <div style={{ fontSize: 13, color: "#374151" }}><strong>Conclusión:</strong> El tiempo promedio en cola es {formatNumber(mmkResults.Wq)} unidades de tiempo.</div>
                     <div style={{ fontSize: 13, color: "#1d4ed8", marginTop: 6 }}><strong>Recomendación:</strong> Si Wq impacta la experiencia, priorizar medidas para reducir la cola (más servidores o servicio más rápido).</div>
                 </div>
             </div>
@@ -603,11 +597,11 @@ const CanalesMultiplesAnalysis = ({ data, onBack }) => {
                     <code>W = Wq + 1/μ</code>
                 </div>
                 <div style={s.resultBox}>
-                    <span style={{ fontSize: 14, color: "#6b7280" }}>W = {mmkResults.Wq.toFixed(4)} + {(1 / μ).toFixed(4)} =</span>
-                    <span style={{ fontSize: 28, fontWeight: 800, color: "#be185d", margin: "8px 0" }}>{mmkResults.W.toFixed(4)}</span>
+                    <span style={{ fontSize: 14, color: "#6b7280" }}>W = {formatNumber(mmkResults.Wq)} + {formatNumber(1 / μ)} =</span>
+                    <span style={{ fontSize: 28, fontWeight: 800, color: "#be185d", margin: "8px 0" }}>{formatNumber(mmkResults.W)}</span>
                 </div>
                 <div style={{ marginTop: 10 }}>
-                    <div style={{ fontSize: 13, color: "#374151" }}><strong>Conclusión:</strong> El tiempo total por cliente en el sistema es {mmkResults.W.toFixed(4)} unidades de tiempo.</div>
+                    <div style={{ fontSize: 13, color: "#374151" }}><strong>Conclusión:</strong> El tiempo total por cliente en el sistema es {formatNumber(mmkResults.W)} unidades de tiempo.</div>
                     <div style={{ fontSize: 13, color: "#1d4ed8", marginTop: 6 }}><strong>Recomendación:</strong> Mejorar servicio o capacidad si W excede los límites de SLA definidos.</div>
                 </div>
             </div>
@@ -630,7 +624,7 @@ const CanalesMultiplesAnalysis = ({ data, onBack }) => {
                         {pnCondMMk.termVals.map(({ i, v }) => (
                             <div key={i} style={s.termCard}>
                                 <div style={s.termLabel}>P(n = {i})</div>
-                                <div style={s.termValue}>{v.toFixed(6)}</div>
+                                <div style={s.termValue}>{formatNumber(v)}</div>
                                 {i < k && <div style={{ fontSize: 10, color: "#6b7280" }}>n ≤ k</div>}
                                 {i >= k && <div style={{ fontSize: 10, color: "#6b7280" }}>n &gt; k</div>}
                             </div>
@@ -639,8 +633,8 @@ const CanalesMultiplesAnalysis = ({ data, onBack }) => {
 
                     <div style={s.resultBox}>
                         <span style={{ fontSize: 14, color: "#6b7280" }}>{pnCondMMk.label} =</span>
-                        <span style={{ fontSize: 28, fontWeight: 800, color: "#2563eb", margin: "8px 0" }}>{pnCondMMk.result.toFixed(6)}</span>
-                        <span style={{ fontSize: 12, color: "#6b7280" }}>({(pnCondMMk.result * 100).toFixed(3)}%)</span>
+                        <span style={{ fontSize: 28, fontWeight: 800, color: "#2563eb", margin: "8px 0" }}>{formatNumber(pnCondMMk.result)}</span>
+                        <span style={{ fontSize: 12, color: "#6b7280" }}>({formatNumber(pnCondMMk.result * 100)}%)</span>
                     </div>
                 </div>
             )}
@@ -691,7 +685,7 @@ const CanalesMultiplesAnalysis = ({ data, onBack }) => {
                         <div style={s.conclusionCard}>
                             <div style={s.conclusionIcon}></div>
                             <div style={s.conclusionTitle}>Clientes esperando</div>
-                            <div style={s.conclusionValue}>{safeReductions.lq.toFixed(1)}%</div>
+                            <div style={s.conclusionValue}>{formatNumber(safeReductions.lq)}%</div>
                             <div style={s.conclusionText}>
                                 La fila promedio baja de {formatNumber(Lq_mm1)} a {formatNumber(mmkResults.Lq)}.
                             </div>
@@ -700,7 +694,7 @@ const CanalesMultiplesAnalysis = ({ data, onBack }) => {
                         <div style={s.conclusionCard}>
                             <div style={s.conclusionIcon}></div>
                             <div style={s.conclusionTitle}>Tiempo de espera</div>
-                            <div style={s.conclusionValue}>{safeReductions.wq.toFixed(1)}%</div>
+                            <div style={s.conclusionValue}>{formatNumber(safeReductions.wq)}%</div>
                             <div style={s.conclusionText}>
                                 Cada cliente espera menos tiempo: baja de {formatNumber(Wq_mm1)} a {formatNumber(mmkResults.Wq)}.
                             </div>
@@ -709,7 +703,7 @@ const CanalesMultiplesAnalysis = ({ data, onBack }) => {
                         <div style={s.conclusionCard}>
                             <div style={s.conclusionIcon}></div>
                             <div style={s.conclusionTitle}>Probabilidad de fila</div>
-                            <div style={s.conclusionValue}>{safeReductions.pw.toFixed(1)}%</div>
+                            <div style={s.conclusionValue}>{formatNumber(safeReductions.pw)}%</div>
                             <div style={s.conclusionText}>
                                 La probabilidad de tener que esperar cambia de {formatProbability(Pw_mm1)} a {formatProbability(mmkResults.Pw)}.
                             </div>
@@ -801,11 +795,11 @@ const CanalesMultiplesAnalysis = ({ data, onBack }) => {
                             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#fff", padding: "8px 12px", borderRadius: "6px", border: "1px solid #f1f5f9" }}>
                                     <span style={{ fontSize: 13, color: "#64748b" }}>Con 1 servidor</span>
-                                    <span style={{ fontWeight: 600, color: "#475569" }}>{(Pw_mm1 * 100).toFixed(1)}%</span>
+                                    <span style={{ fontWeight: 600, color: "#475569" }}>{formatNumber(Pw_mm1 * 100)}%</span>
                                 </div>
                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f0fdf4", padding: "8px 12px", borderRadius: "6px", border: "1px solid #bbf7d0" }}>
                                     <span style={{ fontSize: 13, color: "#166534", fontWeight: 600 }}>Con {k} servidores</span>
-                                    <span style={{ fontWeight: 800, color: "#16a34a", fontSize: 16 }}>{(mmkResults.Pw * 100).toFixed(1)}%</span>
+                                    <span style={{ fontWeight: 800, color: "#16a34a", fontSize: 16 }}>{formatNumber(mmkResults.Pw * 100)}%</span>
                                 </div>
                             </div>
                         </div>

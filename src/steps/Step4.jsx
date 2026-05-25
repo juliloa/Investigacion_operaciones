@@ -1,5 +1,5 @@
 import React from "react";
-import { isProbability, toFiniteNumber } from "../utils/validation";
+import { isProbability, toFiniteNumber, formatNumber } from "../utils/validation";
 
 const Step4 = ({ data, next, prev }) => {
   const { alternatives, states, probabilities, payoff } = data;
@@ -94,7 +94,7 @@ const Step4 = ({ data, next, prev }) => {
 
                       <text x="550" y={yState} fontSize="10">
                         {payoff[i][j]} × {probabilities[j]} ={" "}
-                        {results[i].calc[j].toFixed(4)}
+                        {formatNumber(results[i].calc[j])}
                       </text>
                     </g>
                   );
@@ -121,7 +121,7 @@ const Step4 = ({ data, next, prev }) => {
                     fill={Math.abs(results[i].total - best) < 1e-6 ? "#fff" : "#333"}
                     fontWeight="600"
                   >
-                    VE = {results[i].total.toFixed(4)}
+                    VE = {formatNumber(results[i].total)}
                   </text>
 
                   {Math.abs(results[i].total - best) < 1e-6 && (
@@ -168,14 +168,14 @@ const Step4 = ({ data, next, prev }) => {
             {states.map((state, j) => (
               <p key={j}>
                 {state}: {payoff[i][j]} × {probabilities[j]} ={" "}
-                <strong>{results[i].calc[j].toFixed(4)}</strong>
+                <strong>{formatNumber(results[i].calc[j])}</strong>
               </p>
             ))}
 
             <p>
               <strong>
-                Total VE = {results[i].calc.map(x => x.toFixed(4)).join(" + ")} ={" "}
-                {results[i].total.toFixed(4)}
+                Total VE = {results[i].calc.map(x => formatNumber(x)).join(" + ")} ={" "}
+                {formatNumber(results[i].total)}
               </strong>
             </p>
           </div>
@@ -187,14 +187,14 @@ const Step4 = ({ data, next, prev }) => {
 
         {results.map((r, i) => (
           <p key={i}>
-            {r.name}: VE = <strong>{r.total.toFixed(4)}</strong>
+            {r.name}: VE = <strong>{formatNumber(r.total)}</strong>
           </p>
         ))}
 
         <h3>
           Mejor alternativa:{" "}
           {results.find(r => Math.abs(r.total - best) < 1e-6)?.name} (
-          {best.toFixed(4)})
+          {formatNumber(best)})
         </h3>
       </div>
 

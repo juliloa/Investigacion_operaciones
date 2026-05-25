@@ -1,4 +1,5 @@
 import React from "react";
+import { formatNumber } from "../utils/validation";
 
 const style = `
 :root {
@@ -230,7 +231,7 @@ const Step5 = ({ data, next, prev }) => {
                 </div>
 
                 <div className="result">
-                  p = {it.p.toFixed(4)}
+                  p = {formatNumber(it.p)}
                 </div>
 
               </div>

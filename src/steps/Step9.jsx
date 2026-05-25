@@ -1,5 +1,5 @@
 import React from "react";
-import { isProbability, toFiniteNumber } from "../utils/validation";
+import { isProbability, toFiniteNumber, formatNumber } from "../utils/validation";
 
 const Step9 = ({ data, next, prev }) => {
   const alternatives = data?.alternatives ?? [];
@@ -76,13 +76,13 @@ const Step9 = ({ data, next, prev }) => {
 
         {alternatives.map((alt, i) => (
           <p key={i} style={item}>
-            <strong>{alt}:</strong> {VE_no_estudio[i].toFixed(4)}
+            <strong>{alt}:</strong> {formatNumber(VE_no_estudio[i])}
           </p>
         ))}
 
         <div style={resultBox}>
           <strong>
-            Mejor: {bestAltNoStudy} ({bestNoStudy.toFixed(4)})
+            Mejor: {bestAltNoStudy} ({formatNumber(bestNoStudy)})
           </strong>
         </div>
       </div>
@@ -90,11 +90,11 @@ const Step9 = ({ data, next, prev }) => {
       <div style={card}>
         <h2 style={subtitle}>Con Estudio</h2>
 
-        <p style={item}>Favorable → {bestFav.toFixed(4)}</p>
-        <p style={item}>Desfavorable → {bestDesf.toFixed(4)}</p>
+        <p style={item}>Favorable → {formatNumber(bestFav)}</p>
+        <p style={item}>Desfavorable → {formatNumber(bestDesf)}</p>
 
         <div style={resultBox}>
-          <strong>VE total: {VE_con_estudio.toFixed(4)}</strong>
+          <strong>VE total: {formatNumber(VE_con_estudio)}</strong>
         </div>
       </div>
 

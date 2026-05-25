@@ -1,6 +1,5 @@
 import React from "react";
-
-const format = (v) => Number(v).toFixed(4);
+import { formatNumber } from "../utils/validation";
 
 const EquilibriumMatrix = ({ matrix, rowNames, colNames, rowMin, colMax, saddleCells = {} }) => {
   const cols = colNames.length;
@@ -61,7 +60,7 @@ const EquilibriumMatrix = ({ matrix, rowNames, colNames, rowMin, colMax, saddleC
               )}
 
               <text x={x + cellWidth / 2 - 2} y={y + cellHeight / 2 + 4} textAnchor="middle" style={{ fill: "#12324a", fontSize: "13px", fontWeight: 700 }}>
-                {format(value)}
+                {formatNumber(value)}
               </text>
             </g>
           );

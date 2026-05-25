@@ -39,3 +39,13 @@ export const normalize2DArray = (matrix, fallback = []) => {
   if (!Array.isArray(matrix)) return fallback;
   return matrix.map((row) => (Array.isArray(row) ? [...row] : [])).filter((row) => row.length > 0);
 };
+
+export const formatNumber = (value, digits = 2) => {
+  const parsed = toFiniteNumber(value, NaN);
+  if (!Number.isFinite(parsed)) return "-";
+
+  const isInt = Math.abs(parsed - Math.round(parsed)) < 1e-9;
+  if (isInt) return String(Math.round(parsed));
+
+  return parsed.toFixed(digits);
+};

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { toFiniteNumber } from "../../utils/validation";
+import { toFiniteNumber, formatNumber } from "../../utils/validation";
 
 const MODOS_POISSON = [
     { key: "exact", label: "P(x = n)", desc: "Exacta" },
@@ -152,29 +152,27 @@ const CanalesMultiples = ({ data, setData, onNext }) => {
             {!showPreviousOption && (
                 <>
                     <div style={s.guideCard}>
-                        <h3 style={s.guideTitle}>¿Qué es M/M/k (Canales Múltiples)?</h3>
+                        <h3 style={s.guideTitle}>Sistema con Múltiples Servidores (Cajas o Cajeros)</h3>
                         <p style={s.guideText}>
-                            Sistema con <strong>k servidores</strong> donde los clientes llegan según
-                            <strong> Poisson</strong> y cada servidor atiende con tiempo <strong>Exponencial</strong>.
-                            Ideal para modelar centros de atención con múltiples cajas, asesores, etc.
+                            Es como un banco o supermercado con <strong>varias cajas abiertas (k)</strong>. Hay una única fila, y los clientes pasan al primer cajero que se desocupe.
                         </p>
                         <div style={s.defGrid}>
                             {[
                                 {
-                                    sym: "λ", bg: "#eff6ff", color: "#2563eb", name: "Tasa de llegadas",
-                                    desc: "Clientes que llegan por unidad de tiempo (misma definición que M/M/1).", ej: "2 clientes/min"
+                                    sym: "λ", bg: "#eff6ff", color: "#2563eb", name: "Ritmo de Llegada (λ - Lambda)",
+                                    desc: "¿Qué tan rápido llegan los clientes a la fila? (Se asume al azar).", ej: "Ej: 2 clientes por minuto"
                                 },
                                 {
-                                    sym: "μ", bg: "#fef2f2", color: "#dc2626", name: "Tasa por servidor",
-                                    desc: "Clientes que CADA servidor atiende por unidad de tiempo.", ej: "1 cliente/min"
+                                    sym: "μ", bg: "#fef2f2", color: "#dc2626", name: "Velocidad de Atención (μ - Mu)",
+                                    desc: "¿A qué velocidad atiende CADA cajero a una persona?", ej: "Ej: 1 cliente por minuto"
                                 },
                                 {
-                                    sym: "k", bg: "#f0fdf4", color: "#16a34a", name: "Número de servidores",
-                                    desc: "Cantidad de servidores paralelos en el sistema.", ej: "k = 3"
+                                    sym: "k", bg: "#f0fdf4", color: "#16a34a", name: "Número de Servidores (k)",
+                                    desc: "Cantidad de cajas o ventanillas abiertas al mismo tiempo.", ej: "Ej: k = 3 cajeros"
                                 },
                                 {
-                                    sym: "ρ", bg: "#fef3c7", color: "#ea580c", name: "Utilización",
-                                    desc: "ρ/k = (λ/μ)/k. Fracción de trabajo entre todos. Debe ser < 1.", ej: "0.67 → 67%"
+                                    sym: "ρ", bg: "#fef3c7", color: "#ea580c", name: "Ocupación Global (ρ/k)",
+                                    desc: "Nivel de estrés repartido entre todos. ¡Debe ser < 100% (1.0) para no colapsar!", ej: "Ej: 0.67 → 67% ocupados"
                                 },
                             ].map(({ sym, bg, color, name, desc, ej }) => (
                                 <div key={sym} style={s.defCard}>
@@ -190,8 +188,8 @@ const CanalesMultiples = ({ data, setData, onNext }) => {
 
                     {/* ── LLEGADAS ── */}
                     <div style={s.card}>
-                        <p style={s.cardTitle}><span style={{ color: "#2563eb" }}>λ</span> — Tasa de llegadas</p>
-                        <p style={s.guideText}>Clientes que llegan y en qué período.</p>
+                        <p style={s.cardTitle}><span style={{ color: "#2563eb" }}>λ</span> — Ritmo de Llegada (Lambda)</p>
+                        <p style={s.guideText}>¿Cuántos clientes llegan y en qué período de tiempo?</p>
                         <div style={s.inputRow}>
                             <div style={s.field}>
                                 <label style={s.label}>¿Cuántos clientes llegan?</label>
@@ -214,7 +212,7 @@ const CanalesMultiples = ({ data, setData, onNext }) => {
                         {lambdaOrig !== null && (
                             <div style={s.resultInline}>
                                 <span style={{ color: "#2563eb", fontWeight: 700 }}>λ =</span>
-                                <span style={s.resultNum}>{lambdaOrig.toFixed(4)}</span>
+                                <span style={s.resultNum}>{formatNumber(lambdaOrig)}</span>
                                 <span style={s.resultUnit}>clientes/{llegadas.unidad}</span>
                                 <span style={s.resultFormula}>({llegadas.cantidad} ÷ {llegadas.tiempo})</span>
                             </div>
@@ -223,8 +221,8 @@ const CanalesMultiples = ({ data, setData, onNext }) => {
 
                     {/* ── SERVICIO ── */}
                     <div style={s.card}>
-                        <p style={s.cardTitle}><span style={{ color: "#dc2626" }}>μ</span> — Tasa de servicio (por servidor)</p>
-                        <p style={s.guideText}>Cuántos clientes CADA servidor puede atender.</p>
+                        <p style={s.cardTitle}><span style={{ color: "#dc2626" }}>μ</span> — Velocidad de Atención (Mu por cajero)</p>
+                        <p style={s.guideText}>¿Cuántos clientes puede atender UN SOLO servidor y en cuánto tiempo?</p>
                         <div style={s.inputRow}>
                             <div style={s.field}>
                                 <label style={s.label}>¿Cuántos clientes por servidor?</label>
@@ -247,7 +245,7 @@ const CanalesMultiples = ({ data, setData, onNext }) => {
                         {muOrig !== null && (
                             <div style={{ ...s.resultInline, borderColor: "#fecaca", background: "#fef2f2" }}>
                                 <span style={{ color: "#dc2626", fontWeight: 700 }}>μ =</span>
-                                <span style={{ ...s.resultNum, color: "#dc2626" }}>{muOrig.toFixed(4)}</span>
+                                <span style={{ ...s.resultNum, color: "#dc2626" }}>{formatNumber(muOrig)}</span>
                                 <span style={s.resultUnit}>clientes/{servicio.unidad}</span>
                                 <span style={s.resultFormula}>({servicio.cantidad} ÷ {servicio.tiempo})</span>
                             </div>
@@ -269,8 +267,8 @@ const CanalesMultiples = ({ data, setData, onNext }) => {
                                             onClick={() => update({ unidadBase: u })}
                                         >
                                             <span style={{ fontSize: 13, fontWeight: 700 }}>Trabajar en {u}</span>
-                                            <span style={{ fontSize: 11, color: "#6b7280", marginTop: 3 }}>λ = {lConv?.toFixed(4)} clientes/{u}</span>
-                                            <span style={{ fontSize: 11, color: "#6b7280" }}>μ = {mConv?.toFixed(4)} clientes/{u}</span>
+                                            <span style={{ fontSize: 11, color: "#6b7280", marginTop: 3 }}>λ = {formatNumber(lConv)} clientes/{u}</span>
+                                            <span style={{ fontSize: 11, color: "#6b7280" }}>μ = {formatNumber(mConv)} clientes/{u}</span>
                                         </button>
                                     );
                                 })}
@@ -320,9 +318,9 @@ const CanalesMultiples = ({ data, setData, onNext }) => {
                             background: serverUtilization < 1 ? "#f0fdf4" : "#fef2f2",
                         }}>
                             <span style={{ color: serverUtilization < 1 ? "#16a34a" : "#dc2626", fontWeight: 700 }}>ρ = λ/μ =</span>
-                            <span style={{ ...s.resultNum, color: serverUtilization < 1 ? "#15803d" : "#dc2626" }}>{rho?.toFixed(4)}</span>
+                            <span style={{ ...s.resultNum, color: serverUtilization < 1 ? "#15803d" : "#dc2626" }}>{formatNumber(rho)}</span>
                             <span style={s.resultUnit}>; Utilización = ρ/k =</span>
-                            <span style={{ ...s.resultNum, fontSize: 18, color: serverUtilization < 1 ? "#15803d" : "#dc2626" }}>{serverUtilization?.toFixed(4)}</span>
+                            <span style={{ ...s.resultNum, fontSize: 18, color: serverUtilization < 1 ? "#15803d" : "#dc2626" }}>{formatNumber(serverUtilization)}</span>
                             <span style={s.resultUnit}>
                                 {serverUtilization < 1 ? "Sistema estable" : "Sistema inestable — aumenta k o mejora μ"}
                             </span>
@@ -412,10 +410,10 @@ const CanalesMultiples = ({ data, setData, onNext }) => {
                         <p style={s.cardTitle}>Resumen</p>
                         <div style={s.summaryGrid}>
                             {[
-                                { label: "λ", val: lambda?.toFixed(4) ?? "—", color: "#2563eb", sub: `en ${uBase}` },
-                                { label: "μ", val: mu?.toFixed(4) ?? "—", color: "#dc2626", sub: `en ${uBase}` },
+                                { label: "λ", val: formatNumber(lambda), color: "#2563eb", sub: `en ${uBase}` },
+                                { label: "μ", val: formatNumber(mu), color: "#dc2626", sub: `en ${uBase}` },
                                 { label: "k", val: numServidores, color: "#16a34a", sub: "servidores" },
-                                { label: "ρ/k", val: serverUtilization?.toFixed(4) ?? "—", color: serverUtilization < 1 ? "#16a34a" : "#dc2626", sub: "utilización" },
+                                { label: "ρ/k", val: formatNumber(serverUtilization), color: serverUtilization < 1 ? "#16a34a" : "#dc2626", sub: "utilización" },
                             ].map(({ label, val, color, sub }) => (
                                 <div key={label} style={s.summaryItem}>
                                     <span style={s.summaryLabel}>{label}</span>
@@ -427,7 +425,7 @@ const CanalesMultiples = ({ data, setData, onNext }) => {
 
                         {serverUtilization >= 1 && (
                             <div style={s.errorBox}>
-                                Para M/M/k se requiere ρ/k &lt; 1. Actualmente ρ/k = {serverUtilization?.toFixed(4)}.
+                                Para M/M/k se requiere ρ/k &lt; 1. Actualmente ρ/k = {formatNumber(serverUtilization)}.
                             </div>
                         )}
                         {validationMessage && (

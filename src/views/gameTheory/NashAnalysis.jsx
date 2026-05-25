@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { isFiniteNumber, toFiniteNumber } from "../../utils/validation";
+import { isFiniteNumber, toFiniteNumber, formatNumber } from "../../utils/validation";
 
 const playerColors = ["#2563eb", "#dc2626", "#16a34a", "#9333ea", "#ea580c", "#0891b2"];
 const playerBg     = ["#eff6ff", "#fef2f2", "#f0fdf4", "#faf5ff", "#fff7ed", "#ecfeff"];
@@ -575,14 +575,14 @@ const NashAnalysis = ({ nashData, onBack }) => {
             fontFamily: "monospace"
           }}>
             {mixed.valid
-              ? `${mixed.varName} = ${mixed.prob.toFixed(4)}     1-${mixed.varName} = ${mixed.complement.toFixed(4)}`
+              ? `${mixed.varName} = ${formatNumber(mixed.prob)}     1-${mixed.varName} = ${formatNumber(mixed.complement)}`
               : `${mixed.varName} queda fuera de 0 a 1. Revisa los datos.`
             }
           </div>
 
           {mixed.valid && (
             <div style={{ marginTop: 10, fontSize: 13, color: "#374151" }}>
-              Usa <strong>{primaryOption}</strong> con {mixed.prob.toFixed(4)} y <strong>{secondaryOption}</strong> con {mixed.complement.toFixed(4)}.
+              Usa <strong>{primaryOption}</strong> con {formatNumber(mixed.prob)} y <strong>{secondaryOption}</strong> con {formatNumber(mixed.complement)}.
             </div>
           )}
         </div>
@@ -614,7 +614,7 @@ const NashAnalysis = ({ nashData, onBack }) => {
 
         {mixedJ2 && mixedJ1 && !mixedJ2.general && !mixedJ1.general && mixedJ2.valid && mixedJ1.valid && (
           <div style={{ ...s.verifyBox, fontSize: 14, fontWeight: 600, background: "#eff6ff", borderColor: "#2563eb", color: "#1d4ed8" }}>
-            Mezcla recomendada: J1 usa ({mixedJ1.prob.toFixed(4)}, {mixedJ1.complement.toFixed(4)}) y J2 usa ({mixedJ2.prob.toFixed(4)}, {mixedJ2.complement.toFixed(4)})
+            Mezcla recomendada: J1 usa ({formatNumber(mixedJ1.prob)}, {formatNumber(mixedJ1.complement)}) y J2 usa ({formatNumber(mixedJ2.prob)}, {formatNumber(mixedJ2.complement)})
           </div>
         )}
       </div>
@@ -679,7 +679,7 @@ const NashAnalysis = ({ nashData, onBack }) => {
             recommendation = `Opciones recomendadas: ${bestStrategies.join(", ")}.`;
           } else {
             if (k === 0 && mixedJ1 && !mixedJ1.general && mixedJ1.valid) {
-              recommendation = `Usa ${rowNames[0]} con ${mixedJ1.prob.toFixed(4)} y ${rowNames[1] || "fila 2"} con ${mixedJ1.complement.toFixed(4)}.`;
+              recommendation = `Usa ${rowNames[0]} con ${formatNumber(mixedJ1.prob)} y ${rowNames[1] || "fila 2"} con ${formatNumber(mixedJ1.complement)}.`;
               perfil = {
                 probs: [
                   { label: rowNames[0], prob: mixedJ1.prob },
@@ -688,7 +688,7 @@ const NashAnalysis = ({ nashData, onBack }) => {
                 eu: euJ1
               };
             } else if (k === 1 && mixedJ2 && !mixedJ2.general && mixedJ2.valid) {
-              recommendation = `Usa ${colNames[0]} con ${mixedJ2.prob.toFixed(4)} y ${colNames[1] || "col 2"} con ${mixedJ2.complement.toFixed(4)}.`;
+              recommendation = `Usa ${colNames[0]} con ${formatNumber(mixedJ2.prob)} y ${colNames[1] || "col 2"} con ${formatNumber(mixedJ2.complement)}.`;
               perfil = {
                 probs: [
                   { label: colNames[0], prob: mixedJ2.prob },
@@ -756,7 +756,7 @@ const NashAnalysis = ({ nashData, onBack }) => {
                       }}>
                         <div style={{ fontSize: 11, color: playerColors[k], fontWeight: 600, marginBottom: 2 }}>{pr.label}</div>
                         <div style={{ fontSize: 18, fontWeight: 700, color: playerColors[k] }}>
-                          {pr.prob.toFixed(4)}
+                          {formatNumber(pr.prob)}
                         </div>
                       </div>
                     ))}
@@ -775,7 +775,7 @@ const NashAnalysis = ({ nashData, onBack }) => {
                             fontSize: 13, color: "#374151"
                           }}>
                             <span style={{ color: "#6b7280", marginRight: 6 }}>{e.label}:</span>
-                            <strong>{parseFloat(e.eu).toFixed(4)}</strong>
+                            <strong>{formatNumber(e.eu)}</strong>
                           </div>
                         ))}
                       </div>
@@ -797,9 +797,9 @@ const NashAnalysis = ({ nashData, onBack }) => {
               Las probabilidades finales quedan asi:
             </p>
             <div style={{ fontFamily: "monospace", fontSize: 14, color: "#1d4ed8", background: "#dbeafe", borderRadius: 8, padding: "10px 14px", marginBottom: 10 }}>
-              J1: ({rowNames[0]} = {mixedJ1.prob.toFixed(4)}, {rowNames[1] || "fila 2"} = {mixedJ1.complement.toFixed(4)})
+              J1: ({rowNames[0]} = {formatNumber(mixedJ1.prob)}, {rowNames[1] || "fila 2"} = {formatNumber(mixedJ1.complement)})
               {"  |  "}
-              J2: ({colNames[0]} = {mixedJ2.prob.toFixed(4)}, {colNames[1] || "col 2"} = {mixedJ2.complement.toFixed(4)})
+              J2: ({colNames[0]} = {formatNumber(mixedJ2.prob)}, {colNames[1] || "col 2"} = {formatNumber(mixedJ2.complement)})
             </div>
             <p style={{ fontSize: 12, color: "#3b82f6", fontStyle: "italic" }}>
               Si alguien se sale de esta mezcla, el otro puede responder y ganar mas.

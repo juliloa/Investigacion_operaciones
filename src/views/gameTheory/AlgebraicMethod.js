@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import { analyzeGame } from "./gameTheoryUtils";
+import { formatNumber } from "../../utils/validation";
 
 const COLORS = ["#1d4ed8", "#dc2626", "#059669", "#7c3aed", "#ea580c", "#0891b2"];
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
-const format = (value) => Number(value).toFixed(4);
+const format = (value) => formatNumber(value);
 
 const projectMatrixToColumns = (matrix, sourceColNames, targetColNames) => {
   if (!Array.isArray(matrix) || !matrix.length || !Array.isArray(sourceColNames)) {
@@ -224,7 +225,7 @@ const AlgebraicChart = ({ lines, intersections, yMin, yMax, strategyIntervals = 
               strokeWidth="1"
             />
             <text x={toX(tick)} y={height - margin.bottom + 22} textAnchor="middle" style={axisLabel}>
-              {tick.toFixed(4)}
+              {formatNumber(tick)}
             </text>
           </g>
         ))}
@@ -369,7 +370,7 @@ const AlgebraicMethod = ({ gameData, onBack, onGoData }) => {
   if (!gameData?.matrix?.length || !gameData?.matrix?.[0]?.length) {
     return (
       <div style={container}>
-        <h2 style={title}>Metodo algebraico</h2>
+        <h2 style={title}>Gráfica de Probabilidades</h2>
         <p style={muted}>No hay una matriz cargada para aplicar el metodo.</p>
         <button onClick={onGoData} style={buttonPrimary}>Ir a datos del juego</button>
       </div>
@@ -398,12 +399,12 @@ const AlgebraicMethod = ({ gameData, onBack, onGoData }) => {
 
   return (
     <div style={container}>
-      <h2 style={title}>Metodo algebraico</h2>
+      <h2 style={title}>Gráfica de Probabilidades (Método Gráfico)</h2>
 
       <div style={panel}>
-        <h3 style={panelTitle}>Matriz final de la reduccion</h3>
+        <h3 style={panelTitle}>Las opciones que sobrevivieron</h3>
         <p style={text}>
-          Se toma la matriz reducida del analisis sucesivo para construir las ecuaciones lineales por estrategia de filas.
+          Usamos las opciones que sobrevivieron en el paso anterior para dibujar las líneas de probabilidad y ver qué te conviene jugar.
         </p>
 
         <div style={matrixWrap}>
@@ -433,10 +434,9 @@ const AlgebraicMethod = ({ gameData, onBack, onGoData }) => {
       {isSingleCell && (
         <>
           <div style={panel}>
-            <h3 style={panelTitle}>Grafica para matriz final 1x1</h3>
+            <h3 style={panelTitle}>Resultado Directo</h3>
             <p style={text}>
-              Como la reduccion termino en una sola celda, no hace falta resolver ecuaciones en p.
-              El resultado es puntual y se muestra en la grafica siguiente.
+              Como llegamos a una sola celda ganadora desde el análisis anterior, no necesitamos mezclar probabilidades. La solución es simple y directa.
             </p>
             <SingleCellChart
               value={singleValue}
@@ -476,7 +476,7 @@ const AlgebraicMethod = ({ gameData, onBack, onGoData }) => {
       {!isSingleCell && algebraicFinal.isApplicable && (
         <>
           <div style={panel}>
-            <h3 style={panelTitle}>Ecuaciones del metodo algebraico</h3>
+            <h3 style={panelTitle}>Fórmulas de Probabilidad</h3>
             {algebraicFinal.lines.map((line, index) => (
               <p key={index} style={equation}>
                 <span style={{ ...dot, background: line.color }} />
@@ -487,7 +487,7 @@ const AlgebraicMethod = ({ gameData, onBack, onGoData }) => {
 
           {/* Comparación de matrices */}
           <div style={panel}>
-            <h3 style={panelTitle}>Comparacion: Matriz Original vs Matriz Reducida</h3>
+            <h3 style={panelTitle}>Comparando: Todas las opciones vs Las que sobrevivieron</h3>
             
             <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
               {/* Matriz original */}
@@ -637,8 +637,8 @@ const AlgebraicMethod = ({ gameData, onBack, onGoData }) => {
                 <p style={text}><strong>Puntos de corte en matriz reducida:</strong></p>
                 {algebraicFinal.intersections.map((point, index) => (
                   <p key={index} style={text}>
-                    - Cruce {index + 1}: {point.pair[0]} con {point.pair[1]} en p = {point.x.toFixed(4)} ({format(point.x*100)}%) 
-                    y 1-p = {format(1-point.x)} ({format((1-point.x)*100)}%), valor = {point.y.toFixed(4)}.
+                    - Cruce {index + 1}: {point.pair[0]} con {point.pair[1]} en p = {formatNumber(point.x)} ({format(point.x*100)}%) 
+                    y 1-p = {format(1-point.x)} ({format((1-point.x)*100)}%), valor = {formatNumber(point.y)}.
                   </p>
                 ))}
               </div>
@@ -697,10 +697,10 @@ const AlgebraicMethod = ({ gameData, onBack, onGoData }) => {
                 </p>
                 {algebraicFinal.strategyIntervals.map((interval, index) => (
                   <p key={index} style={text}>
-                    - Para p en [{interval.left.toFixed(4)}, {interval.right.toFixed(4)}] 
+                    - Para p en [{formatNumber(interval.left)}, {formatNumber(interval.right)}] 
                     (es decir, probabilidad de la primera columna entre {format(interval.left*100)}% y {format(interval.right*100)}%),
                     la mejor estrategia de filas es <strong>{interval.winners.join(" o ")}</strong> 
-                    con valor esperado aproximado de {interval.value.toFixed(4)}.
+                    con valor esperado aproximado de {formatNumber(interval.value)}.
                   </p>
                 ))}
               </>
@@ -713,9 +713,9 @@ const AlgebraicMethod = ({ gameData, onBack, onGoData }) => {
                 {algebraicFinal.intersections.map((point, index) => (
                   <p key={index} style={text}>
                     - Cruce {index + 1} entre {point.pair[0]} y {point.pair[1]}:<br/>
-                    &nbsp;&nbsp;p = {point.x.toFixed(4)} ({format(point.x*100)}% para primera columna)<br/>
+                    &nbsp;&nbsp;p = {formatNumber(point.x)} ({format(point.x*100)}% para primera columna)<br/>
                     &nbsp;&nbsp;1-p = {format(1 - point.x)} ({format((1-point.x)*100)}% para segunda columna)<br/>
-                    &nbsp;&nbsp;Valor del juego en este punto: {point.y.toFixed(4)}
+                    &nbsp;&nbsp;Valor del juego en este punto: {formatNumber(point.y)}
                   </p>
                 ))}
               </div>
@@ -732,7 +732,7 @@ const AlgebraicMethod = ({ gameData, onBack, onGoData }) => {
               <strong>Resumen del equilibrio:</strong> La decision final se apoya en la envolvente superior de rectas: 
               en cada rango de p se elige la estrategia que maximiza el pago esperado. 
               El equilibrio se interpreta a partir de los puntos donde las rectas se cruzan.
-              Si p = {algebraicFinal.intersections[0]?.x.toFixed(4) || "N/A"}, entonces el valor del juego es {algebraicFinal.intersections[0]?.y.toFixed(4) || "N/A"}.
+              Si p = {algebraicFinal.intersections[0] ? formatNumber(algebraicFinal.intersections[0].x) : "N/A"}, entonces el valor del juego es {algebraicFinal.intersections[0] ? formatNumber(algebraicFinal.intersections[0].y) : "N/A"}.
             </p>
 
             {/* Tabla resumen de equilibrio */}

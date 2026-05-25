@@ -1,5 +1,5 @@
 import React from "react";
-import { toFiniteNumber } from "../../utils/validation";
+import { toFiniteNumber, formatNumber } from "../../utils/validation";
 
 const MODOS_POISSON = [
     { key: "exact", label: "P(x = n)", desc: "Exacta" },
@@ -105,16 +105,16 @@ const CanalesSimples = ({ data, setData, onNext }) => {
                 <div style={s.defGrid}>
                     {[
                         {
-                            sym: "λ", bg: "#eff6ff", color: "#2563eb", name: "Tasa de llegadas (lambda)",
-                            desc: "Promedio de clientes que llegan por unidad de tiempo. Sigue distribución Poisson — llegadas aleatorias e independientes.", ej: "0.75 clientes/min"
+                            sym: "λ", bg: "#eff6ff", color: "#2563eb", name: "Ritmo de Llegada (λ - Lambda)",
+                            desc: "¿Qué tan rápido llegan los clientes a la fila? (Se asume que llegan al azar).", ej: "Ej: 10 clientes por hora"
                         },
                         {
-                            sym: "μ", bg: "#fef2f2", color: "#dc2626", name: "Tasa de servicio (mu)",
-                            desc: "Promedio de clientes que el servidor atiende por unidad de tiempo. Los tiempos de servicio siguen distribución Exponencial.", ej: "1 cliente/min"
+                            sym: "μ", bg: "#fef2f2", color: "#dc2626", name: "Velocidad de Atención (μ - Mu)",
+                            desc: "¿A qué velocidad atiende el cajero o servidor a cada persona?", ej: "Ej: 15 clientes por hora"
                         },
                         {
-                            sym: "ρ", bg: "#f0fdf4", color: "#16a34a", name: "Utilización del servidor (rho)",
-                            desc: "ρ = λ/μ. Fracción del tiempo que el servidor está ocupado. Debe ser < 1 para que el sistema sea estable.", ej: "ρ = 0.75 → ocupado 75%"
+                            sym: "ρ", bg: "#f0fdf4", color: "#16a34a", name: "Porcentaje de Ocupación (ρ - Rho)",
+                            desc: "Nivel de estrés del cajero. Si es mayor o igual a 100% (1.0), la fila será infinita y colapsará. ¡Siempre debe ser < 1!", ej: "Ej: ρ = 0.75 → Ocupado el 75% del tiempo"
                         },
                     ].map(({ sym, bg, color, name, desc, ej }) => (
                         <div key={sym} style={s.defCard}>
@@ -130,7 +130,7 @@ const CanalesSimples = ({ data, setData, onNext }) => {
 
             {/* ── LLEGADAS ── */}
             <div style={s.card}>
-                <p style={s.cardTitle}><span style={{ color: "#2563eb" }}>λ</span> — Tasa de llegadas</p>
+                <p style={s.cardTitle}><span style={{ color: "#2563eb" }}>λ</span> — Ritmo de Llegada (Lambda)</p>
                 <p style={s.guideText}>Ingresa cuántos clientes llegan y en qué período. La app calculará λ automáticamente.</p>
                 <div style={s.inputRow}>
                     <div style={s.field}>
@@ -154,7 +154,7 @@ const CanalesSimples = ({ data, setData, onNext }) => {
                 {lambdaOrig !== null && (
                     <div style={s.resultInline}>
                         <span style={{ color: "#2563eb", fontWeight: 700 }}>λ =</span>
-                        <span style={s.resultNum}>{lambdaOrig.toFixed(4)}</span>
+                        <span style={s.resultNum}>{formatNumber(lambdaOrig)}</span>
                         <span style={s.resultUnit}>clientes/{llegadas.unidad}</span>
                         <span style={s.resultFormula}>({llegadas.cantidad} ÷ {llegadas.tiempo} {llegadas.unidad})</span>
                     </div>
@@ -163,7 +163,7 @@ const CanalesSimples = ({ data, setData, onNext }) => {
 
             {/* ── SERVICIO ── */}
             <div style={s.card}>
-                <p style={s.cardTitle}><span style={{ color: "#dc2626" }}>μ</span> — Tasa de servicio</p>
+                <p style={s.cardTitle}><span style={{ color: "#dc2626" }}>μ</span> — Velocidad de Atención (Mu)</p>
                 <p style={s.guideText}>Ingresa cuántos clientes puede atender el servidor y en qué período.</p>
                 <div style={s.inputRow}>
                     <div style={s.field}>
@@ -187,7 +187,7 @@ const CanalesSimples = ({ data, setData, onNext }) => {
                 {muOrig !== null && (
                     <div style={{ ...s.resultInline, borderColor: "#fecaca", background: "#fef2f2" }}>
                         <span style={{ color: "#dc2626", fontWeight: 700 }}>μ =</span>
-                        <span style={{ ...s.resultNum, color: "#dc2626" }}>{muOrig.toFixed(4)}</span>
+                        <span style={{ ...s.resultNum, color: "#dc2626" }}>{formatNumber(muOrig)}</span>
                         <span style={s.resultUnit}>clientes/{servicio.unidad}</span>
                         <span style={s.resultFormula}>({servicio.cantidad} ÷ {servicio.tiempo} {servicio.unidad})</span>
                     </div>
@@ -235,24 +235,47 @@ const CanalesSimples = ({ data, setData, onNext }) => {
                         </div>
 
                         {mejoraInterna.tipo === "tasa" ? (
-                            <div style={s.inputRow}>
-                                <div style={s.field}>
-                                    <label style={s.label}>¿Cuántos clientes podrá atender ahora?</label>
-                                    <input type="number" value={mejoraInterna.cantidad} onChange={e => updateMI({ cantidad: e.target.value })} style={s.input} placeholder="ej: 80" />
+                            <div>
+                                <div style={s.inputRow}>
+                                    <div style={s.field}>
+                                        <label style={s.label}>¿Cuántos clientes podrá atender ahora?</label>
+                                        <input type="number" value={mejoraInterna.cantidad} onChange={e => updateMI({ cantidad: e.target.value })} style={s.input} placeholder="ej: 80" />
+                                    </div>
+                                    <div style={s.fieldSm}>
+                                        <label style={s.label}>En cuántos</label>
+                                        <input type="number" value={mejoraInterna.tiempo} onChange={e => updateMI({ tiempo: e.target.value })} style={s.inputSm} placeholder="ej: 60" />
+                                    </div>
+                                    <div style={s.fieldSm}>
+                                        <label style={s.label}>Unidad</label>
+                                        <select value={mejoraInterna.unidad} onChange={e => updateMI({ unidad: e.target.value })} style={s.select}>
+                                            <option value="seg">seg</option>
+                                            <option value="min">min</option>
+                                            <option value="hora">hora</option>
+                                            <option value="día">día</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div style={s.fieldSm}>
-                                    <label style={s.label}>En cuántos</label>
-                                    <input type="number" value={mejoraInterna.tiempo} onChange={e => updateMI({ tiempo: e.target.value })} style={s.inputSm} placeholder="ej: 60" />
-                                </div>
-                                <div style={s.fieldSm}>
-                                    <label style={s.label}>Unidad</label>
-                                    <select value={mejoraInterna.unidad} onChange={e => updateMI({ unidad: e.target.value })} style={s.select}>
-                                        <option value="seg">seg</option>
-                                        <option value="min">min</option>
-                                        <option value="hora">hora</option>
-                                        <option value="día">día</option>
-                                    </select>
-                                </div>
+                                {(() => {
+                                    const qty = toFiniteNumber(mejoraInterna.cantidad, NaN);
+                                    const time = toFiniteNumber(mejoraInterna.tiempo, NaN);
+                                    const unit = mejoraInterna.unidad || uBase;
+                                    const muNueva = convertRate(qty, time, unit, uBase);
+
+                                    if (!Number.isFinite(mu) || !Number.isFinite(muNueva)) return null;
+
+                                    return (
+                                        <p style={{ ...s.guideText, background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, padding: "8px 10px" }}>
+                                            <strong>Ejemplo con tus datos:</strong> μ actual = {formatNumber(mu)} clientes/{uBase} →
+                                            μ nueva = {formatNumber(muNueva)} clientes/{uBase}
+                                            {uBase && (
+                                                <>
+                                                    <br />
+                                                    <span style={{ color: "#64748b" }}>Unidad base: clientes/{uBase}</span>
+                                                </>
+                                            )}
+                                        </p>
+                                    );
+                                })()}
                             </div>
                         ) : (
                             <div style={s.field}>
@@ -269,6 +292,29 @@ const CanalesSimples = ({ data, setData, onNext }) => {
                                     <span style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", color: "#6b7280", fontWeight: 700 }}>%</span>
                                 </div>
                                 <p style={s.guideText}>Ej: Si el servidor atiende 10 clientes/hora, un 20% de mejora lo subirá a 12 clientes/hora.</p>
+                                <p style={s.guideText}>
+                                    <strong>¿Qué hace el porcentaje?</strong> Toma la tasa actual μ y la multiplica por (1 + porcentaje/100).
+                                    En otras palabras: μ nueva = μ actual × (1 + p/100).
+                                </p>
+                                <p style={s.guideText}>
+                                    <strong>Proceso que sigue:</strong> 1) calcula μ actual con tus datos, 2) aplica el aumento,
+                                    3) con esa μ nueva vuelve a calcular ρ, Lq, Wq y el resto para comparar antes vs después.
+                                </p>
+                                {(() => {
+                                    const pct = toFiniteNumber(mejoraInterna.porcentaje, NaN);
+                                    const muNueva = Number.isFinite(mu) && Number.isFinite(pct)
+                                        ? mu * (1 + pct / 100)
+                                        : null;
+
+                                    if (!Number.isFinite(mu) || !Number.isFinite(pct)) return null;
+
+                                    return (
+                                        <p style={{ ...s.guideText, background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, padding: "8px 10px" }}>
+                                            <strong>Ejemplo con tus datos:</strong> μ actual = {formatNumber(mu)} clientes/{uBase} →
+                                            μ nueva = {formatNumber(muNueva)} clientes/{uBase}
+                                        </p>
+                                    );
+                                })()}
                             </div>
                         )}
                     </div>
@@ -295,10 +341,16 @@ const CanalesSimples = ({ data, setData, onNext }) => {
                                 >
                                     <span style={{ fontSize: 13, fontWeight: 700 }}>Trabajar en {u}</span>
                                     <span style={{ fontSize: 11, color: "#6b7280", marginTop: 3 }}>
-                                        λ = {lConv?.toFixed(4)} clientes/{u}
+                                        λ = {formatNumber(lConv)} clientes/{u}
+                                                                                {uBase && (
+                                                                                    <>
+                                                                                        <br />
+                                                                                        <span style={{ color: "#64748b" }}>Unidad base: clientes/{uBase}</span>
+                                                                                    </>
+                                                                                )}
                                     </span>
                                     <span style={{ fontSize: 11, color: "#6b7280" }}>
-                                        μ = {mConv?.toFixed(4)} clientes/{u}
+                                        μ = {formatNumber(mConv)} clientes/{u}
                                     </span>
                                 </button>
                             );
@@ -312,8 +364,8 @@ const CanalesSimples = ({ data, setData, onNext }) => {
                                 ✓ Trabajando en {unidadBase}:
                             </p>
                             <div style={{ fontFamily: "monospace", fontSize: 12, color: "#374151" }}>
-                                <div>λ: {llegadas.cantidad}/{llegadas.tiempo}{llegadas.unidad} → {lambda?.toFixed(4)} clientes/{unidadBase}</div>
-                                <div>μ: {servicio.cantidad}/{servicio.tiempo}{servicio.unidad} → {mu?.toFixed(4)} clientes/{unidadBase}</div>
+                                <div>λ: {llegadas.cantidad}/{llegadas.tiempo}{llegadas.unidad} → {formatNumber(lambda)} clientes/{unidadBase}</div>
+                                <div>μ: {servicio.cantidad}/{servicio.tiempo}{servicio.unidad} → {formatNumber(mu)} clientes/{unidadBase}</div>
                             </div>
                         </div>
                     )}
@@ -328,7 +380,7 @@ const CanalesSimples = ({ data, setData, onNext }) => {
                     background: rho < 1 ? "#f0fdf4" : "#fef2f2",
                 }}>
                     <span style={{ color: rho < 1 ? "#16a34a" : "#dc2626", fontWeight: 700 }}>ρ = λ/μ =</span>
-                    <span style={{ ...s.resultNum, color: rho < 1 ? "#15803d" : "#dc2626" }}>{rho?.toFixed(4)}</span>
+                    <span style={{ ...s.resultNum, color: rho < 1 ? "#15803d" : "#dc2626" }}>{formatNumber(rho)}</span>
                     <span style={s.resultUnit}>
                         {rho < 1 ? "✓ Sistema estable" : "✗ Sistema inestable — aumenta μ o reduce λ"}
                     </span>
@@ -432,15 +484,15 @@ const CanalesSimples = ({ data, setData, onNext }) => {
                 <div style={s.summaryGrid}>
                     {[
                         {
-                            label: "λ", val: lambda?.toFixed(4) ?? "—", color: "#2563eb",
+                            label: "λ", val: formatNumber(lambda), color: "#2563eb",
                             sub: unidadBase ? `en ${unidadBase}` : `en ${llegadas.unidad}`
                         },
                         {
-                            label: "μ", val: mu?.toFixed(4) ?? "—", color: "#dc2626",
+                            label: "μ", val: formatNumber(mu), color: "#dc2626",
                             sub: unidadBase ? `en ${unidadBase}` : `en ${servicio.unidad}`
                         },
                         {
-                            label: "ρ", val: rho?.toFixed(4) ?? "—",
+                            label: "ρ", val: formatNumber(rho),
                             color: rho < 1 ? "#16a34a" : "#dc2626", sub: "λ/μ"
                         },
                         { label: "x", val: x || "—", color: "#374151", sub: "Poisson" },
@@ -456,7 +508,7 @@ const CanalesSimples = ({ data, setData, onNext }) => {
 
                 {rho >= 1 && (
                     <div style={s.errorBox}>
-                        ⚠ Para M/M/1 se requiere ρ &lt; 1. Actualmente ρ = {rho?.toFixed(4)}.
+                        ⚠ Para M/M/1 se requiere ρ &lt; 1. Actualmente ρ = {formatNumber(rho)}.
                     </div>
                 )}
                 {validationMessage && (
