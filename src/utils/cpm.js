@@ -1,14 +1,20 @@
 // src/utils/cpm.js
+// Método de la Ruta Crítica (CPM) - PERT/CPM
+// IP = Tiempo de Inicio más Próximo
+// TP = Tiempo de Terminación más Próximo
+// IL = Tiempo de Inicio más Lejano
+// TL = Tiempo de Terminación más Lejano
+// H = Holgura (Slack)
 
 export const calculateCPM = (activitiesInput) => {
     // Clone to avoid mutating the original input directly
     const nodes = activitiesInput.map(a => ({
         ...a,
-        ES: 0,
-        EF: 0,
-        LS: 0,
-        LF: 0,
-        slack: 0,
+        IP: 0,  // Inicio Próximo (Earliest Start)
+        TP: 0,  // Terminación Próxima (Earliest Finish)
+        IL: 0,  // Inicio Lejano (Latest Start)
+        TL: 0,  // Terminación Lejana (Latest Finish)
+        H: 0,   // Holgura (Slack)
         isCritical: false,
         successors: []
     }));
@@ -44,40 +50,41 @@ export const calculateCPM = (activitiesInput) => {
         });
     }
 
-    // Forward Pass (ES, EF)
+    // Recorrido hacia adelante (Forward Pass)
+    // Calcula IP y TP
     sorted.forEach(u => {
         if (u.precedences.length === 0) {
-            u.ES = 0;
+            u.IP = 0;
         } else {
-            const maxEF = Math.max(...u.precedences.map(pId => nodeMap[pId].EF));
-            u.ES = maxEF;
+            const maxTP = Math.max(...u.precedences.map(pId => nodeMap[pId].TP));
+            u.IP = maxTP;
         }
-        u.EF = u.ES + u.duration;
+        u.TP = u.IP + u.duration;
     });
 
-    // Determine Project Duration (Max EF of all end nodes)
+    // Determine Project Duration (Max TP of all end nodes)
     const endNodes = nodes.filter(n => n.successors.length === 0);
-    const maxProjectDuration = Math.max(...endNodes.map(n => n.EF));
+    const maxProjectDuration = Math.max(...endNodes.map(n => n.TP));
 
-    // Backward Pass (LF, LS)
-    // Reverse the topological sort
+    // Recorrido hacia atrás (Backward Pass)
+    // Calcula IL, TL y H
     const reversed = [...sorted].reverse();
     reversed.forEach(u => {
         if (u.successors.length === 0) {
-            u.LF = maxProjectDuration;
+            u.TL = maxProjectDuration;
         } else {
-            const minLS = Math.min(...u.successors.map(sId => nodeMap[sId].LS));
-            u.LF = minLS;
+            const minIL = Math.min(...u.successors.map(sId => nodeMap[sId].IL));
+            u.TL = minIL;
         }
-        u.LS = u.LF - u.duration;
+        u.IL = u.TL - u.duration;
         
-        // Calculate Slack
-        u.slack = u.LS - u.ES; // or LF - EF
+        // Calculate Holgura (Slack)
+        u.H = u.IL - u.IP; // o también TL - TP
         
-        // A node is critical if slack is 0 (or very close to 0 due to float math, though durations are integers/floats)
-        if (Math.abs(u.slack) < 0.0001) {
+        // A node is critical if H is 0 (or very close to 0 due to float math)
+        if (Math.abs(u.H) < 0.0001) {
             u.isCritical = true;
-            u.slack = 0;
+            u.H = 0;
         }
     });
 

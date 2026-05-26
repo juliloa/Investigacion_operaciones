@@ -1,0 +1,384 @@
+/* ProjectAnalysis.css - Estilos animados y visuales */
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+@keyframes bounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-4px);
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -1000px 0;
+    }
+    100% {
+        background-position: 1000px 0;
+    }
+}
+
+@keyframes criticalPulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+    }
+}
+
+.pa-container {
+    animation: slideInUp 0.6s ease-out;
+}
+
+.pa-stat-box {
+    animation: slideInUp 0.6s ease-out;
+    transition: all 0.3s ease;
+}
+
+.pa-stat-box:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px -5px rgba(0, 0, 0, 0.1) !important;
+}
+
+.pa-stat-value {
+    animation: bounce 2s infinite;
+}
+
+.pa-card {
+    animation: slideInUp 0.6s ease-out;
+    transition: all 0.3s ease;
+}
+
+.pa-card:hover {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1) !important;
+}
+
+.pa-gantt-bar {
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.pa-gantt-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    animation: shimmer 2s infinite;
+}
+
+.pa-gantt-bar:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.pa-critical-indicator {
+    animation: criticalPulse 2s infinite;
+}
+
+.pa-badge {
+    animation: slideInLeft 0.4s ease-out;
+    display: inline-block;
+}
+
+.pa-table-row {
+    transition: all 0.3s ease;
+    animation: slideInUp 0.5s ease-out;
+}
+
+.pa-table-row:hover {
+    background-color: rgba(79, 127, 232, 0.05) !important;
+    transform: scale(1.01);
+}
+
+.pa-chart-bar {
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    cursor: pointer;
+    border-radius: 6px 6px 0 0;
+}
+
+.pa-chart-bar:hover {
+    filter: brightness(1.2);
+    transform: scaleY(1.05);
+}
+
+.pa-header {
+    animation: slideInUp 0.6s ease-out;
+}
+
+.pa-stat-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.pa-stat-number {
+    font-size: 36px;
+    font-weight: 800;
+    color: #1e293b;
+    animation: slideInLeft 0.6s ease-out;
+}
+
+.pa-chart-container {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    margin-top: 20px;
+    padding: 20px;
+    background: linear-gradient(135deg, #f0f9ff 0%, #f8fafc 100%);
+    border-radius: 12px;
+}
+
+.pa-chart-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.pa-chart-item-label {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 600;
+    text-align: center;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pa-list-item {
+    animation: slideInLeft 0.5s ease-out;
+    transition: all 0.3s ease;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+}
+
+.pa-list-item:hover {
+    background-color: rgba(79, 127, 232, 0.08);
+    padding-left: 16px;
+}
+
+.pa-critical-badge {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    color: #991b1b;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 20px;
+    display: inline-block;
+    border: 1px solid #fca5a5;
+    animation: slideInLeft 0.4s ease-out;
+}
+
+.pa-normal-badge {
+    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+    color: #475569;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 20px;
+    display: inline-block;
+}
+
+.pa-info-box {
+    animation: slideInUp 0.6s ease-out;
+    border-left: 4px solid;
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+}
+
+.pa-info-box:hover {
+    transform: translateX(4px);
+}
+
+.pa-info-box-success {
+    background: #f0fdf4;
+    border-left-color: #22c55e;
+}
+
+.pa-info-box-warning {
+    background: #fffbeb;
+    border-left-color: #f59e0b;
+}
+
+.pa-info-box-info {
+    background: #f0f9ff;
+    border-left-color: #0284c7;
+}
+
+.pa-timeline {
+    position: relative;
+    padding: 30px 0;
+}
+
+.pa-timeline-item {
+    animation: slideInLeft 0.6s ease-out;
+    padding-left: 40px;
+    margin-bottom: 30px;
+    position: relative;
+}
+
+.pa-timeline-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 16px;
+    height: 16px;
+    background: #4f7fe8;
+    border-radius: 50%;
+    border: 3px solid #f8fafc;
+    box-shadow: 0 0 0 4px #4f7fe8;
+}
+
+.pa-timeline-critical::before {
+    background: #ef4444;
+    box-shadow: 0 0 0 4px #ef4444;
+}
+
+/* Tabla mejorada */
+.pa-table-wrapper {
+    overflow-x: auto;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.pa-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+.pa-table thead {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+}
+
+.pa-table th {
+    padding: 16px;
+    text-align: left;
+    font-weight: 700;
+    color: #475569;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 2px solid #cbd5e1;
+}
+
+.pa-table td {
+    padding: 16px;
+    border-bottom: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 14px;
+}
+
+.pa-table tbody tr {
+    transition: all 0.3s ease;
+    animation: slideInUp 0.5s ease-out;
+}
+
+.pa-table tbody tr:hover {
+    background-color: #f8fafc;
+    box-shadow: inset 0 0 10px rgba(79, 127, 232, 0.1);
+}
+
+.pa-table .pa-critical-row {
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    font-weight: 600;
+}
+
+.pa-table .pa-critical-row:hover {
+    background: linear-gradient(135deg, #fecaca 0%, #fca5a5 100%);
+}
+
+.pa-statistic-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.pa-stat-item {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    text-align: center;
+    animation: slideInUp 0.6s ease-out;
+    transition: all 0.3s ease;
+}
+
+.pa-stat-item:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    border-color: #4f7fe8;
+}
+
+.pa-stat-item.critical {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    border-color: #ef4444;
+}
+
+.pa-stat-item.critical:hover {
+    background: linear-gradient(135deg, #fecaca 0%, #fca5a5 100%);
+}
+
+/* Network diagram */
+.pa-network-container {
+    animation: slideInUp 0.8s ease-out;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+/* Responsive animations */
+@media (max-width: 768px) {
+    .pa-stat-value {
+        animation: none;
+    }
+
+    .pa-chart-container {
+        flex-direction: column;
+    }
+}
